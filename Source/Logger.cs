@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace EnhancedDistrictServices
@@ -51,18 +48,34 @@ namespace EnhancedDistrictServices
             }
         }
 
+        /// <summary>
+        /// Singleton instance of MyLogger.
+        /// </summary>
         private static readonly MyLogger m_instance = new MyLogger();
 
+        /// <summary>
+        /// Log a regular message.
+        /// </summary>
+        /// <param name="format"></param>
+        /// <param name="args"></param>
         public static void Log(string format, params object[] args)
         {
             m_instance.WriteLine(format, args);
         }
 
+        /// <summary>
+        /// Log a warning message.
+        /// </summary>
+        /// <param name="msg"></param>
         public static void LogWarning(string msg)
         {
             m_instance.WriteLine($"[WARNING] {msg}");
         }
 
+        /// <summary>
+        /// In case of an exception, dump the stack trace to help us debug the problem.
+        /// </summary>
+        /// <param name="ex"></param>
         public static void LogException(Exception ex)
         {
             m_instance.WriteLine("[CRITICAL] Exception");

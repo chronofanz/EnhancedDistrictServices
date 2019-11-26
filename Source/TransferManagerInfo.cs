@@ -7,6 +7,13 @@ namespace EnhancedDistrictServices
     /// </summary>
     public static class TransferManagerInfo
     {
+        /// <summary>
+        /// Returns the building id associated with the offer, if specified.
+        /// If a citizen is associated with the offer, returns the citizen's home building id.
+        /// If a service vehicle is associated with the offer, returns that vehicle's service building.
+        /// </summary>
+        /// <param name="offer"></param>
+        /// <returns></returns>
         public static ushort GetHomeBuilding(ref TransferManager.TransferOffer offer)
         {
             if (offer.Building != 0)

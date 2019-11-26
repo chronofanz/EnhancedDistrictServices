@@ -7,8 +7,8 @@
     <ProjectGuid>{931AA4D1-891F-414B-8D33-AD6403E360B5}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EnhanceDistrictServices</RootNamespace>
-    <AssemblyName>EnhanceDistrictServices</AssemblyName>
+    <RootNamespace>EnhancedDistrictServices</RootNamespace>
+    <AssemblyName>EnhancedDistrictServices</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -60,6 +60,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Source\EnhancedDistrictServicesThreadingExtension.cs" />
     <Compile Include="Source\EnhancedDistrictServicesMod.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Source\DistrictServicesTable.cs" />

@@ -11,9 +11,18 @@ namespace EnhancedDistrictServices
         public static bool[] BuildingToOutsideConnections = new bool[BuildingManager.MAX_BUILDING_COUNT];
         public static List<int>[] BuildingToDistrictServiced = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
+        static DistrictServicesTable()
+        {
+            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
+            {
+                BuildingToAllLocalAreas[buildingId] = true;
+                BuildingToOutsideConnections[buildingId] = true;
+            }
+        }
+
         public static void Clear()
         {
-            for (int buildingId = 0; buildingId < BuildingToDistrictServiced.Length; buildingId++)
+            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
             {
                 RemoveBuilding(buildingId);
             }

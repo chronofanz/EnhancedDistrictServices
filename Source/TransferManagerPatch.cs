@@ -326,13 +326,11 @@ namespace EnhancedDistrictServices
                                 break;
                             }
 
-                            /*
                             // Do not match outside to outside offers, because it clogs up the cargo harbors.
                             if (priorityOut == 0 && priorityIn == 0)
                             {
                                 break;
                             }
-                            */
 
                             int responseCountIndex = (int)material * 8 + priorityIn;
                             int responseSubCount = responseCount[responseCountIndex];
@@ -363,16 +361,16 @@ namespace EnhancedDistrictServices
                                     {
                                         // Awesome, from a district restrictions perspective, we can service the offer.
                                         // But also check for supply chain restrictions.
-                                        if (isSupplyChainOffer && !IsValidBuildingOffer(ref responseOffer, ref requestOffer, allowForSpecifiedConnectionOnly: false))
+                                        if (isSupplyChainOffer && !IsSupplyChainOffer(ref responseOffer, ref requestOffer, allowForSpecifiedConnectionOnly: false))
                                         {
                                             continue;
                                         }
                                     }
-                                    else
+                                    else // Not valid district offer ...
                                     {
                                         // Cannot service from a district restrictions perspective.
                                         // But can we still service it from a supply chain perspective?
-                                        if (isSupplyChainOffer && IsValidBuildingOffer(ref responseOffer, ref requestOffer, allowForSpecifiedConnectionOnly: true))
+                                        if (isSupplyChainOffer && IsSupplyChainOffer(ref responseOffer, ref requestOffer, allowForSpecifiedConnectionOnly: true))
                                         {
                                             // Great, allow the match.
                                         }
@@ -528,7 +526,7 @@ namespace EnhancedDistrictServices
             }
         }
 
-        private static bool IsValidBuildingOffer(ref TransferManager.TransferOffer outgoingOffer, ref TransferManager.TransferOffer incomingOffer, bool allowForSpecifiedConnectionOnly)
+        private static bool IsSupplyChainOffer(ref TransferManager.TransferOffer outgoingOffer, ref TransferManager.TransferOffer incomingOffer, bool allowForSpecifiedConnectionOnly)
         {
             var outgoingHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref outgoingOffer);
             var incomingHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref incomingOffer);
@@ -546,6 +544,14 @@ namespace EnhancedDistrictServices
                 incomingOfferRestricted = true;
             }
 
+            if (!allowForSpecifiedConnectionOnly)
+            {
+                if (outgoingBuildingsServed == null && !incomingOfferRestricted)
+                {
+                    return true;
+                }
+            }
+
             bool AllowOutsideConnections(ushort homeBuilding)
             {
                 if (!TransferManagerInfo.IsDistrictServicesBuilding(homeBuilding))
@@ -561,7 +567,7 @@ namespace EnhancedDistrictServices
                 return false;
             }
 
-            if (!allowForSpecifiedConnectionOnly)
+            if (outgoingBuildingsServed == null)
             {
                 if (TransferManagerInfo.IsOutsideOffer(ref outgoingOffer))
                 {
@@ -571,11 +577,6 @@ namespace EnhancedDistrictServices
                 if (TransferManagerInfo.IsOutsideOffer(ref incomingOffer))
                 {
                     return AllowOutsideConnections(outgoingHomeBuilding);
-                }
-
-                if (outgoingBuildingsServed == null && !incomingOfferRestricted)
-                {
-                    return true;
                 }
             }
 
