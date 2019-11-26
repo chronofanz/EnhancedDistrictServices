@@ -1,7 +1,5 @@
 ﻿using ColossalFramework;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace EnhancedDistrictServices
 {
@@ -37,7 +35,7 @@ namespace EnhancedDistrictServices
 
             if (verbose || (BuildingToAllLocalAreas[buildingId] != status))
             {
-                var buildingName = Singleton<BuildingManager>.instance.GetBuildingName((ushort)buildingId, InstanceID.Empty);
+                var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 Logger.Log($"DistrictServicesTable::SetAllLocalAreas: {buildingName} ({buildingId}) = {status} ...");
             }
 
@@ -53,7 +51,7 @@ namespace EnhancedDistrictServices
 
             if (verbose || (BuildingToOutsideConnections[buildingId] != status))
             {
-                var buildingName = Singleton<BuildingManager>.instance.GetBuildingName((ushort)buildingId, InstanceID.Empty);
+                var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 Logger.Log($"DistrictServicesTable::SetAllOutgoingConnections: {buildingName} ({buildingId}) = {status} ...");
             }
 
@@ -67,9 +65,6 @@ namespace EnhancedDistrictServices
                 return;
             }
 
-            var buildingName = Singleton<BuildingManager>.instance.GetBuildingName((ushort)buildingId, InstanceID.Empty);
-            var districtName = DistrictManager.instance.GetDistrictName(district);
-
             if (BuildingToDistrictServiced[buildingId] == null)
             {
                 BuildingToDistrictServiced[buildingId] = new List<int>();
@@ -77,16 +72,16 @@ namespace EnhancedDistrictServices
 
             if (!BuildingToDistrictServiced[buildingId].Contains((int)district))
             {
+                var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+                var districtName = DistrictManager.instance.GetDistrictName(district);
                 Logger.Log($"DistrictServicesTable::AddDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
+
                 BuildingToDistrictServiced[buildingId].Add((int)district);
             }
         }
 
         public static void RemoveDistrictRestriction(int buildingId, int district)
         {
-            var buildingName = Singleton<BuildingManager>.instance.GetBuildingName((ushort)buildingId, InstanceID.Empty);
-            var districtName = DistrictManager.instance.GetDistrictName(district);
-
             if (BuildingToDistrictServiced[buildingId] == null)
             {
                 return;
@@ -94,7 +89,10 @@ namespace EnhancedDistrictServices
 
             if (BuildingToDistrictServiced[buildingId].Contains((int)district))
             {
+                var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+                var districtName = DistrictManager.instance.GetDistrictName(district);
                 Logger.Log($"DistrictServicesTable::RemoveDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
+
                 BuildingToDistrictServiced[buildingId].Remove((int)district);
             }
 
@@ -109,18 +107,6 @@ namespace EnhancedDistrictServices
             BuildingToAllLocalAreas[buildingId] = false;
             BuildingToOutsideConnections[buildingId] = false;
             BuildingToDistrictServiced[buildingId] = null;
-        }
-
-        public static string ToString(uint buildingId, List<uint> buildingToDistrictServiced)
-        {
-            if (buildingToDistrictServiced == null)
-            {
-                return buildingId.ToString();
-            }
-            else
-            {
-                return $"{buildingId}-{string.Join(",", buildingToDistrictServiced.Select(district => district.ToString()).ToArray())}";
-            }
         }
     }
 }

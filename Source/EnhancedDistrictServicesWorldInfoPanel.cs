@@ -43,7 +43,7 @@ namespace EnhancedDistrictServices
         private readonly List<int> m_districtsMapping = new List<int>(capacity: DistrictManager.MAX_DISTRICT_COUNT);
 
         // Store current building id.
-        private int m_currBuildingId = 0;
+        private ushort m_currBuildingId = 0;
 
         public override void Start()
         {
@@ -91,7 +91,9 @@ namespace EnhancedDistrictServices
                 }
             };
 
-            m_supplyChainIn = AttachUICompositeTextFieldTo(this, 3, 43, 111, $"Supply Chain In: ");
+            m_homeDistrict = AttachUILabelTo(this, 3, 43);
+
+            m_supplyChainIn = AttachUICompositeTextFieldTo(this, 3, 63, 111, $"Supply Chain In: ");
             m_supplyChainIn.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict incoming shipments to those buildings.";
             m_supplyChainIn.eventClicked += (c, p) =>
             {
@@ -138,7 +140,7 @@ namespace EnhancedDistrictServices
                 UpdateSupplyChainIn(m_currBuildingId);
             };
 
-            m_supplyChainOut = AttachUICompositeTextFieldTo(this, 3, 63, 122, $"Supply Chain Out: ");
+            m_supplyChainOut = AttachUICompositeTextFieldTo(this, 3, 83, 122, $"Supply Chain Out: ");
             m_supplyChainOut.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict outgoing shipments to those buildings.\nOverrides all other options below.";
             m_supplyChainOut.eventClicked += (c, p) =>
             {
@@ -184,8 +186,6 @@ namespace EnhancedDistrictServices
 
                 UpdateSupplyChainOut(m_currBuildingId);
             };
-
-            m_homeDistrict = AttachUILabelTo(this, 3, 83);
 
             m_allLocalAreasCheckBox = AttachUICheckBoxTo(this, 3, 103);
             m_allLocalAreasCheckBox.tooltip = "If enabled, serves all local areas.  Overrides Districts Served restrictons below.";
@@ -315,8 +315,7 @@ namespace EnhancedDistrictServices
         {
             if (TransferManagerInfo.IsDistrictServicesBuilding(building))
             {
-                var buildingName = Singleton<BuildingManager>.instance.GetBuildingName(building, InstanceID.Empty);
-                m_title.text = buildingName;
+                m_title.text = TransferManagerInfo.GetBuildingName(building);
 
                 UpdateBuildingId(building);
                 UpdateHomeDistrict(building);
@@ -398,7 +397,7 @@ namespace EnhancedDistrictServices
                 if (SupplyChainTable.IncomingOfferRestricted[buildingId]?.Count > 0)
                 {
                     var buildingNames = SupplyChainTable.IncomingOfferRestricted[buildingId]
-                        .Select(b => Singleton<BuildingManager>.instance.GetBuildingName((ushort)b, InstanceID.Empty))
+                        .Select(b => TransferManagerInfo.GetBuildingName(b))
                         .OrderBy(s => s);
 
                     var sb = new StringBuilder();
@@ -435,7 +434,7 @@ namespace EnhancedDistrictServices
                 if (SupplyChainTable.BuildingToBuildingServiced[buildingId]?.Count > 0)
                 {
                     var buildingNames = SupplyChainTable.BuildingToBuildingServiced[buildingId]
-                        .Select(b => Singleton<BuildingManager>.instance.GetBuildingName((ushort)b, InstanceID.Empty))
+                        .Select(b => TransferManagerInfo.GetBuildingName(b))
                         .OrderBy(s => s);
 
                     var sb = new StringBuilder();
@@ -552,8 +551,6 @@ namespace EnhancedDistrictServices
                 m_restrictionSummary.text = $"Districts served: {restrictions.Count} others";
                 m_districtsDropDown.triggerButton.tooltip = districtNameList();
             }
-
-
         }
 
         #region Graphical elements setup

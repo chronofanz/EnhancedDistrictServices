@@ -56,8 +56,8 @@ namespace EnhancedDistrictServices
 
             if (added)
             {
-                var sourceBuildingName = Singleton<BuildingManager>.instance.GetBuildingName((ushort)source, InstanceID.Empty);
-                var destinationBuildingName = Singleton<BuildingManager>.instance.GetBuildingName((ushort)destination, InstanceID.Empty);
+                var sourceBuildingName = TransferManagerInfo.GetBuildingName(source);
+                var destinationBuildingName = TransferManagerInfo.GetBuildingName(destination);
                 Logger.Log($"SupplyChainTable::AddSupplyChainConnection: {sourceBuildingName} ({source}) => {destinationBuildingName} ({destination}) ...");
             }
         }
@@ -122,18 +122,6 @@ namespace EnhancedDistrictServices
             }
 
             return removed;
-        }
-
-        public static string ToString(uint buildingId, List<int> buildingToBuildingServiced)
-        {
-            if (buildingToBuildingServiced == null)
-            {
-                return buildingId.ToString();
-            }
-            else
-            {
-                return $"{buildingId}-{string.Join(",", buildingToBuildingServiced.Select(building => building.ToString()).ToArray())}";
-            }
         }
     }
 }

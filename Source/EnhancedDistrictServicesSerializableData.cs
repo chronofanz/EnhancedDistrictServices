@@ -33,8 +33,7 @@ namespace CitiesMod
                 DistrictServicesTable.Clear();
                 SupplyChainTable.Clear();
 
-                Data data = null;
-                if (this.LoadData(EnhancedDistrictServicesId, out data))
+                if (this.LoadData(EnhancedDistrictServicesId, out Data data))
                 {
                     for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
                     {

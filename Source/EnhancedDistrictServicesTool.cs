@@ -158,11 +158,10 @@ namespace EnhancedDistrictServices
                 if (text == null)
                     return;
 
-                Vector3 position;
-                Quaternion rotation;
-                Vector3 size;
-                if (!InstanceManager.GetPosition(m_hoverInstance, out position, out rotation, out size))
+                if (!InstanceManager.GetPosition(m_hoverInstance, out Vector3 position, out Quaternion rotation, out Vector3 size))
+                {
                     position = this.m_mousePosition;
+                }
 
                 Vector3 screenPoint = Camera.main.WorldToScreenPoint(position);
                 screenPoint.y = Screen.height - screenPoint.y;
@@ -202,26 +201,39 @@ namespace EnhancedDistrictServices
             SupplyChainTable.RemoveBuilding(building);
         }
 
-        public static string GetBuildingInfoText(uint buildingId)
+        public static string GetBuildingInfoText(int buildingId)
         {
             var txtItems = new List<string>();
 
+            txtItems.Add($"{TransferManagerInfo.GetBuildingName(buildingId)} ({buildingId})");
+
             var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
-            txtItems.Add($"Building: {buildingId} @ {position}");
-
-            var buildingName = Singleton<BuildingManager>.instance.GetBuildingName((ushort)buildingId, InstanceID.Empty);
-            txtItems.Add($"Building Name: {buildingName}");
-
             var district = DistrictManager.instance.GetDistrict(position);
             if (district != 0)
             {
                 var districtName = DistrictManager.instance.GetDistrictName((int)district);
-                txtItems.Add($"District: {districtName} ({district})");
+                txtItems.Add($"District: {districtName}");
+            }
+            else
+            {
+                txtItems.Add($"District: (Not in a district)");
             }
 
-            var service = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info.GetService().ToString();
-            var subService = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info.GetSubService().ToString();
-            if (subService.Equals("None"))
+            var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
+            var service = buildingInfo.GetService();
+            var subService = buildingInfo.GetSubService();
+            if (service == ItemClass.Service.PlayerIndustry)
+            {
+                if (buildingInfo.GetAI() is WarehouseAI warehouseAI)
+                {
+                    txtItems.Add($"Service: {service} ({warehouseAI.m_storageType})");
+                }
+                else
+                {
+                    txtItems.Add($"Service: {service}");
+                }
+            }
+            else if (subService == ItemClass.SubService.None)
             {
                 txtItems.Add($"Service: {service}");
             }
@@ -230,53 +242,61 @@ namespace EnhancedDistrictServices
                 txtItems.Add($"Service: {service} ({subService})");
             }
 
-            if (SupplyChainTable.BuildingToBuildingServiced[buildingId] != null)
+            // Early return.  Rest of info pertains to building types that we deal with in the mod.
+            if (!TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
             {
-                txtItems.Add($"BuildingsServed: {SupplyChainTable.ToString(buildingId, SupplyChainTable.BuildingToBuildingServiced[buildingId])}");
+                return string.Join("\n", txtItems.ToArray());
             }
 
             if (SupplyChainTable.IncomingOfferRestricted[buildingId]?.Count > 0)
             {
-                txtItems.Add($"Incoming Offers: Restricted to {string.Join(",", SupplyChainTable.IncomingOfferRestricted[buildingId].Select(b => b.ToString()).ToArray())}");
-            }
-            else
-            {
-                txtItems.Add($"Incoming Offers: No restrictions");
+                txtItems.Add($"<<Supply Chain In>>");
+
+                var buildingNames = SupplyChainTable.IncomingOfferRestricted[buildingId]
+                    .Select(b => TransferManagerInfo.GetBuildingName(b))
+                    .OrderBy(s => s);
+
+                foreach (var buildingName in buildingNames)
+                {
+                    txtItems.Add(buildingName);
+                }
             }
 
-            if (TransferManagerInfo.IsDistrictServicesBuilding((ushort)buildingId))
+            if (SupplyChainTable.BuildingToBuildingServiced[buildingId] != null)
             {
-                if (DistrictServicesTable.BuildingToDistrictServiced[buildingId] != null && DistrictServicesTable.BuildingToDistrictServiced[buildingId].Count > 0)
-                {
-                    var districts = DistrictServicesTable.BuildingToDistrictServiced[buildingId];
+                txtItems.Add($"<<Supply Chain Out>>");
 
-                    if (districts.Count == 1)
-                    {
-                        txtItems.Add($"DistrictsServed: {DistrictManager.instance.GetDistrictName((int)districts[0])}");
-                    }
-                    else
-                    {
-                        txtItems.Add($"<DistrictsServed>");
-                        for (int i = 0; i < districts.Count; i++)
-                        {
-                            txtItems.Add($"{DistrictManager.instance.GetDistrictName((int)districts[i])}");
-                        }
-                    }
-                }
-                else
+                var buildingNames = SupplyChainTable.BuildingToBuildingServiced[buildingId]
+                    .Select(b => TransferManagerInfo.GetBuildingName(b))
+                    .OrderBy(s => s);
+
+                foreach (var buildingName in buildingNames)
                 {
-                    txtItems.Add($"DistrictsServed: No restrictions");
+                    txtItems.Add(buildingName);
                 }
+            }
+
+            txtItems.Add($"<<DistrictsServed>>");
+
+            if (DistrictServicesTable.BuildingToOutsideConnections[buildingId])
+            {
+                txtItems.Add($"All outside connections served");
             }
 
             if (DistrictServicesTable.BuildingToAllLocalAreas[buildingId])
             {
                 txtItems.Add($"All local areas served");
             }
-
-            if (DistrictServicesTable.BuildingToOutsideConnections[buildingId])
+            else if (DistrictServicesTable.BuildingToDistrictServiced[buildingId]?.Count > 0)
             {
-                txtItems.Add($"Outside connections enabled");
+                var districtNames = DistrictServicesTable.BuildingToDistrictServiced[buildingId]
+                    .Select(d => DistrictManager.instance.GetDistrictName(d))
+                    .OrderBy(s => s);
+
+                foreach (var districtName in districtNames)
+                {
+                    txtItems.Add(districtName);
+                }
             }
 
             return string.Join("\n", txtItems.ToArray());

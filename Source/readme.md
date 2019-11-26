@@ -2,6 +2,10 @@
 The project is simple enough such that all the CS files are in one directory.
 
 ## Classes
+- **EnhancedDistrictServicesLoadingExtension**: Create the EnhancedDistrictServicesTool object. 
 - **EnhancedDistrictServicesMod**: Main mod class that implements **IUserMod** and defines various metadata about the mod.
+- **EnhancedDistrictServicesThreadingExtension**: Allows the user to activate the EnhancedDistrictServices tool by pressing Ctrl-D.
 - **Logger**: Yet another logger class ... 
-- **TransferManagerInfo** Helper class containing methods for classifying buildings and offers.
+- **TransferManagerAddOfferPatch**: Modifies the priority and amount of incoming and outgoing orders, including deprioritizing outside connection orders.
+- **TransferManagerInfo**: Helper class containing methods for classifying buildings and offers.
+- **TransferManagerMatchOffersPatch**: Overrides the offer matching algorithm in the TransferManager for supported materials, applying district and supply chain constraints.
