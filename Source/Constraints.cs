@@ -1,22 +1,38 @@
-﻿using ColossalFramework;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace EnhancedDistrictServices
 {
+    /// <summary>
+    /// Contains all the district and supply chain constraint data that used by the TransferManager (patch) to determine
+    /// how best to match incoming and outgoing offers.
+    /// </summary>
     public static class Constraints
     {
+        /// <summary>
+        /// Map of building id to bool indicating whether all local areas are serviced by the building.
+        /// If true, this overrides the BuildingToDistrictServiced constraint.
+        /// </summary>
         public static readonly bool[] BuildingToAllLocalAreas = new bool[BuildingManager.MAX_BUILDING_COUNT];
+
+        /// <summary>
+        /// Map of building id to bool indicating whether outside connections are serviced by the building.
+        /// </summary>
         public static readonly bool[] BuildingToOutsideConnections = new bool[BuildingManager.MAX_BUILDING_COUNT];
+
+        /// <summary>
+        /// Map of building id to list of districts served by the building.
+        /// </summary>
         public static readonly List<int>[] BuildingToDistrictServiced = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
         /// Map of building id to the list of allowed destination building ids.  For supply chains only.
+        /// If specified, this overrides all other constraints.
         /// </summary>
         public static readonly List<int>[] SupplyDestinations = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
         /// A cached derived view of SupplyDestinations.  Maps building id to the list of allowed source building ids.
-        /// For supply chains only.
+        /// For supply chains only.  If specified, this overrides all other constraints.
         /// </summary>
         public static readonly List<int>[] SupplySources = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
@@ -51,7 +67,7 @@ namespace EnhancedDistrictServices
 
             if (homeDistrict != 0)
             {
-                AddDistrictRestriction(buildingId, homeDistrict);
+                AddDistrictServiced(buildingId, homeDistrict);
                 SetAllLocalAreas(buildingId, false, true);
                 SetAllOutsideConnections(buildingId, false, true);
             }
@@ -76,6 +92,20 @@ namespace EnhancedDistrictServices
             RemoveAllSupplyChainConnectionsFromSource(buildingId);
         }
 
+        #region Accessors
+
+        #endregion
+
+        #region Local Areas and Outside Connections methods
+
+        /// <summary>
+        /// If <paramref name="status"/> is true, then all local connections are allowed to the specified building.
+        /// If <paramref name="status"/> is false, then all local connections are disallowed to the specified building.
+        /// This setting overrides district constraints, but is itself overriden by supply chain link specifications.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <param name="status"></param>
+        /// <param name="verbose">If true, log the change to the log file</param>
         public static void SetAllLocalAreas(int buildingId, bool status, bool verbose)
         {
             if (!TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
@@ -86,12 +116,19 @@ namespace EnhancedDistrictServices
             if (verbose || (BuildingToAllLocalAreas[buildingId] != status))
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
-                Logger.Log($"DistrictServicesTable::SetAllLocalAreas: {buildingName} ({buildingId}) = {status} ...");
+                Logger.Log($"Constraint::SetAllLocalAreas: {buildingName} ({buildingId}) = {status} ...");
             }
 
             BuildingToAllLocalAreas[buildingId] = status;
         }
 
+        /// <summary>
+        /// If <paramref name="status"/> is true, then all outside connections are allowed to the specified building.
+        /// If <paramref name="status"/> is false, then all outside connections are disallowed to the specified building.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <param name="status"></param>
+        /// <param name="verbose">If true, log the change to the log file</param>
         public static void SetAllOutsideConnections(int buildingId, bool status, bool verbose)
         {
             if (!TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
@@ -102,13 +139,22 @@ namespace EnhancedDistrictServices
             if (verbose || (BuildingToOutsideConnections[buildingId] != status))
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
-                Logger.Log($"DistrictServicesTable::SetAllOutgoingConnections: {buildingName} ({buildingId}) = {status} ...");
+                Logger.Log($"Constraint::SetAllOutgoingConnections: {buildingName} ({buildingId}) = {status} ...");
             }
 
             BuildingToOutsideConnections[buildingId] = status;
         }
 
-        public static void AddDistrictRestriction(int buildingId, int district)
+        #endregion
+
+        #region District Services methods
+
+        /// <summary>
+        /// Allow the specified district to be serviced by the specified building
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <param name="district"></param>
+        public static void AddDistrictServiced(int buildingId, int district)
         {
             if (!TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
             {
@@ -124,13 +170,18 @@ namespace EnhancedDistrictServices
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 var districtName = DistrictManager.instance.GetDistrictName(district);
-                Logger.Log($"DistrictServicesTable::AddDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
+                Logger.Log($"Constraint::AddDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
 
                 BuildingToDistrictServiced[buildingId].Add(district);
             }
         }
 
-        public static void RemoveDistrictRestriction(int buildingId, int district)
+        /// <summary>
+        /// Disallow the specified district from being serviced by the specified building
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <param name="district"></param>
+        public static void RemoveDistrictServiced(int buildingId, int district)
         {
             if (BuildingToDistrictServiced[buildingId] == null)
             {
@@ -141,7 +192,7 @@ namespace EnhancedDistrictServices
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 var districtName = DistrictManager.instance.GetDistrictName(district);
-                Logger.Log($"DistrictServicesTable::RemoveDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
+                Logger.Log($"Constraint::RemoveDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
 
                 BuildingToDistrictServiced[buildingId].Remove(district);
             }
@@ -152,10 +203,13 @@ namespace EnhancedDistrictServices
             }
         }
 
+        #endregion
+
         #region Supply Chain methods
 
         /// <summary>
         /// Add a supply chain link between the source and destination buildings.
+        /// The supply chain link overrides all local area, all outside connections, and all district constraints.
         /// </summary>
         /// <param name="source"></param>
         /// <param name="destination"></param>
@@ -194,7 +248,7 @@ namespace EnhancedDistrictServices
             {
                 var sourceBuildingName = TransferManagerInfo.GetBuildingName(source);
                 var destinationBuildingName = TransferManagerInfo.GetBuildingName(destination);
-                Logger.Log($"SupplyChainTable::AddSupplyChainConnection: {sourceBuildingName} ({source}) => {destinationBuildingName} ({destination}) ...");
+                Logger.Log($"Constraint::AddSupplyChainConnection: {sourceBuildingName} ({source}) => {destinationBuildingName} ({destination}) ...");
             }
         }
 
@@ -250,7 +304,7 @@ namespace EnhancedDistrictServices
             bool removed = false;
 
             // First remove this building from any lists that might refer to this building ...
-            for (uint b = 0; b < SupplyDestinations.Length; b++)
+            for (int b = 0; b < SupplyDestinations.Length; b++)
             {
                 if (SupplyDestinations[b] != null && SupplyDestinations[b].Contains(buildingId))
                 {

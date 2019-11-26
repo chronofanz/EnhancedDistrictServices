@@ -167,11 +167,11 @@ namespace EnhancedDistrictServices
             {
                 if (UIDistrictsDropDown.GetChecked(t))
                 {
-                    Constraints.AddDistrictRestriction(m_currBuildingId, m_districtsMapping[t]);
+                    Constraints.AddDistrictServiced(m_currBuildingId, m_districtsMapping[t]);
                 }
                 else
                 {
-                    Constraints.RemoveDistrictRestriction(m_currBuildingId, m_districtsMapping[t]);
+                    Constraints.RemoveDistrictServiced(m_currBuildingId, m_districtsMapping[t]);
                 }
 
                 UpdateRestrictionSummary(m_currBuildingId);

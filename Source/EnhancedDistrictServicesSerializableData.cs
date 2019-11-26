@@ -66,7 +66,7 @@ namespace CitiesMod
                         {
                             foreach (var district in restrictions)
                             {
-                                Constraints.AddDistrictRestriction(buildingId, district);
+                                Constraints.AddDistrictServiced(buildingId, district);
                             }
                         }
                     }
