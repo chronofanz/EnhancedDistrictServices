@@ -8,8 +8,15 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace CitiesMod
 {
+    /// <summary>
+    /// The game code automatically calls OnLoadData and OnSaveData on classes that extend 
+    /// SerializableDataExtensionBase.
+    /// </summary>
     public class EnhancedDistrictServicesSerializableData : SerializableDataExtensionBase
     {
+        /// <summary>
+        /// Data that we are serializing to the save game file.
+        /// </summary>
         [Serializable]
         public class Data
         {
@@ -48,7 +55,7 @@ namespace CitiesMod
             }
         }
 
-        public bool LoadData<T>(string id, out T target) where T : class
+        private bool LoadData<T>(string id, out T target) where T : class
         {
             if (!serializableDataManager.EnumerateData().Contains(id))
             {
