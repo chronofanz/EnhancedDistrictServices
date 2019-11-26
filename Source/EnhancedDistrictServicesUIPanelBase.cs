@@ -4,11 +4,15 @@ using UnityEngine;
 namespace EnhancedDistrictServices
 {
     /// <summary>
-    /// Singleton panel of given type that derives from UIPanel.
+    /// This class contain all the GUI elements that define the world info panel that users use to interact with the
+    /// tool.  This is perhaps not the neatest way to separate the GUI from the underlying logic, but on the other hand
+    /// MVVM is probably overkill for our purposes.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class SingletonPanel<T> : UIPanel where T : UIPanel
+    public class EnhancedDistrictServicesUIPanelBase<T> : UIPanel where T : UIPanel
     {
+        #region Static methods and properties
+
         /// <summary>
         /// The singleton instance.
         /// </summary>
@@ -60,6 +64,21 @@ namespace EnhancedDistrictServices
             }
         }
 
+        #endregion
+
+        #region GUI layout
+
+        private UIComponent m_component;
+        public UIComponent component
+        {
+            get
+            {
+                if (m_component == null)
+                    m_component = GetComponent<UIComponent>();
+                return m_component;
+            }
+        }
+
         /// <summary>
         /// Cleanup UI objects on destroy.
         /// </summary>
@@ -72,5 +91,7 @@ namespace EnhancedDistrictServices
 
             base.OnDestroy();
         }
+
+        #endregion
     }
 }

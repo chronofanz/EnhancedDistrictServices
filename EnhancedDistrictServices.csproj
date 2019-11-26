@@ -69,7 +69,7 @@
     <Compile Include="Source\EnhancedDistrictServicesTool.cs" />
     <Compile Include="Source\EnhancedDistrictServicesWorldInfoPanel.cs" />
     <Compile Include="Source\Logger.cs" />
-    <Compile Include="Source\SingletonPanel.cs" />
+    <Compile Include="Source\EnhancedDistrictServicesUIPanelBase.cs" />
     <Compile Include="Source\TransferManagerAddOfferPatch.cs" />
     <Compile Include="Source\TransferManagerInfo.cs" />
     <Compile Include="Source\TransferManagerMatchOffersPatch.cs" />
