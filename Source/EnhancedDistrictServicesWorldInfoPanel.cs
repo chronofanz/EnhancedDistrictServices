@@ -139,7 +139,7 @@ namespace EnhancedDistrictServices
                 UpdateSupplyChainIn(m_currBuildingId);
             };
 
-            m_supplyChainOut = AttachUICompositeTextFieldTo(this, 3, 83, 122, $"Supply Chain Out: ");
+            m_supplyChainOut = AttachUICompositeTextFieldTo(this, 3, 83, 123, $"Supply Chain Out: ");
             m_supplyChainOut.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict outgoing shipments to those buildings.\nOverrides all other options below.";
             m_supplyChainOut.eventClicked += (c, p) =>
             {

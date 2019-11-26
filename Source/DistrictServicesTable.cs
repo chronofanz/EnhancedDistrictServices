@@ -100,13 +100,13 @@ namespace EnhancedDistrictServices
                 BuildingToDistrictServiced[buildingId] = new List<int>();
             }
 
-            if (!BuildingToDistrictServiced[buildingId].Contains((int)district))
+            if (!BuildingToDistrictServiced[buildingId].Contains(district))
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 var districtName = DistrictManager.instance.GetDistrictName(district);
                 Logger.Log($"DistrictServicesTable::AddDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
 
-                BuildingToDistrictServiced[buildingId].Add((int)district);
+                BuildingToDistrictServiced[buildingId].Add(district);
             }
         }
 
@@ -117,13 +117,13 @@ namespace EnhancedDistrictServices
                 return;
             }
 
-            if (BuildingToDistrictServiced[buildingId].Contains((int)district))
+            if (BuildingToDistrictServiced[buildingId].Contains(district))
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 var districtName = DistrictManager.instance.GetDistrictName(district);
                 Logger.Log($"DistrictServicesTable::RemoveDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
 
-                BuildingToDistrictServiced[buildingId].Remove((int)district);
+                BuildingToDistrictServiced[buildingId].Remove(district);
             }
 
             if (BuildingToDistrictServiced[buildingId].Count == 0)

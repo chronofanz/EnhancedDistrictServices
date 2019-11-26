@@ -134,47 +134,6 @@ namespace EnhancedDistrictServices
                         }
                     }
                 }
-
-                /*
-                if (m_toolController.m_developerUI == null || !this.m_toolController.m_developerUI.enabled || !Cursor.visible)
-                {
-                    return;
-                }
-
-                string text = null;
-                if (hoverInstance.Building != 0)
-                {
-                    ushort building1 = m_hoverInstance.Building;
-                    BuildingManager instance = Singleton<BuildingManager>.instance;
-
-                    if ((instance.m_buildings.m_buffer[building1].m_flags & Building.Flags.Created) != Building.Flags.None)
-                    {
-                        BuildingInfo info = instance.m_buildings.m_buffer[building1].Info;
-                        if (info != null)
-                        {
-                            text = StringUtils.SafeFormat("{0} ({1})", info.gameObject.name, building1);
-                            string debugString = info.m_buildingAI.GetDebugString(building1, ref instance.m_buildings.m_buffer[building1]);
-                            if (debugString != null)
-                                text = text + "\n" + debugString;
-                        }
-                    }
-                }
-
-                if (text == null)
-                    return;
-
-                if (!InstanceManager.GetPosition(m_hoverInstance, out Vector3 position, out Quaternion rotation, out Vector3 size))
-                {
-                    position = this.m_mousePosition;
-                }
-
-                Vector3 screenPoint = Camera.main.WorldToScreenPoint(position);
-                screenPoint.y = Screen.height - screenPoint.y;
-                Color color = GUI.color;
-                GUI.color = Color.cyan;
-                DeveloperUI.LabelOutline(new Rect(screenPoint.x, screenPoint.y, 500f, 500f), text, Color.black, Color.cyan, GUI.skin.label, 2f);
-                GUI.color = color;
-                */
             }
             catch (Exception ex)
             {
@@ -220,19 +179,19 @@ namespace EnhancedDistrictServices
             {
                 if (buildingInfo.GetAI() is ExtractingFacilityAI extractingFacilityAI)
                 {
-                    txtItems.Add($"Service: {service} ({subService}) ({extractingFacilityAI.m_outputResource})");
+                    txtItems.Add($"Service: {service} ({extractingFacilityAI.m_outputResource})");
                 }
                 else if (buildingInfo.GetAI() is ProcessingFacilityAI processingFacilityAI)                    
                 {
-                    txtItems.Add($"Service: {service} ({subService}) ({processingFacilityAI.m_outputResource})");
+                    txtItems.Add($"Service: {service} ({processingFacilityAI.m_outputResource})");
                 }
                 else if (buildingInfo.GetAI() is WarehouseAI warehouseAI)
                 {
-                    txtItems.Add($"Service: {service} ({subService}) ({warehouseAI.m_storageType})");
+                    txtItems.Add($"Service: {service} ({warehouseAI.m_storageType})");
                 }
                 else
                 {
-                    txtItems.Add($"Service: {service} ({subService})");
+                    txtItems.Add($"Service: {service}");
                 }
             }
             else
