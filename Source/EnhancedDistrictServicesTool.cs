@@ -21,8 +21,10 @@ namespace EnhancedDistrictServices
 
             EnhancedDistrictServicesWorldInfoPanel.Create();
 
-            BuildingManager.instance.EventBuildingCreated += Instance_EventBuildingCreated;
-            BuildingManager.instance.EventBuildingReleased += Instance_EventBuildingReleased;
+            BuildingManager.instance.EventBuildingCreated += DistrictServicesTable.CreateBuilding;
+            BuildingManager.instance.EventBuildingCreated += SupplyChainTable.CreateBuilding;
+            BuildingManager.instance.EventBuildingReleased += DistrictServicesTable.ReleaseBuilding;
+            BuildingManager.instance.EventBuildingReleased += SupplyChainTable.ReleaseBuilding;
         }
 
         protected override void OnDestroy()
@@ -31,8 +33,10 @@ namespace EnhancedDistrictServices
 
             EnhancedDistrictServicesWorldInfoPanel.Destroy();
 
-            BuildingManager.instance.EventBuildingCreated -= Instance_EventBuildingCreated;
-            BuildingManager.instance.EventBuildingReleased -= Instance_EventBuildingReleased;
+            BuildingManager.instance.EventBuildingCreated -= DistrictServicesTable.CreateBuilding;
+            BuildingManager.instance.EventBuildingCreated -= SupplyChainTable.CreateBuilding;
+            BuildingManager.instance.EventBuildingReleased -= DistrictServicesTable.ReleaseBuilding;
+            BuildingManager.instance.EventBuildingReleased -= SupplyChainTable.ReleaseBuilding;
         }
 
         protected override void OnEnable()
@@ -103,7 +107,7 @@ namespace EnhancedDistrictServices
             {
                 WorldInfoPanel.HideAllWorldInfoPanels();
 
-                InstanceID hoverInstance = this.m_hoverInstance;
+                var hoverInstance = this.m_hoverInstance;
 
                 if (!m_toolController.IsInsideUI && e.type == UnityEngine.EventType.MouseDown && e.button == 0)
                 {
@@ -131,6 +135,7 @@ namespace EnhancedDistrictServices
                     }
                 }
 
+                /*
                 if (m_toolController.m_developerUI == null || !this.m_toolController.m_developerUI.enabled || !Cursor.visible)
                 {
                     return;
@@ -169,6 +174,7 @@ namespace EnhancedDistrictServices
                 GUI.color = Color.cyan;
                 DeveloperUI.LabelOutline(new Rect(screenPoint.x, screenPoint.y, 500f, 500f), text, Color.black, Color.cyan, GUI.skin.label, 2f);
                 GUI.color = color;
+                */
             }
             catch (Exception ex)
             {
@@ -177,30 +183,12 @@ namespace EnhancedDistrictServices
             }
         }
 
-        private void Instance_EventBuildingCreated(ushort building)
-        {
-            var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
-            var homeDistrict = DistrictManager.instance.GetDistrict(position);
-
-            if (homeDistrict != 0)
-            {
-                DistrictServicesTable.AddDistrictRestriction(building, homeDistrict);
-                DistrictServicesTable.SetAllLocalAreas(building, false, true);
-                DistrictServicesTable.SetAllOutsideConnections(building, false, true);
-            }
-            else
-            {
-                DistrictServicesTable.SetAllLocalAreas(building, true, true);
-                DistrictServicesTable.SetAllOutsideConnections(building, true, true);
-            }
-        }
-
-        private void Instance_EventBuildingReleased(ushort building)
-        {
-            DistrictServicesTable.RemoveBuilding(building);
-            SupplyChainTable.RemoveBuilding(building);
-        }
-
+        /// <summary>
+        /// Helper method for displaying information, including district and supply chain constraints, about the 
+        /// building with given building id.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
         public static string GetBuildingInfoText(int buildingId)
         {
             var txtItems = new List<string>();
@@ -212,34 +200,11 @@ namespace EnhancedDistrictServices
             if (district != 0)
             {
                 var districtName = DistrictManager.instance.GetDistrictName((int)district);
-                txtItems.Add($"District: {districtName}");
+                txtItems.Add($"Home district: {districtName}");
             }
             else
             {
-                txtItems.Add($"District: (Not in a district)");
-            }
-
-            var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
-            var service = buildingInfo.GetService();
-            var subService = buildingInfo.GetSubService();
-            if (service == ItemClass.Service.PlayerIndustry)
-            {
-                if (buildingInfo.GetAI() is WarehouseAI warehouseAI)
-                {
-                    txtItems.Add($"Service: {service} ({warehouseAI.m_storageType})");
-                }
-                else
-                {
-                    txtItems.Add($"Service: {service}");
-                }
-            }
-            else if (subService == ItemClass.SubService.None)
-            {
-                txtItems.Add($"Service: {service}");
-            }
-            else
-            {
-                txtItems.Add($"Service: {service} ({subService})");
+                txtItems.Add($"Home district: (Not in a district)");
             }
 
             // Early return.  Rest of info pertains to building types that we deal with in the mod.
@@ -248,11 +213,39 @@ namespace EnhancedDistrictServices
                 return string.Join("\n", txtItems.ToArray());
             }
 
-            if (SupplyChainTable.IncomingOfferRestricted[buildingId]?.Count > 0)
+            var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
+            var service = buildingInfo.GetService();
+            var subService = buildingInfo.GetSubService();
+            if (service == ItemClass.Service.PlayerIndustry)
             {
+                if (buildingInfo.GetAI() is ExtractingFacilityAI extractingFacilityAI)
+                {
+                    txtItems.Add($"Service: {service} ({subService}) ({extractingFacilityAI.m_outputResource})");
+                }
+                else if (buildingInfo.GetAI() is ProcessingFacilityAI processingFacilityAI)                    
+                {
+                    txtItems.Add($"Service: {service} ({subService}) ({processingFacilityAI.m_outputResource})");
+                }
+                else if (buildingInfo.GetAI() is WarehouseAI warehouseAI)
+                {
+                    txtItems.Add($"Service: {service} ({subService}) ({warehouseAI.m_storageType})");
+                }
+                else
+                {
+                    txtItems.Add($"Service: {service} ({subService})");
+                }
+            }
+            else
+            {
+                txtItems.Add($"Service: {service} ({subService})");
+            }
+
+            if (SupplyChainTable.SupplySources[buildingId]?.Count > 0)
+            {
+                txtItems.Add("");
                 txtItems.Add($"<<Supply Chain In>>");
 
-                var buildingNames = SupplyChainTable.IncomingOfferRestricted[buildingId]
+                var buildingNames = SupplyChainTable.SupplySources[buildingId]
                     .Select(b => TransferManagerInfo.GetBuildingName(b))
                     .OrderBy(s => s);
 
@@ -262,11 +255,12 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            if (SupplyChainTable.BuildingToBuildingServiced[buildingId] != null)
+            if (SupplyChainTable.SupplyDestinations[buildingId]?.Count > 0)
             {
+                txtItems.Add("");
                 txtItems.Add($"<<Supply Chain Out>>");
 
-                var buildingNames = SupplyChainTable.BuildingToBuildingServiced[buildingId]
+                var buildingNames = SupplyChainTable.SupplyDestinations[buildingId]
                     .Select(b => TransferManagerInfo.GetBuildingName(b))
                     .OrderBy(s => s);
 
@@ -276,6 +270,7 @@ namespace EnhancedDistrictServices
                 }
             }
 
+            txtItems.Add("");
             txtItems.Add($"<<DistrictsServed>>");
 
             if (DistrictServicesTable.BuildingToOutsideConnections[buildingId])

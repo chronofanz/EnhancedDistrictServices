@@ -1,26 +1,46 @@
-﻿using ColossalFramework;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace EnhancedDistrictServices
 {
     public static class SupplyChainTable
     {
         // Outgoing to list of allowed incoming.
-        public static List<int>[] BuildingToBuildingServiced = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
+        public static readonly List<int>[] SupplyDestinations = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
         // Maps building id to true/false depending on whether it restricted to one or more particular outgoing offers or not.
         // CACHE to boost perf.
-        public static List<int>[] IncomingOfferRestricted = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
+        public static readonly List<int>[] SupplySources = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
+
+        static SupplyChainTable()
+        {
+            Clear();
+        }
 
         // 
         public static void Clear()
         {
-            for (uint buildingId = 0; buildingId < BuildingToBuildingServiced.Length; buildingId++)
+            for (ushort buildingId = 0; buildingId < SupplyDestinations.Length; buildingId++)
             {
-                BuildingToBuildingServiced[buildingId] = null;
-                IncomingOfferRestricted[buildingId] = null;
+                ReleaseBuilding(buildingId);
             }
+        }
+
+        /// <summary>
+        /// Called when a building is first created.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        public static void CreateBuilding(ushort buildingId)
+        {
+        }
+
+        /// <summary>
+        /// Called when a building is destroyed.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        public static void ReleaseBuilding(ushort buildingId)
+        {
+            RemoveAllSupplyChainConnectionsToDestination(buildingId);
+            RemoveAllSupplyChainConnectionsFromSource(buildingId);
         }
 
         public static void AddSupplyChainConnection(int source, int destination)
@@ -32,26 +52,26 @@ namespace EnhancedDistrictServices
 
             bool added = false;
 
-            if (BuildingToBuildingServiced[source] == null)
+            if (SupplyDestinations[source] == null)
             {
-                BuildingToBuildingServiced[source] = new List<int>();
+                SupplyDestinations[source] = new List<int>();
             }
 
-            if (!BuildingToBuildingServiced[source].Contains(destination))
+            if (!SupplyDestinations[source].Contains(destination))
             {
                 added = true;
-                BuildingToBuildingServiced[source].Add(destination);
+                SupplyDestinations[source].Add(destination);
             }
 
-            if (IncomingOfferRestricted[destination] == null)
+            if (SupplySources[destination] == null)
             {
-                IncomingOfferRestricted[destination] = new List<int>();
+                SupplySources[destination] = new List<int>();
             }
 
-            if (!IncomingOfferRestricted[destination].Contains(source))
+            if (!SupplySources[destination].Contains(source))
             {
                 added = true;
-                IncomingOfferRestricted[destination].Add(source);
+                SupplySources[destination].Add(source);
             }
 
             if (added)
@@ -62,41 +82,28 @@ namespace EnhancedDistrictServices
             }
         }
 
-        public static void RemoveSupplyChainConnection(int source, int destination)
+        private static void RemoveSupplyChainConnection(int source, int destination)
         {
-            BuildingToBuildingServiced[source]?.Remove(destination);
-            if (BuildingToBuildingServiced[source]?.Count > 0)
+            SupplyDestinations[source]?.Remove(destination);
+            if (SupplyDestinations[source]?.Count > 0)
             {
-                BuildingToBuildingServiced[source] = null;
+                SupplyDestinations[source] = null;
             }
 
-            IncomingOfferRestricted[destination]?.Remove(source);
-            if (IncomingOfferRestricted[destination]?.Count > 0)
+            SupplySources[destination]?.Remove(source);
+            if (SupplySources[destination]?.Count > 0)
             {
-                IncomingOfferRestricted[destination] = null;
-            }
-        }
-
-        public static void RemoveBuilding(uint buildingId)
-        {
-            bool removed = false;
-
-            removed |= RemoveBuildingFromOtherTargets((int)buildingId);
-            removed |= RemoveBuildingTargets((int)buildingId);
-
-            if (removed)
-            {
-                Logger.Log($"SupplyChainTable::RemoveBuilding: building={buildingId}");
+                SupplySources[destination] = null;
             }
         }
 
-        public static bool RemoveBuildingTargets(int buildingId)
+        public static bool RemoveAllSupplyChainConnectionsFromSource(int buildingId)
         {
-            if (BuildingToBuildingServiced[buildingId] != null)
+            if (SupplyDestinations[buildingId] != null)
             {
-                while (BuildingToBuildingServiced[buildingId]?.Count > 0)
+                while (SupplyDestinations[buildingId]?.Count > 0)
                 {
-                    RemoveSupplyChainConnection(buildingId, BuildingToBuildingServiced[buildingId][0]);
+                    RemoveSupplyChainConnection(buildingId, SupplyDestinations[buildingId][0]);
                 }
 
                 return true;
@@ -107,14 +114,14 @@ namespace EnhancedDistrictServices
             }
         }
 
-        public static bool RemoveBuildingFromOtherTargets(int buildingId)
+        public static bool RemoveAllSupplyChainConnectionsToDestination(int buildingId)
         {
             bool removed = false;
 
             // First remove this building from any lists that might refer to this building ...
-            for (uint b = 0; b < BuildingToBuildingServiced.Length; b++)
+            for (uint b = 0; b < SupplyDestinations.Length; b++)
             {
-                if (BuildingToBuildingServiced[b] != null && BuildingToBuildingServiced[b].Contains(buildingId))
+                if (SupplyDestinations[b] != null && SupplyDestinations[b].Contains(buildingId))
                 {
                     RemoveSupplyChainConnection((int)b, buildingId);
                     removed = true;

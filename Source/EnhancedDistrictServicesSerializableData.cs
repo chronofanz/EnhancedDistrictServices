@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace CitiesMod
@@ -12,7 +11,7 @@ namespace CitiesMod
     public class EnhancedDistrictServicesSerializableData : SerializableDataExtensionBase
     {
         [Serializable]
-        private class Data
+        public class Data
         {
             public bool[] BuildingToAllLocalAreas = new bool[BuildingManager.MAX_BUILDING_COUNT];
             public bool[] BuildingToOutsideConnections = new bool[BuildingManager.MAX_BUILDING_COUNT];
@@ -88,7 +87,7 @@ namespace CitiesMod
                 {
                     BuildingToAllLocalAreas = DistrictServicesTable.BuildingToAllLocalAreas,
                     BuildingToOutsideConnections = DistrictServicesTable.BuildingToOutsideConnections,
-                    BuildingToBuildingServiced = SupplyChainTable.BuildingToBuildingServiced,
+                    BuildingToBuildingServiced = SupplyChainTable.SupplyDestinations,
                     BuildingToDistrictServiced = DistrictServicesTable.BuildingToDistrictServiced
                 };
 

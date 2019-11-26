@@ -5,25 +5,55 @@ namespace EnhancedDistrictServices
 {
     public static class DistrictServicesTable
     {
-        public static bool[] BuildingToAllLocalAreas = new bool[BuildingManager.MAX_BUILDING_COUNT];
-        public static bool[] BuildingToOutsideConnections = new bool[BuildingManager.MAX_BUILDING_COUNT];
-        public static List<int>[] BuildingToDistrictServiced = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
+        public static readonly bool[] BuildingToAllLocalAreas = new bool[BuildingManager.MAX_BUILDING_COUNT];
+        public static readonly bool[] BuildingToOutsideConnections = new bool[BuildingManager.MAX_BUILDING_COUNT];
+        public static readonly List<int>[] BuildingToDistrictServiced = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
         static DistrictServicesTable()
         {
-            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-            {
-                BuildingToAllLocalAreas[buildingId] = true;
-                BuildingToOutsideConnections[buildingId] = true;
-            }
+            Clear();
         }
 
         public static void Clear()
         {
-            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
+            for (ushort buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
             {
-                RemoveBuilding(buildingId);
+                ReleaseBuilding(buildingId);
             }
+        }
+
+        /// <summary>
+        /// Called when a building is first created.  If situated in a district, then automatically restricts that
+        /// building to serve its home district only.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        public static void CreateBuilding(ushort buildingId)
+        {
+            var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
+            var homeDistrict = DistrictManager.instance.GetDistrict(position);
+
+            if (homeDistrict != 0)
+            {
+                AddDistrictRestriction(buildingId, homeDistrict);
+                SetAllLocalAreas(buildingId, false, true);
+                SetAllOutsideConnections(buildingId, false, true);
+            }
+            else
+            {
+                SetAllLocalAreas(buildingId, true, true);
+                SetAllOutsideConnections(buildingId, true, true);
+            }
+        }
+
+        /// <summary>
+        /// Called when a building is destroyed.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        public static void ReleaseBuilding(ushort buildingId)
+        {
+            BuildingToAllLocalAreas[buildingId] = true;
+            BuildingToOutsideConnections[buildingId] = true;
+            BuildingToDistrictServiced[buildingId] = null;
         }
 
         public static void SetAllLocalAreas(int buildingId, bool status, bool verbose)
@@ -100,13 +130,6 @@ namespace EnhancedDistrictServices
             {
                 BuildingToDistrictServiced[buildingId] = null;
             }
-        }
-
-        public static void RemoveBuilding(int buildingId)
-        {
-            BuildingToAllLocalAreas[buildingId] = false;
-            BuildingToOutsideConnections[buildingId] = false;
-            BuildingToDistrictServiced[buildingId] = null;
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using ColossalFramework;
-using ColossalFramework.UI;
+﻿using ColossalFramework.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -114,14 +113,14 @@ namespace EnhancedDistrictServices
 
                 if (string.IsNullOrEmpty(m_supplyChainIn.text.Trim()))
                 {
-                    SupplyChainTable.RemoveBuildingFromOtherTargets(m_currBuildingId);
+                    SupplyChainTable.RemoveAllSupplyChainConnectionsToDestination(m_currBuildingId);
                 }
                 else
                 {
                     try
                     {
                         // TODO, FIXME: Do this in a single transaction.
-                        SupplyChainTable.RemoveBuildingFromOtherTargets(m_currBuildingId);
+                        SupplyChainTable.RemoveAllSupplyChainConnectionsToDestination(m_currBuildingId);
 
                         var sources = m_supplyChainIn.text.Split(',').Select(s => ushort.Parse(s));
                         foreach (var source in sources)
@@ -161,14 +160,14 @@ namespace EnhancedDistrictServices
 
                 if (string.IsNullOrEmpty(m_supplyChainOut.text.Trim()))
                 {
-                    SupplyChainTable.RemoveBuildingTargets(m_currBuildingId);
+                    SupplyChainTable.RemoveAllSupplyChainConnectionsFromSource(m_currBuildingId);
                 }
                 else
                 {
                     try
                     {
                         // TODO, FIXME: Do this in a single transaction.
-                        SupplyChainTable.RemoveBuildingTargets(m_currBuildingId);
+                        SupplyChainTable.RemoveAllSupplyChainConnectionsFromSource(m_currBuildingId);
 
                         var destinations = m_supplyChainOut.text.Split(',').Select(s => ushort.Parse(s));
                         foreach (var destination in destinations)
@@ -394,9 +393,9 @@ namespace EnhancedDistrictServices
         {
             string buildingNameList()
             {
-                if (SupplyChainTable.IncomingOfferRestricted[buildingId]?.Count > 0)
+                if (SupplyChainTable.SupplySources[buildingId]?.Count > 0)
                 {
-                    var buildingNames = SupplyChainTable.IncomingOfferRestricted[buildingId]
+                    var buildingNames = SupplyChainTable.SupplySources[buildingId]
                         .Select(b => TransferManagerInfo.GetBuildingName(b))
                         .OrderBy(s => s);
 
@@ -415,9 +414,9 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            if (SupplyChainTable.IncomingOfferRestricted[buildingId]?.Count > 0)
+            if (SupplyChainTable.SupplySources[buildingId]?.Count > 0)
             {
-                m_supplyChainIn.text = string.Join(",", SupplyChainTable.IncomingOfferRestricted[buildingId].Select(b => b.ToString()).ToArray());
+                m_supplyChainIn.text = string.Join(",", SupplyChainTable.SupplySources[buildingId].Select(b => b.ToString()).ToArray());
                 m_supplyChainIn.tooltip = buildingNameList();
             }
             else
@@ -431,9 +430,9 @@ namespace EnhancedDistrictServices
         {
             string buildingNameList()
             {
-                if (SupplyChainTable.BuildingToBuildingServiced[buildingId]?.Count > 0)
+                if (SupplyChainTable.SupplyDestinations[buildingId]?.Count > 0)
                 {
-                    var buildingNames = SupplyChainTable.BuildingToBuildingServiced[buildingId]
+                    var buildingNames = SupplyChainTable.SupplyDestinations[buildingId]
                         .Select(b => TransferManagerInfo.GetBuildingName(b))
                         .OrderBy(s => s);
 
@@ -452,9 +451,9 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            if (SupplyChainTable.BuildingToBuildingServiced[buildingId]?.Count > 0)
+            if (SupplyChainTable.SupplyDestinations[buildingId]?.Count > 0)
             {
-                m_supplyChainOut.text = string.Join(",", SupplyChainTable.BuildingToBuildingServiced[buildingId].Select(b => b.ToString()).ToArray());
+                m_supplyChainOut.text = string.Join(",", SupplyChainTable.SupplyDestinations[buildingId].Select(b => b.ToString()).ToArray());
                 m_supplyChainOut.tooltip = buildingNameList();
             }
             else

@@ -343,9 +343,9 @@ namespace EnhancedDistrictServices
                 return false;
             }
 
-            var outgoingBuildingsServed = SupplyChainTable.BuildingToBuildingServiced[outgoingHomeBuilding];
+            var outgoingBuildingsServed = SupplyChainTable.SupplyDestinations[outgoingHomeBuilding];
             var incomingOfferRestricted = false;
-            if (SupplyChainTable.IncomingOfferRestricted[incomingHomeBuilding]?.Count > 0)
+            if (SupplyChainTable.SupplySources[incomingHomeBuilding]?.Count > 0)
             {
                 incomingOfferRestricted = true;
             }

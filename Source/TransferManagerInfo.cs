@@ -100,7 +100,8 @@ namespace EnhancedDistrictServices
                         return info.GetSubService() == ItemClass.SubService.PublicTransportPost;
 
                     case ItemClass.Service.PlayerIndustry:
-                        return true;
+                        return !(
+                            info.GetAI() is MainIndustryBuildingAI);
 
                     default:
                         return false;
