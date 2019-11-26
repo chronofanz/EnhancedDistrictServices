@@ -27,49 +27,10 @@ namespace CitiesMod
 
             if (managers.loading.currentMode == AppMode.Game)
             {
-                Logger.Log("EnhancedDistrictServicesSerializableData::OnLoadData: Loading data ...");
-
-                Constraints.Clear();
-
                 if (this.LoadData(EnhancedDistrictServicesId, out Data data))
                 {
-                    for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-                    {
-                        var restrictions = data.BuildingToAllLocalAreas[buildingId];
-                        Constraints.SetAllLocalAreas(buildingId, restrictions, false);
-                    }
-
-                    for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-                    {
-                        var restrictions = data.BuildingToOutsideConnections[buildingId];
-                        Constraints.SetAllOutsideConnections(buildingId, restrictions, false);
-                    }
-
-                    for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-                    {
-                        var restrictions = data.BuildingToBuildingServiced[buildingId];
-                        
-                        if (restrictions != null)
-                        {
-                            foreach (var destination in restrictions)
-                            {
-                                Constraints.AddSupplyChainConnection(buildingId, destination);
-                            }
-                        }                        
-                    }
-
-                    for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-                    {
-                        var restrictions = data.BuildingToDistrictServiced[buildingId];
-
-                        if (restrictions != null)
-                        {
-                            foreach (var district in restrictions)
-                            {
-                                Constraints.AddDistrictServiced(buildingId, district);
-                            }
-                        }
-                    }
+                    Logger.Log("EnhancedDistrictServicesSerializableData::OnLoadData: Loading data ...");
+                    Constraints.LoadData(data);
                 }
             }
         }
@@ -82,14 +43,7 @@ namespace CitiesMod
             {
                 Logger.Log("EnhancedDistrictServicesSerializableData::OnSaveData: Saving data ...");
 
-                var data = new Data
-                {
-                    BuildingToAllLocalAreas = Constraints.BuildingToAllLocalAreas,
-                    BuildingToOutsideConnections = Constraints.BuildingToOutsideConnections,
-                    BuildingToBuildingServiced = Constraints.SupplyDestinations,
-                    BuildingToDistrictServiced = Constraints.BuildingToDistrictServiced
-                };
-
+                var data = Constraints.SaveData();
                 this.SaveData(EnhancedDistrictServicesId, data);
             }
         }

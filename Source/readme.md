@@ -2,6 +2,7 @@
 The project is simple enough such that all the CS files are in one directory.
 
 ## Classes
+- **Constraints**: Contains the data on district, supply chain, and other constraints.
 - **EnhancedDistrictServicesLoadingExtension**: Create the EnhancedDistrictServicesTool object. 
 - **EnhancedDistrictServicesMod**: Main mod class that implements **IUserMod** and defines various metadata about the mod.
 - **EnhancedDistrictServicesThreadingExtension**: Allows the user to activate the EnhancedDistrictServices tool by pressing Ctrl-D.

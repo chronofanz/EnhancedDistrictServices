@@ -250,10 +250,10 @@ namespace EnhancedDistrictServices
 
                 m_currBuildingId = building;
 
-                UIAllLocalAreasCheckBox.isChecked = Constraints.BuildingToAllLocalAreas[building];
-                UIAllOutsideConnectionsCheckBox.isChecked = Constraints.BuildingToOutsideConnections[building];
+                UIAllLocalAreasCheckBox.isChecked = Constraints.AllLocalAreas(building);
+                UIAllOutsideConnectionsCheckBox.isChecked = Constraints.OutsideConnections(building);
 
-                var restrictions = Constraints.BuildingToDistrictServiced[building];
+                var restrictions = Constraints.DistrictServiced(building);
                 if (restrictions != null)
                 {
                     for (int index = 0; index < m_districtsMapping.Count; index++)
@@ -315,13 +315,13 @@ namespace EnhancedDistrictServices
             }
         }
 
-        private void UpdateSupplyChainIn(int buildingId)
+        private void UpdateSupplyChainIn(ushort buildingId)
         {
             string buildingNameList()
             {
-                if (Constraints.SupplySources[buildingId]?.Count > 0)
+                if (Constraints.SupplySources(buildingId)?.Count > 0)
                 {
-                    var buildingNames = Constraints.SupplySources[buildingId]
+                    var buildingNames = Constraints.SupplySources(buildingId)
                         .Select(b => TransferManagerInfo.GetBuildingName(b))
                         .OrderBy(s => s);
 
@@ -340,9 +340,9 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            if (Constraints.SupplySources[buildingId]?.Count > 0)
+            if (Constraints.SupplySources(buildingId)?.Count > 0)
             {
-                UISupplyChainIn.text = string.Join(",", Constraints.SupplySources[buildingId].Select(b => b.ToString()).ToArray());
+                UISupplyChainIn.text = string.Join(",", Constraints.SupplySources(buildingId).Select(b => b.ToString()).ToArray());
                 UISupplyChainIn.tooltip = buildingNameList();
             }
             else
@@ -352,13 +352,13 @@ namespace EnhancedDistrictServices
             }
         }
 
-        private void UpdateSupplyChainOut(int buildingId)
+        private void UpdateSupplyChainOut(ushort buildingId)
         {
             string buildingNameList()
             {
-                if (Constraints.SupplyDestinations[buildingId]?.Count > 0)
+                if (Constraints.SupplyDestinations(buildingId)?.Count > 0)
                 {
-                    var buildingNames = Constraints.SupplyDestinations[buildingId]
+                    var buildingNames = Constraints.SupplyDestinations(buildingId)
                         .Select(b => TransferManagerInfo.GetBuildingName(b))
                         .OrderBy(s => s);
 
@@ -377,9 +377,9 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            if (Constraints.SupplyDestinations[buildingId]?.Count > 0)
+            if (Constraints.SupplyDestinations(buildingId)?.Count > 0)
             {
-                UISupplyChainOut.text = string.Join(",", Constraints.SupplyDestinations[buildingId].Select(b => b.ToString()).ToArray());
+                UISupplyChainOut.text = string.Join(",", Constraints.SupplyDestinations(buildingId).Select(b => b.ToString()).ToArray());
                 UISupplyChainOut.tooltip = buildingNameList();
             }
             else
@@ -389,11 +389,11 @@ namespace EnhancedDistrictServices
             }
         }
 
-        private void UpdateRestrictionSummary(int buildingId)
+        private void UpdateRestrictionSummary(ushort buildingId)
         {
             string districtNameList()
             {
-                var districts = Constraints.BuildingToDistrictServiced[buildingId];
+                var districts = Constraints.DistrictServiced(buildingId);
                 if (districts?.Count == 0)
                 {
                     return string.Empty;
@@ -420,8 +420,8 @@ namespace EnhancedDistrictServices
             var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
             var homeDistrict = DistrictManager.instance.GetDistrict(position);
 
-            var restrictions = Constraints.BuildingToDistrictServiced[buildingId];
-            if (Constraints.BuildingToAllLocalAreas[buildingId])
+            var restrictions = Constraints.DistrictServiced(buildingId);
+            if (Constraints.AllLocalAreas(buildingId))
             {
                 UIDistrictsSummary.text = "Districts served: All local areas";
                 UIDistrictsDropDown.triggerButton.tooltip = "Districts served: All local areas";

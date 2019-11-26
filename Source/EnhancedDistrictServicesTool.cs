@@ -146,7 +146,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="buildingId"></param>
         /// <returns></returns>
-        private static string GetBuildingInfoText(int buildingId)
+        private static string GetBuildingInfoText(ushort buildingId)
         {
             var txtItems = new List<string>();
 
@@ -197,12 +197,12 @@ namespace EnhancedDistrictServices
                 txtItems.Add($"Service: {service} ({subService})");
             }
 
-            if (Constraints.SupplySources[buildingId]?.Count > 0)
+            if (Constraints.SupplySources(buildingId)?.Count > 0)
             {
                 txtItems.Add("");
                 txtItems.Add($"<<Supply Chain In>>");
 
-                var buildingNames = Constraints.SupplySources[buildingId]
+                var buildingNames = Constraints.SupplySources(buildingId)
                     .Select(b => TransferManagerInfo.GetBuildingName(b))
                     .OrderBy(s => s);
 
@@ -212,12 +212,12 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            if (Constraints.SupplyDestinations[buildingId]?.Count > 0)
+            if (Constraints.SupplyDestinations(buildingId)?.Count > 0)
             {
                 txtItems.Add("");
                 txtItems.Add($"<<Supply Chain Out>>");
 
-                var buildingNames = Constraints.SupplyDestinations[buildingId]
+                var buildingNames = Constraints.SupplyDestinations(buildingId)
                     .Select(b => TransferManagerInfo.GetBuildingName(b))
                     .OrderBy(s => s);
 
@@ -230,18 +230,18 @@ namespace EnhancedDistrictServices
             txtItems.Add("");
             txtItems.Add($"<<DistrictsServed>>");
 
-            if (Constraints.BuildingToOutsideConnections[buildingId])
+            if (Constraints.OutsideConnections(buildingId))
             {
                 txtItems.Add($"All outside connections served");
             }
 
-            if (Constraints.BuildingToAllLocalAreas[buildingId])
+            if (Constraints.AllLocalAreas(buildingId))
             {
                 txtItems.Add($"All local areas served");
             }
-            else if (Constraints.BuildingToDistrictServiced[buildingId]?.Count > 0)
+            else if (Constraints.DistrictServiced(buildingId)?.Count > 0)
             {
-                var districtNames = Constraints.BuildingToDistrictServiced[buildingId]
+                var districtNames = Constraints.DistrictServiced(buildingId)
                     .Select(d => DistrictManager.instance.GetDistrictName(d))
                     .OrderBy(s => s);
 

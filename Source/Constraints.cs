@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace EnhancedDistrictServices
 {
@@ -12,29 +13,29 @@ namespace EnhancedDistrictServices
         /// Map of building id to bool indicating whether all local areas are serviced by the building.
         /// If true, this overrides the BuildingToDistrictServiced constraint.
         /// </summary>
-        public static readonly bool[] BuildingToAllLocalAreas = new bool[BuildingManager.MAX_BUILDING_COUNT];
+        private static readonly bool[] m_buildingToAllLocalAreas = new bool[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
         /// Map of building id to bool indicating whether outside connections are serviced by the building.
         /// </summary>
-        public static readonly bool[] BuildingToOutsideConnections = new bool[BuildingManager.MAX_BUILDING_COUNT];
+        private static readonly bool[] m_buildingToOutsideConnections = new bool[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
         /// Map of building id to list of districts served by the building.
         /// </summary>
-        public static readonly List<int>[] BuildingToDistrictServiced = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
+        private static readonly List<int>[] m_buildingToDistrictServiced = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
         /// Map of building id to the list of allowed destination building ids.  For supply chains only.
         /// If specified, this overrides all other constraints.
         /// </summary>
-        public static readonly List<int>[] SupplyDestinations = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
+        private static readonly List<int>[] m_supplyDestinations = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
         /// A cached derived view of SupplyDestinations.  Maps building id to the list of allowed source building ids.
         /// For supply chains only.  If specified, this overrides all other constraints.
         /// </summary>
-        public static readonly List<int>[] SupplySources = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
+        private static readonly List<int>[] m_supplySources = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
         /// Static constructor.
@@ -53,6 +54,68 @@ namespace EnhancedDistrictServices
             {
                 ReleaseBuilding(buildingId);
             }
+        }
+
+        /// <summary>
+        /// Load data from given object.
+        /// </summary>
+        /// <param name="data"></param>
+        public static void LoadData(CitiesMod.EnhancedDistrictServicesSerializableData.Data data)
+        {
+            Clear();
+
+            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
+            {
+                var restrictions = data.BuildingToAllLocalAreas[buildingId];
+                SetAllLocalAreas(buildingId, restrictions, false);
+            }
+
+            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
+            {
+                var restrictions = data.BuildingToOutsideConnections[buildingId];
+                SetAllOutsideConnections(buildingId, restrictions, false);
+            }
+
+            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
+            {
+                var restrictions = data.BuildingToBuildingServiced[buildingId];
+
+                if (restrictions != null)
+                {
+                    foreach (var destination in restrictions)
+                    {
+                        AddSupplyChainConnection(buildingId, destination);
+                    }
+                }
+            }
+
+            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
+            {
+                var restrictions = data.BuildingToDistrictServiced[buildingId];
+
+                if (restrictions != null)
+                {
+                    foreach (var district in restrictions)
+                    {
+                        AddDistrictServiced(buildingId, district);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Saves a copy of the data in this object, for serialization.
+        /// </summary>
+        /// <returns></returns>
+        public static CitiesMod.EnhancedDistrictServicesSerializableData.Data SaveData()        
+        {
+            return new CitiesMod.EnhancedDistrictServicesSerializableData.Data
+            {
+                BuildingToAllLocalAreas = Constraints.m_buildingToAllLocalAreas.ToArray(),
+                BuildingToOutsideConnections = Constraints.m_buildingToOutsideConnections.ToArray(),
+                BuildingToBuildingServiced = Constraints.m_supplyDestinations.ToArray(),
+                BuildingToDistrictServiced = Constraints.m_buildingToDistrictServiced.ToArray()
+            };
         }
 
         /// <summary>
@@ -84,15 +147,66 @@ namespace EnhancedDistrictServices
         /// <param name="buildingId"></param>
         public static void ReleaseBuilding(ushort buildingId)
         {
-            BuildingToAllLocalAreas[buildingId] = true;
-            BuildingToOutsideConnections[buildingId] = true;
-            BuildingToDistrictServiced[buildingId] = null;
+            m_buildingToAllLocalAreas[buildingId] = true;
+            m_buildingToOutsideConnections[buildingId] = true;
+            m_buildingToDistrictServiced[buildingId] = null;
 
             RemoveAllSupplyChainConnectionsToDestination(buildingId);
             RemoveAllSupplyChainConnectionsFromSource(buildingId);
         }
 
         #region Accessors
+
+        /// <summary>
+        /// Returns true if all local areas are serviced by the building.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        public static bool AllLocalAreas(ushort buildingId)
+        {
+            return m_buildingToAllLocalAreas[buildingId];
+        }
+
+        /// <summary>
+        /// Returns true if outside connections are allowed by the building.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        public static bool OutsideConnections(ushort buildingId)
+        {
+            return m_buildingToOutsideConnections[buildingId];
+        }
+
+        /// <summary>
+        /// Returns the list of districts served by the building.
+        /// TODO: Replace with IReadOnlyList.  Can't do it with older version of .NET.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        public static List<int> DistrictServiced(ushort buildingId)
+        {
+            return m_buildingToDistrictServiced[buildingId];
+        }
+
+        /// <summary>
+        /// Returns the list of allowed destination building ids.  For supply chains only.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        public static List<int> SupplyDestinations(ushort buildingId)
+        {
+            return m_supplyDestinations[buildingId];
+        }
+
+        /// <summary>
+        /// Returns the list of allowed source building ids.  For supply chains only.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        public static List<int> SupplySources(ushort buildingId)
+        {
+            return m_supplySources[buildingId];
+        }
 
         #endregion
 
@@ -113,13 +227,13 @@ namespace EnhancedDistrictServices
                 return;
             }
 
-            if (verbose || (BuildingToAllLocalAreas[buildingId] != status))
+            if (verbose || (m_buildingToAllLocalAreas[buildingId] != status))
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 Logger.Log($"Constraint::SetAllLocalAreas: {buildingName} ({buildingId}) = {status} ...");
             }
 
-            BuildingToAllLocalAreas[buildingId] = status;
+            m_buildingToAllLocalAreas[buildingId] = status;
         }
 
         /// <summary>
@@ -136,13 +250,13 @@ namespace EnhancedDistrictServices
                 return;
             }
 
-            if (verbose || (BuildingToOutsideConnections[buildingId] != status))
+            if (verbose || (m_buildingToOutsideConnections[buildingId] != status))
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 Logger.Log($"Constraint::SetAllOutgoingConnections: {buildingName} ({buildingId}) = {status} ...");
             }
 
-            BuildingToOutsideConnections[buildingId] = status;
+            m_buildingToOutsideConnections[buildingId] = status;
         }
 
         #endregion
@@ -161,18 +275,18 @@ namespace EnhancedDistrictServices
                 return;
             }
 
-            if (BuildingToDistrictServiced[buildingId] == null)
+            if (m_buildingToDistrictServiced[buildingId] == null)
             {
-                BuildingToDistrictServiced[buildingId] = new List<int>();
+                m_buildingToDistrictServiced[buildingId] = new List<int>();
             }
 
-            if (!BuildingToDistrictServiced[buildingId].Contains(district))
+            if (!m_buildingToDistrictServiced[buildingId].Contains(district))
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 var districtName = DistrictManager.instance.GetDistrictName(district);
                 Logger.Log($"Constraint::AddDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
 
-                BuildingToDistrictServiced[buildingId].Add(district);
+                m_buildingToDistrictServiced[buildingId].Add(district);
             }
         }
 
@@ -183,23 +297,23 @@ namespace EnhancedDistrictServices
         /// <param name="district"></param>
         public static void RemoveDistrictServiced(int buildingId, int district)
         {
-            if (BuildingToDistrictServiced[buildingId] == null)
+            if (m_buildingToDistrictServiced[buildingId] == null)
             {
                 return;
             }
 
-            if (BuildingToDistrictServiced[buildingId].Contains(district))
+            if (m_buildingToDistrictServiced[buildingId].Contains(district))
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 var districtName = DistrictManager.instance.GetDistrictName(district);
                 Logger.Log($"Constraint::RemoveDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
 
-                BuildingToDistrictServiced[buildingId].Remove(district);
+                m_buildingToDistrictServiced[buildingId].Remove(district);
             }
 
-            if (BuildingToDistrictServiced[buildingId].Count == 0)
+            if (m_buildingToDistrictServiced[buildingId].Count == 0)
             {
-                BuildingToDistrictServiced[buildingId] = null;
+                m_buildingToDistrictServiced[buildingId] = null;
             }
         }
 
@@ -222,26 +336,26 @@ namespace EnhancedDistrictServices
 
             bool added = false;
 
-            if (SupplyDestinations[source] == null)
+            if (m_supplyDestinations[source] == null)
             {
-                SupplyDestinations[source] = new List<int>();
+                m_supplyDestinations[source] = new List<int>();
             }
 
-            if (!SupplyDestinations[source].Contains(destination))
+            if (!m_supplyDestinations[source].Contains(destination))
             {
                 added = true;
-                SupplyDestinations[source].Add(destination);
+                m_supplyDestinations[source].Add(destination);
             }
 
-            if (SupplySources[destination] == null)
+            if (m_supplySources[destination] == null)
             {
-                SupplySources[destination] = new List<int>();
+                m_supplySources[destination] = new List<int>();
             }
 
-            if (!SupplySources[destination].Contains(source))
+            if (!m_supplySources[destination].Contains(source))
             {
                 added = true;
-                SupplySources[destination].Add(source);
+                m_supplySources[destination].Add(source);
             }
 
             if (added)
@@ -259,16 +373,16 @@ namespace EnhancedDistrictServices
         /// <param name="destination"></param>
         private static void RemoveSupplyChainConnection(int source, int destination)
         {
-            SupplyDestinations[source]?.Remove(destination);
-            if (SupplyDestinations[source]?.Count > 0)
+            m_supplyDestinations[source]?.Remove(destination);
+            if (m_supplyDestinations[source]?.Count > 0)
             {
-                SupplyDestinations[source] = null;
+                m_supplyDestinations[source] = null;
             }
 
-            SupplySources[destination]?.Remove(source);
-            if (SupplySources[destination]?.Count > 0)
+            m_supplySources[destination]?.Remove(source);
+            if (m_supplySources[destination]?.Count > 0)
             {
-                SupplySources[destination] = null;
+                m_supplySources[destination] = null;
             }
         }
 
@@ -279,11 +393,11 @@ namespace EnhancedDistrictServices
         /// <returns></returns>
         public static bool RemoveAllSupplyChainConnectionsFromSource(int buildingId)
         {
-            if (SupplyDestinations[buildingId] != null)
+            if (m_supplyDestinations[buildingId] != null)
             {
-                while (SupplyDestinations[buildingId]?.Count > 0)
+                while (m_supplyDestinations[buildingId]?.Count > 0)
                 {
-                    RemoveSupplyChainConnection(buildingId, SupplyDestinations[buildingId][0]);
+                    RemoveSupplyChainConnection(buildingId, m_supplyDestinations[buildingId][0]);
                 }
 
                 return true;
@@ -304,9 +418,9 @@ namespace EnhancedDistrictServices
             bool removed = false;
 
             // First remove this building from any lists that might refer to this building ...
-            for (int b = 0; b < SupplyDestinations.Length; b++)
+            for (int b = 0; b < m_supplyDestinations.Length; b++)
             {
-                if (SupplyDestinations[b] != null && SupplyDestinations[b].Contains(buildingId))
+                if (m_supplyDestinations[b] != null && m_supplyDestinations[b].Contains(buildingId))
                 {
                     RemoveSupplyChainConnection((int)b, buildingId);
                     removed = true;

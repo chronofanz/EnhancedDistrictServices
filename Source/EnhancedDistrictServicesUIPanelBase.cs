@@ -158,7 +158,7 @@ namespace EnhancedDistrictServices
             if (m_CameraTransform == null)
                 return;
 
-            if (InstanceManager.GetPosition(new InstanceID { Building = building }, out Vector3 position, out Quaternion rotation, out Vector3 size))
+            if (InstanceManager.GetPosition(new InstanceID { Building = building }, out Vector3 position, out Quaternion _, out Vector3 size))
                 position.y += size.y * 0.8f;
             else
                 position = worldMousePosition;
