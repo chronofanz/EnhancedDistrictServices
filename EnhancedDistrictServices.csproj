@@ -67,7 +67,7 @@
     <Compile Include="Source\EnhancedDistrictServicesLoadingExtension.cs" />
     <Compile Include="Source\EnhancedDistrictServicesSerializableData.cs" />
     <Compile Include="Source\EnhancedDistrictServicesTool.cs" />
-    <Compile Include="Source\EnhancedDistrictServicesWorldInfoPanel.cs" />
+    <Compile Include="Source\EnhancedDistrictServicesUIPanel.cs" />
     <Compile Include="Source\Logger.cs" />
     <Compile Include="Source\EnhancedDistrictServicesUIPanelBase.cs" />
     <Compile Include="Source\TransferManagerAddOfferPatch.cs" />

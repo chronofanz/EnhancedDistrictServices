@@ -8,6 +8,9 @@ using UnityEngine;
 
 namespace EnhancedDistrictServices
 {
+    /// <summary>
+    /// The EnhancedDistrictServicesTool.
+    /// </summary>
     public class EnhancedDistrictServicesTool : DefaultTool
     {
         #region MonoBehavior
@@ -19,7 +22,7 @@ namespace EnhancedDistrictServices
 
             name = "EnhancedDistrictServicesTool";
 
-            EnhancedDistrictServicesWorldInfoPanel.Create();
+            EnhancedDistrictServicesUIPanel.Create();
 
             BuildingManager.instance.EventBuildingCreated += Constraints.CreateBuilding;
             BuildingManager.instance.EventBuildingReleased += Constraints.ReleaseBuilding;
@@ -28,8 +31,7 @@ namespace EnhancedDistrictServices
         protected override void OnDestroy()
         {
             base.OnDestroy();
-
-            EnhancedDistrictServicesWorldInfoPanel.Destroy();
+            EnhancedDistrictServicesUIPanel.Destroy();
 
             BuildingManager.instance.EventBuildingCreated -= Constraints.CreateBuilding;
             BuildingManager.instance.EventBuildingReleased -= Constraints.ReleaseBuilding;
@@ -38,13 +40,13 @@ namespace EnhancedDistrictServices
         protected override void OnEnable()
         {
             base.OnEnable();
-            EnhancedDistrictServicesWorldInfoPanel.Instance?.Activate();
+            EnhancedDistrictServicesUIPanel.Instance?.Activate();
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
-            EnhancedDistrictServicesWorldInfoPanel.Instance.Hide();
+            EnhancedDistrictServicesUIPanel.Instance.Hide();
         }
 
         #endregion
@@ -119,7 +121,7 @@ namespace EnhancedDistrictServices
                                 return;
                             }
 
-                            var panel = EnhancedDistrictServicesWorldInfoPanel.Instance;
+                            var panel = EnhancedDistrictServicesUIPanel.Instance;
                             panel.SetTarget(mousePosition, hoverInstance.Building);
                             panel.opacity = 1f;
                         }
@@ -144,7 +146,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="buildingId"></param>
         /// <returns></returns>
-        public static string GetBuildingInfoText(int buildingId)
+        private static string GetBuildingInfoText(int buildingId)
         {
             var txtItems = new List<string>();
 
