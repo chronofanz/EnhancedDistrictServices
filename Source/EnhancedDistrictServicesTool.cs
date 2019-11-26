@@ -1,0 +1,347 @@
+﻿using ColossalFramework;
+using ColossalFramework.UI;
+using JetBrains.Annotations;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace EnhancedDistrictServices
+{
+    public class EnhancedDistrictServicesTool : DefaultTool
+    {
+        #region MonoBehavior
+
+        [UsedImplicitly]
+        protected override void Awake()
+        {
+            base.Awake();
+
+            name = "EnhancedDistrictServicesTool";
+
+            EnhancedDistrictServicesWorldInfoPanel.Create();
+
+            BuildingManager.instance.EventBuildingCreated += Instance_EventBuildingCreated;
+            BuildingManager.instance.EventBuildingReleased += Instance_EventBuildingReleased;
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+
+            EnhancedDistrictServicesWorldInfoPanel.Destroy();
+
+            BuildingManager.instance.EventBuildingCreated -= Instance_EventBuildingCreated;
+            BuildingManager.instance.EventBuildingReleased -= Instance_EventBuildingReleased;
+        }
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            EnhancedDistrictServicesWorldInfoPanel.Instance?.Activate();
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            EnhancedDistrictServicesWorldInfoPanel.Instance.Hide();
+        }
+
+        #endregion
+
+        #region Game Loop
+
+        public override void SimulationStep()
+        {
+            base.SimulationStep();
+
+            if (m_mouseRayValid)
+            {
+                var defaultService = new RaycastService(ItemClass.Service.None, ItemClass.SubService.None, ItemClass.Layer.Default);
+                var input = new RaycastInput(m_mouseRay, m_mouseRayLength)
+                {
+                    m_rayRight = m_rayRight,
+                    m_netService = defaultService,
+                    m_ignoreCitizenFlags = CitizenInstance.Flags.All,
+                    m_ignoreNodeFlags = NetNode.Flags.All,
+                    m_ignoreSegmentFlags = NetSegment.Flags.All
+                };
+
+                if (RayCast(input, out RaycastOutput output))
+                {
+                    if (output.m_building != 0)
+                    {
+                        m_hoverInstance.Building = output.m_building;
+                    }
+                }
+                else
+                {
+                    m_hoverInstance.Building = 0;
+                }
+            }
+        }
+
+        protected override void OnToolUpdate()
+        {
+            base.OnToolUpdate();
+
+            var buildingId = m_hoverInstance.Building;
+            if (m_toolController.IsInsideUI || !Cursor.visible || buildingId == 0)
+            {
+                ShowToolInfo(false, null, Vector3.zero);
+                return;
+            }
+
+            var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
+            var txt = GetBuildingInfoText(buildingId);
+            ShowToolInfo(true, txt, position);
+        }
+
+        protected override void OnToolGUI(Event e)
+        {
+            try
+            {
+                WorldInfoPanel.HideAllWorldInfoPanels();
+
+                InstanceID hoverInstance = this.m_hoverInstance;
+
+                if (!m_toolController.IsInsideUI && e.type == UnityEngine.EventType.MouseDown && e.button == 0)
+                {
+                    if (this.m_selectErrors == ToolBase.ToolErrors.None || this.m_selectErrors == ToolBase.ToolErrors.RaycastFailed)
+                    {
+                        Vector3 mousePosition = this.m_mousePosition;
+                        UIInput.MouseUsed();
+
+                        if (TransferManagerInfo.IsDistrictServicesBuilding(hoverInstance.Building))
+                        {
+                            if (!Singleton<InstanceManager>.instance.SelectInstance(hoverInstance))
+                            {
+                                return;
+                            }
+
+                            var panel = EnhancedDistrictServicesWorldInfoPanel.Instance;
+                            panel.SetTarget(mousePosition, hoverInstance.Building);
+                            panel.opacity = 1f;
+                        }
+
+                        if (!hoverInstance.IsEmpty)
+                        {
+                            Singleton<SimulationManager>.instance.AddAction(() => Singleton<GuideManager>.instance.m_worldInfoNotUsed.Disable());
+                        }
+                    }
+                }
+
+                if (m_toolController.m_developerUI == null || !this.m_toolController.m_developerUI.enabled || !Cursor.visible)
+                {
+                    return;
+                }
+
+                string text = null;
+                if (hoverInstance.Building != 0)
+                {
+                    ushort building1 = m_hoverInstance.Building;
+                    BuildingManager instance = Singleton<BuildingManager>.instance;
+
+                    if ((instance.m_buildings.m_buffer[building1].m_flags & Building.Flags.Created) != Building.Flags.None)
+                    {
+                        BuildingInfo info = instance.m_buildings.m_buffer[building1].Info;
+                        if (info != null)
+                        {
+                            text = StringUtils.SafeFormat("{0} ({1})", info.gameObject.name, building1);
+                            string debugString = info.m_buildingAI.GetDebugString(building1, ref instance.m_buildings.m_buffer[building1]);
+                            if (debugString != null)
+                                text = text + "\n" + debugString;
+                        }
+                    }
+                }
+
+                if (text == null)
+                    return;
+
+                Vector3 position;
+                Quaternion rotation;
+                Vector3 size;
+                if (!InstanceManager.GetPosition(m_hoverInstance, out position, out rotation, out size))
+                    position = this.m_mousePosition;
+
+                Vector3 screenPoint = Camera.main.WorldToScreenPoint(position);
+                screenPoint.y = Screen.height - screenPoint.y;
+                Color color = GUI.color;
+                GUI.color = Color.cyan;
+                DeveloperUI.LabelOutline(new Rect(screenPoint.x, screenPoint.y, 500f, 500f), text, Color.black, Color.cyan, GUI.skin.label, 2f);
+                GUI.color = color;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"Could not open district services world info panel!");
+                Logger.LogException(ex);
+            }
+        }
+
+        private void Instance_EventBuildingCreated(ushort building)
+        {
+            var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
+            var homeDistrict = DistrictManager.instance.GetDistrict(position);
+
+            if (homeDistrict != 0)
+            {
+                DistrictServicesTable.AddDistrictRestriction(building, homeDistrict);
+                DistrictServicesTable.SetAllLocalAreas(building, false, true);
+                DistrictServicesTable.SetAllOutsideConnections(building, false, true);
+            }
+            else
+            {
+                DistrictServicesTable.SetAllLocalAreas(building, true, true);
+                DistrictServicesTable.SetAllOutsideConnections(building, true, true);
+            }
+        }
+
+        private void Instance_EventBuildingReleased(ushort building)
+        {
+            DistrictServicesTable.RemoveBuilding(building);
+            SupplyChainTable.RemoveBuilding(building);
+        }
+
+        public static string GetBuildingInfoText(uint buildingId)
+        {
+            var txtItems = new List<string>();
+
+            var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
+            txtItems.Add($"Building: {buildingId} @ {position}");
+
+            var buildingName = Singleton<BuildingManager>.instance.GetBuildingName((ushort)buildingId, InstanceID.Empty);
+            txtItems.Add($"Building Name: {buildingName}");
+
+            var district = DistrictManager.instance.GetDistrict(position);
+            if (district != 0)
+            {
+                var districtName = DistrictManager.instance.GetDistrictName((int)district);
+                txtItems.Add($"District: {districtName} ({district})");
+            }
+
+            var service = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info.GetService().ToString();
+            var subService = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info.GetSubService().ToString();
+            if (subService.Equals("None"))
+            {
+                txtItems.Add($"Service: {service}");
+            }
+            else
+            {
+                txtItems.Add($"Service: {service} ({subService})");
+            }
+
+            if (SupplyChainTable.BuildingToBuildingServiced[buildingId] != null)
+            {
+                txtItems.Add($"BuildingsServed: {SupplyChainTable.ToString(buildingId, SupplyChainTable.BuildingToBuildingServiced[buildingId])}");
+            }
+
+            if (SupplyChainTable.IncomingOfferRestricted[buildingId]?.Count > 0)
+            {
+                txtItems.Add($"Incoming Offers: Restricted to {string.Join(",", SupplyChainTable.IncomingOfferRestricted[buildingId].Select(b => b.ToString()).ToArray())}");
+            }
+            else
+            {
+                txtItems.Add($"Incoming Offers: No restrictions");
+            }
+
+            if (TransferManagerInfo.IsDistrictServicesBuilding((ushort)buildingId))
+            {
+                if (DistrictServicesTable.BuildingToDistrictServiced[buildingId] != null && DistrictServicesTable.BuildingToDistrictServiced[buildingId].Count > 0)
+                {
+                    var districts = DistrictServicesTable.BuildingToDistrictServiced[buildingId];
+
+                    if (districts.Count == 1)
+                    {
+                        txtItems.Add($"DistrictsServed: {DistrictManager.instance.GetDistrictName((int)districts[0])}");
+                    }
+                    else
+                    {
+                        txtItems.Add($"<DistrictsServed>");
+                        for (int i = 0; i < districts.Count; i++)
+                        {
+                            txtItems.Add($"{DistrictManager.instance.GetDistrictName((int)districts[i])}");
+                        }
+                    }
+                }
+                else
+                {
+                    txtItems.Add($"DistrictsServed: No restrictions");
+                }
+            }
+
+            if (DistrictServicesTable.BuildingToAllLocalAreas[buildingId])
+            {
+                txtItems.Add($"All local areas served");
+            }
+
+            if (DistrictServicesTable.BuildingToOutsideConnections[buildingId])
+            {
+                txtItems.Add($"Outside connections enabled");
+            }
+
+            return string.Join("\n", txtItems.ToArray());
+        }
+
+        #endregion
+
+        #region Ignore Flags
+
+        public override NetNode.Flags GetNodeIgnoreFlags()
+        {
+            return NetNode.Flags.All;
+        }
+
+        public override NetSegment.Flags GetSegmentIgnoreFlags(out bool nameOnly)
+        {
+            nameOnly = false;
+            return NetSegment.Flags.All;
+        }
+
+        public override Building.Flags GetBuildingIgnoreFlags()
+        {
+            return Building.Flags.Deleted;
+        }
+
+        public override TreeInstance.Flags GetTreeIgnoreFlags()
+        {
+            return TreeInstance.Flags.All;
+        }
+
+        public override PropInstance.Flags GetPropIgnoreFlags()
+        {
+            return PropInstance.Flags.All;
+        }
+
+        public override Vehicle.Flags GetVehicleIgnoreFlags()
+        {
+            return Vehicle.Flags.Created;
+        }
+
+        public override VehicleParked.Flags GetParkedVehicleIgnoreFlags()
+        {
+            return VehicleParked.Flags.All;
+        }
+
+        public override CitizenInstance.Flags GetCitizenIgnoreFlags()
+        {
+            return CitizenInstance.Flags.All;
+        }
+
+        public override TransportLine.Flags GetTransportIgnoreFlags()
+        {
+            return TransportLine.Flags.All;
+        }
+
+        public override District.Flags GetDistrictIgnoreFlags()
+        {
+            return District.Flags.All;
+        }
+
+        public override bool GetTerrainIgnore()
+        {
+            return true;
+        }
+
+        #endregion
+    }
+}
