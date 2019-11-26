@@ -21,10 +21,8 @@ namespace EnhancedDistrictServices
 
             EnhancedDistrictServicesWorldInfoPanel.Create();
 
-            BuildingManager.instance.EventBuildingCreated += DistrictServicesTable.CreateBuilding;
-            BuildingManager.instance.EventBuildingCreated += SupplyChainTable.CreateBuilding;
-            BuildingManager.instance.EventBuildingReleased += DistrictServicesTable.ReleaseBuilding;
-            BuildingManager.instance.EventBuildingReleased += SupplyChainTable.ReleaseBuilding;
+            BuildingManager.instance.EventBuildingCreated += Constraints.CreateBuilding;
+            BuildingManager.instance.EventBuildingReleased += Constraints.ReleaseBuilding;
         }
 
         protected override void OnDestroy()
@@ -33,10 +31,8 @@ namespace EnhancedDistrictServices
 
             EnhancedDistrictServicesWorldInfoPanel.Destroy();
 
-            BuildingManager.instance.EventBuildingCreated -= DistrictServicesTable.CreateBuilding;
-            BuildingManager.instance.EventBuildingCreated -= SupplyChainTable.CreateBuilding;
-            BuildingManager.instance.EventBuildingReleased -= DistrictServicesTable.ReleaseBuilding;
-            BuildingManager.instance.EventBuildingReleased -= SupplyChainTable.ReleaseBuilding;
+            BuildingManager.instance.EventBuildingCreated -= Constraints.CreateBuilding;
+            BuildingManager.instance.EventBuildingReleased -= Constraints.ReleaseBuilding;
         }
 
         protected override void OnEnable()
@@ -179,19 +175,19 @@ namespace EnhancedDistrictServices
             {
                 if (buildingInfo.GetAI() is ExtractingFacilityAI extractingFacilityAI)
                 {
-                    txtItems.Add($"Service: {service} ({extractingFacilityAI.m_outputResource})");
+                    txtItems.Add($"Service: {service} ({buildingInfo.GetAI()}) ({extractingFacilityAI.m_outputResource})");
                 }
                 else if (buildingInfo.GetAI() is ProcessingFacilityAI processingFacilityAI)                    
                 {
-                    txtItems.Add($"Service: {service} ({processingFacilityAI.m_outputResource})");
+                    txtItems.Add($"Service: {service} ({buildingInfo.GetAI()}) ({processingFacilityAI.m_outputResource})");
                 }
                 else if (buildingInfo.GetAI() is WarehouseAI warehouseAI)
                 {
-                    txtItems.Add($"Service: {service} ({warehouseAI.m_storageType})");
+                    txtItems.Add($"Service: {service} ({buildingInfo.GetAI()}) ({warehouseAI.m_storageType})");
                 }
                 else
                 {
-                    txtItems.Add($"Service: {service}");
+                    txtItems.Add($"Service: {service} ({buildingInfo.GetAI()})");
                 }
             }
             else
@@ -199,12 +195,12 @@ namespace EnhancedDistrictServices
                 txtItems.Add($"Service: {service} ({subService})");
             }
 
-            if (SupplyChainTable.SupplySources[buildingId]?.Count > 0)
+            if (Constraints.SupplySources[buildingId]?.Count > 0)
             {
                 txtItems.Add("");
                 txtItems.Add($"<<Supply Chain In>>");
 
-                var buildingNames = SupplyChainTable.SupplySources[buildingId]
+                var buildingNames = Constraints.SupplySources[buildingId]
                     .Select(b => TransferManagerInfo.GetBuildingName(b))
                     .OrderBy(s => s);
 
@@ -214,12 +210,12 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            if (SupplyChainTable.SupplyDestinations[buildingId]?.Count > 0)
+            if (Constraints.SupplyDestinations[buildingId]?.Count > 0)
             {
                 txtItems.Add("");
                 txtItems.Add($"<<Supply Chain Out>>");
 
-                var buildingNames = SupplyChainTable.SupplyDestinations[buildingId]
+                var buildingNames = Constraints.SupplyDestinations[buildingId]
                     .Select(b => TransferManagerInfo.GetBuildingName(b))
                     .OrderBy(s => s);
 
@@ -232,18 +228,18 @@ namespace EnhancedDistrictServices
             txtItems.Add("");
             txtItems.Add($"<<DistrictsServed>>");
 
-            if (DistrictServicesTable.BuildingToOutsideConnections[buildingId])
+            if (Constraints.BuildingToOutsideConnections[buildingId])
             {
                 txtItems.Add($"All outside connections served");
             }
 
-            if (DistrictServicesTable.BuildingToAllLocalAreas[buildingId])
+            if (Constraints.BuildingToAllLocalAreas[buildingId])
             {
                 txtItems.Add($"All local areas served");
             }
-            else if (DistrictServicesTable.BuildingToDistrictServiced[buildingId]?.Count > 0)
+            else if (Constraints.BuildingToDistrictServiced[buildingId]?.Count > 0)
             {
-                var districtNames = DistrictServicesTable.BuildingToDistrictServiced[buildingId]
+                var districtNames = Constraints.BuildingToDistrictServiced[buildingId]
                     .Select(d => DistrictManager.instance.GetDistrictName(d))
                     .OrderBy(s => s);
 

@@ -29,21 +29,20 @@ namespace CitiesMod
             {
                 Logger.Log("EnhancedDistrictServicesSerializableData::OnLoadData: Loading data ...");
 
-                DistrictServicesTable.Clear();
-                SupplyChainTable.Clear();
+                Constraints.Clear();
 
                 if (this.LoadData(EnhancedDistrictServicesId, out Data data))
                 {
                     for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
                     {
                         var restrictions = data.BuildingToAllLocalAreas[buildingId];
-                        DistrictServicesTable.SetAllLocalAreas(buildingId, restrictions, false);
+                        Constraints.SetAllLocalAreas(buildingId, restrictions, false);
                     }
 
                     for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
                     {
                         var restrictions = data.BuildingToOutsideConnections[buildingId];
-                        DistrictServicesTable.SetAllOutsideConnections(buildingId, restrictions, false);
+                        Constraints.SetAllOutsideConnections(buildingId, restrictions, false);
                     }
 
                     for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
@@ -54,7 +53,7 @@ namespace CitiesMod
                         {
                             foreach (var destination in restrictions)
                             {
-                                SupplyChainTable.AddSupplyChainConnection(buildingId, destination);
+                                Constraints.AddSupplyChainConnection(buildingId, destination);
                             }
                         }                        
                     }
@@ -67,7 +66,7 @@ namespace CitiesMod
                         {
                             foreach (var district in restrictions)
                             {
-                                DistrictServicesTable.AddDistrictRestriction(buildingId, district);
+                                Constraints.AddDistrictRestriction(buildingId, district);
                             }
                         }
                     }
@@ -85,10 +84,10 @@ namespace CitiesMod
 
                 var data = new Data
                 {
-                    BuildingToAllLocalAreas = DistrictServicesTable.BuildingToAllLocalAreas,
-                    BuildingToOutsideConnections = DistrictServicesTable.BuildingToOutsideConnections,
-                    BuildingToBuildingServiced = SupplyChainTable.SupplyDestinations,
-                    BuildingToDistrictServiced = DistrictServicesTable.BuildingToDistrictServiced
+                    BuildingToAllLocalAreas = Constraints.BuildingToAllLocalAreas,
+                    BuildingToOutsideConnections = Constraints.BuildingToOutsideConnections,
+                    BuildingToBuildingServiced = Constraints.SupplyDestinations,
+                    BuildingToDistrictServiced = Constraints.BuildingToDistrictServiced
                 };
 
                 this.SaveData(EnhancedDistrictServicesId, data);

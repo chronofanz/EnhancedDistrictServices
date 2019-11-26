@@ -88,7 +88,9 @@ namespace EnhancedDistrictServices
                     case ItemClass.Service.PoliceDepartment:
                     case ItemClass.Service.FireDepartment:
                     case ItemClass.Service.PlayerEducation:
-                        return true;
+                        return !(
+                            info.GetAI() is HelicopterDepotAI ||
+                            info.GetAI() is SaunaAI);
 
                     case ItemClass.Service.Education:
                         return !(

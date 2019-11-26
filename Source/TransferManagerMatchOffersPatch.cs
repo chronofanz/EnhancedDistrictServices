@@ -303,12 +303,12 @@ namespace EnhancedDistrictServices
                 return true;
             }
 
-            if (DistrictServicesTable.BuildingToAllLocalAreas[homeBuilding])
+            if (Constraints.BuildingToAllLocalAreas[homeBuilding])
             {
                 return true;
             }
 
-            var districtsServed = DistrictServicesTable.BuildingToDistrictServiced[homeBuilding];
+            var districtsServed = Constraints.BuildingToDistrictServiced[homeBuilding];
             if (districtsServed == null)
             {
                 return false;
@@ -343,9 +343,9 @@ namespace EnhancedDistrictServices
                 return false;
             }
 
-            var outgoingBuildingsServed = SupplyChainTable.SupplyDestinations[outgoingHomeBuilding];
+            var outgoingBuildingsServed = Constraints.SupplyDestinations[outgoingHomeBuilding];
             var incomingOfferRestricted = false;
-            if (SupplyChainTable.SupplySources[incomingHomeBuilding]?.Count > 0)
+            if (Constraints.SupplySources[incomingHomeBuilding]?.Count > 0)
             {
                 incomingOfferRestricted = true;
             }
@@ -365,7 +365,7 @@ namespace EnhancedDistrictServices
                     return true;
                 }
 
-                if (DistrictServicesTable.BuildingToOutsideConnections[homeBuilding])
+                if (Constraints.BuildingToOutsideConnections[homeBuilding])
                 {
                     return true;
                 }
