@@ -99,7 +99,8 @@ namespace EnhancedDistrictServices
                 while (requestSubIndex < requestSubCount)
                 {
                     var requestOffer = requestOffers[requestCountIndex * 256 + requestSubIndex];
-                    var requestDistrict = TransferManagerInfo.GetDistrict(ref requestOffer);
+                    var requestHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
+                    var requestDistrict = TransferManagerInfo.GetDistrict(requestHomeBuilding);
 
                     var requestPosition = requestOffer.Position;
                     int requestAmount = requestOffer.Amount;

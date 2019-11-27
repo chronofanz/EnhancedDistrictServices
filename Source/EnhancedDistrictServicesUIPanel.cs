@@ -1,73 +1,72 @@
-﻿using ColossalFramework.UI;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using UnityEngine;
 
 namespace EnhancedDistrictServices
 {
+    /// <summary>
+    /// The main panel that the user interacts with.
+    /// </summary>
     public class EnhancedDistrictServicesUIPanel : EnhancedDistrictServicesUIPanelBase<EnhancedDistrictServicesUIPanel>
     {
-        // Mapping of dropdown index to district number.
+        /// <summary>
+        /// Mapping of dropdown index to district number. 
+        /// </summary>
         private readonly List<int> m_districtsMapping = new List<int>(capacity: DistrictManager.MAX_DISTRICT_COUNT);
 
-        // Store current building id.
+        /// <summary>
+        /// Current building whose policies we are editing.
+        /// </summary>
         private ushort m_currBuildingId = 0;
 
+        /// <summary>
+        /// Hookup all the event handlers.
+        /// </summary>
         public override void Start()
         {
             base.Start();
 
-            UITitle.tooltip = "Click on service building to configure";
-            UIBuildingId.tooltip = "Enter a new building id to configure that building";
-
-            UIBuildingId.eventClicked += (c, p) =>
+            UIBuildingId.eventClicked += (c, p) => 
             {
                 UIBuildingId.text = "";
             };
 
             UIBuildingId.eventTextCancelled += (c, p) =>
             {
-                UpdateBuildingId(m_currBuildingId);
+                UpdateUIBuildingId();
             };
 
             UIBuildingId.eventTextSubmitted += (c, p) =>
             {
-                if (ushort.TryParse(UIBuildingId.text, out ushort buildingId2) &&
-                    TransferManagerInfo.IsDistrictServicesBuilding(buildingId2))
+                if (ushort.TryParse(UIBuildingId.text, out ushort buildingId) &&
+                    TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
                 {
-                    var position = BuildingManager.instance.m_buildings.m_buffer[buildingId2].m_position;
+                    var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
+                    CameraController.SetTarget(new InstanceID { Building = buildingId }, position, false);
 
-                    var buildingInstanceID = new InstanceID
-                    {
-                        Building = buildingId2
-                    };
-
-                    CameraController.SetTarget(buildingInstanceID, position, false);
-                    SetTarget(position, buildingId2);
+                    SetBuilding(buildingId);
+                    UpdatePositionToBuilding(buildingId);
                 }
                 else
                 {
-                    UpdateBuildingId(m_currBuildingId);
+                    UpdateUIBuildingId();
                 }
             };
 
-            UISupplyChainIn.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict incoming shipments to those buildings.";
             UISupplyChainIn.eventClicked += (c, p) =>
             {
             };
 
             UISupplyChainIn.eventTextCancelled += (c, p) =>
             {
-                UpdateSupplyChainIn(m_currBuildingId);
+                UpdateUISupplyChainIn();
             };
 
             UISupplyChainIn.eventTextSubmitted += (c, p) =>
             {
                 if (!TransferManagerInfo.IsSupplyChainBuilding((ushort)m_currBuildingId))
                 {
-                    UpdateSupplyChainIn(m_currBuildingId);
+                    UpdateUISupplyChainIn();
                     return;
                 }
 
@@ -96,24 +95,25 @@ namespace EnhancedDistrictServices
                     }
                 }
 
-                UpdateSupplyChainIn(m_currBuildingId);
+                UpdateUISupplyChainIn();
+                UpdateUIDistrictsDropdown();
+                UpdateUIDistrictsSummary();
             };
 
-            UISupplyChainOut.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict outgoing shipments to those buildings.\nOverrides all other options below.";
             UISupplyChainOut.eventClicked += (c, p) =>
             {
             };
 
             UISupplyChainOut.eventTextCancelled += (c, p) =>
             {
-                UpdateSupplyChainOut(m_currBuildingId);
+                UpdateUISupplyChainOut();
             };
 
             UISupplyChainOut.eventTextSubmitted += (c, p) =>
             {
                 if (!TransferManagerInfo.IsSupplyChainBuilding((ushort)m_currBuildingId))
                 {
-                    UpdateSupplyChainOut(m_currBuildingId);
+                    UpdateUISupplyChainOut();
                     return;
                 }
 
@@ -142,25 +142,22 @@ namespace EnhancedDistrictServices
                     }
                 }
 
-                UpdateSupplyChainOut(m_currBuildingId);
+                UpdateUISupplyChainOut();
+                UpdateUIDistrictsDropdown();
+                UpdateUIDistrictsSummary();
             };
-
-            UIAllLocalAreasCheckBox.tooltip = "If enabled, serves all local areas.  Overrides Districts Served restrictons below.";
-            UIAllLocalAreasCheckBox.label.text = "All Local Areas";
 
             UIAllLocalAreasCheckBox.eventCheckChanged += (c, t) =>
             {
                 Constraints.SetAllLocalAreas(m_currBuildingId, t, true);
-                UpdateRestrictionSummary(m_currBuildingId);
+                UpdateUIDistrictsDropdown();
+                UpdateUIDistrictsSummary();
             };
-
-            UIAllOutsideConnectionsCheckBox.tooltip = "If enabled, serves all outside connections.";
-            UIAllOutsideConnectionsCheckBox.label.text = "All Outside Connections";
 
             UIAllOutsideConnectionsCheckBox.eventCheckChanged += (c, t) =>
             {
                 Constraints.SetAllOutsideConnections(m_currBuildingId, t, true);
-                UpdateRestrictionSummary(m_currBuildingId);
+                UpdateUIDistrictsSummary();
             };
 
             UIDistrictsDropDown.eventCheckedChanged += (c, t) =>
@@ -174,24 +171,192 @@ namespace EnhancedDistrictServices
                     Constraints.RemoveDistrictServiced(m_currBuildingId, m_districtsMapping[t]);
                 }
 
-                UpdateRestrictionSummary(m_currBuildingId);
+                UpdateUIDistrictsSummary();
             };
         }
 
-        public void Activate()
+        public override void OnEnable()
         {
             if (UIDistrictsDropDown == null)
             {
                 return;
             }
 
-            UIDistrictsDropDown.Clear();
-            m_districtsMapping.Clear();
+            base.OnEnable();
+            UpdateUIDistrictsDropdownDistrictItems();
+            SetBuilding(0);
+        }
 
+        public void SetBuilding(ushort building)
+        {
+            if (TransferManagerInfo.IsDistrictServicesBuilding(building))
+            {
+                m_currBuildingId = building;
+            }
+            else
+            {
+                m_currBuildingId = 0;
+            }
+
+            UpdateUITitle();
+            UpdateUIBuildingId();
+            UpdateUIHomeDistrict();
+            UpdateUIServices();
+            UpdateUISupplyChainIn();
+            UpdateUISupplyChainOut();
+            UpdateUIAllLocalAreasCheckBox();
+            UpdateUIAllOutsideConnectionsCheckBox();
+            UpdateUIDistrictsDropdown();
+
+            UpdateUIDistrictsSummary();
+            Show();
+        }
+
+        private void UpdateUITitle()
+        {
+            if (m_currBuildingId != 0)
+            {
+                UITitle.text = TransferManagerInfo.GetBuildingName(m_currBuildingId);
+            }
+            else
+            {
+                UITitle.text = "(Enhanced District Services Tool)";
+            }
+
+            UITitle.tooltip = "Click on service building to configure";
+        }
+
+        private void UpdateUIBuildingId()
+        {
+            UIBuildingId.text = m_currBuildingId != 0 ? $"{m_currBuildingId}" : string.Empty;
+            UIBuildingId.tooltip = "Enter a new building id to configure that building";
+        }
+
+        private void UpdateUIHomeDistrict()
+        {
+            UIHomeDistrict.text = TransferManagerInfo.GetDistrictText(m_currBuildingId);
+        }
+
+        private void UpdateUIServices()
+        {
+            UIServices.text = TransferManagerInfo.GetServicesText(m_currBuildingId);
+        }
+
+        private void UpdateUISupplyChainIn()
+        {
+            if (m_currBuildingId != 0 && TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
+            {
+                UISupplyChainIn.readOnly = false;
+
+                if (Constraints.SupplySources(m_currBuildingId)?.Count > 0)
+                {
+                    UISupplyChainIn.text = string.Join(",", Constraints.SupplySources(m_currBuildingId).Select(b => b.ToString()).ToArray());
+                    UISupplyChainIn.tooltip = TransferManagerInfo.GetSupplySourcesText(m_currBuildingId);
+                }
+                else
+                {
+                    UISupplyChainIn.text = "";
+                    UISupplyChainIn.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict incoming shipments to those buildings.";
+                }
+            }
+            else
+            {
+                UISupplyChainIn.readOnly = true;
+
+                UISupplyChainIn.text = "";
+                UISupplyChainIn.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict incoming shipments to those buildings.";
+            }
+        }
+
+        private void UpdateUISupplyChainOut()
+        {
+            if (m_currBuildingId != 0 && TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
+            {
+                UISupplyChainOut.readOnly = false;
+
+                if (Constraints.SupplyDestinations(m_currBuildingId)?.Count > 0)
+                {
+                    UISupplyChainOut.text = string.Join(",", Constraints.SupplyDestinations(m_currBuildingId).Select(b => b.ToString()).ToArray());
+                    UISupplyChainOut.tooltip = TransferManagerInfo.GetSupplyDestinationsText(m_currBuildingId);
+                }
+                else
+                {
+                    UISupplyChainOut.text = "";
+                    UISupplyChainOut.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict outgoing shipments to those buildings.\nOverrides all other options below.";
+                }
+            }
+            else
+            {
+                UISupplyChainOut.readOnly = true;
+
+                UISupplyChainOut.text = "";
+                UISupplyChainOut.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict outgoing shipments to those buildings.\nOverrides all other options below.";
+            }
+        }
+
+        private void UpdateUIAllLocalAreasCheckBox()
+        {
+            if (m_currBuildingId != 0)
+            {
+                UIAllLocalAreasCheckBox.isChecked = Constraints.AllLocalAreas(m_currBuildingId);
+                UIAllLocalAreasCheckBox.readOnly = false;
+            }
+            else
+            {
+                UIAllLocalAreasCheckBox.isChecked = false;
+                UIAllLocalAreasCheckBox.readOnly = true;
+            }
+
+            UIAllLocalAreasCheckBox.label.text = "All Local Areas";
+            UIAllLocalAreasCheckBox.tooltip = "If enabled, serves all local areas.  Overrides Districts Served restrictions below.";
+        }
+
+        private void UpdateUIAllOutsideConnectionsCheckBox()
+        {
+            if (m_currBuildingId != 0)
+            {
+                UIAllOutsideConnectionsCheckBox.isChecked = Constraints.OutsideConnections(m_currBuildingId);
+                UIAllOutsideConnectionsCheckBox.readOnly = false;
+            }
+            else
+            {
+                UIAllOutsideConnectionsCheckBox.isChecked = false;
+                UIAllOutsideConnectionsCheckBox.readOnly = true;
+            }
+
+            UIAllOutsideConnectionsCheckBox.tooltip = "If enabled, serves all outside connections.";
+            UIAllOutsideConnectionsCheckBox.label.text = "All Outside Connections";
+        }
+
+        private void UpdateUIDistrictsDropdown()
+        {
+            if (m_currBuildingId != 0 && !Constraints.AllLocalAreas(m_currBuildingId) && Constraints.SupplyDestinations(m_currBuildingId)?.Count == 0)
+            {
+                UIDistrictsDropDown.triggerButton.Enable();
+
+                var districtsServiced = Constraints.DistrictServiced(m_currBuildingId);
+                if (districtsServiced != null)
+                {
+                    UIDistrictsDropDown.SetChecked(m_districtsMapping.Select(district => districtsServiced.Contains(district)).ToArray());
+                }
+                else
+                {
+                    UIDistrictsDropDown.SetChecked(m_districtsMapping.Select(district => false).ToArray());
+                }
+            }
+            else
+            {
+                UIDistrictsDropDown.triggerButton.Disable();
+                UIDistrictsDropDown.SetChecked(m_districtsMapping.Select(district => false).ToArray());
+            }
+
+            UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetDistrictsServedText(m_currBuildingId);
+        }
+
+        private void UpdateUIDistrictsDropdownDistrictItems()
+        {
             var districtNames = new SortedDictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
-
-            // TODO: Add in alphabetical order!
-            for (int district = 1; district < DistrictManager.MAX_DISTRICT_COUNT; district++)
+            for (byte district = 1; district < DistrictManager.MAX_DISTRICT_COUNT; district++)
             {
                 if ((DistrictManager.instance.m_districts.m_buffer[district].m_flags & District.Flags.Created) != 0)
                 {
@@ -200,254 +365,43 @@ namespace EnhancedDistrictServices
                 }
             }
 
+            UIDistrictsDropDown.Clear();
+            m_districtsMapping.Clear();
+
             foreach (var kvp in districtNames)
             {
                 UIDistrictsDropDown.AddItem(kvp.Key, isChecked: false);
                 m_districtsMapping.Add(kvp.Value);
             }
-
-            SetTarget(Vector3.zero, 0);
         }
 
-        public void SetTarget(Vector3 worldMousePosition, ushort building)
+        private void UpdateUIDistrictsSummary()
         {
-            if (TransferManagerInfo.IsDistrictServicesBuilding(building))
-            {
-                UISupplyChainIn.readOnly = !TransferManagerInfo.IsSupplyChainBuilding(building);
-                UISupplyChainOut.readOnly = !TransferManagerInfo.IsSupplyChainBuilding(building);
-                UIAllLocalAreasCheckBox.readOnly = false;
-                UIAllOutsideConnectionsCheckBox.readOnly = false;
-                UIDistrictsDropDown.triggerButton.Enable();
+            var homeDistrict = TransferManagerInfo.GetDistrict(m_currBuildingId);
+            var districtsServed = Constraints.DistrictServiced(m_currBuildingId);
 
-                UpdatePositionToBuilding(worldMousePosition, building);
-                UpdatePanel(worldMousePosition, building);
-            }
-            else
-            {
-                UISupplyChainIn.readOnly = true;
-                UISupplyChainOut.readOnly = true;
-                UIAllLocalAreasCheckBox.readOnly = true;
-                UIAllOutsideConnectionsCheckBox.readOnly = true;
-                UIDistrictsDropDown.triggerButton.Disable();
-
-                UpdatePanel(worldMousePosition, 0);
-            }
-
-            Show();
-        }
-
-        private void UpdatePanel(Vector3 worldMousePosition, ushort building)
-        {
-            if (TransferManagerInfo.IsDistrictServicesBuilding(building))
-            {
-                UITitle.text = TransferManagerInfo.GetBuildingName(building);
-
-                UpdateBuildingId(building);
-                UpdateHomeDistrict(building);
-                UpdateSupplyChainIn(building);
-                UpdateSupplyChainOut(building);
-                UpdateRestrictionSummary(building);
-
-                m_currBuildingId = building;
-
-                UIAllLocalAreasCheckBox.isChecked = Constraints.AllLocalAreas(building);
-                UIAllOutsideConnectionsCheckBox.isChecked = Constraints.OutsideConnections(building);
-
-                var restrictions = Constraints.DistrictServiced(building);
-                if (restrictions != null)
-                {
-                    for (int index = 0; index < m_districtsMapping.Count; index++)
-                    {
-                        UIDistrictsDropDown.SetChecked(m_districtsMapping.Select(district => restrictions.Contains(district)).ToArray());
-                    }
-                }
-                else
-                {
-                    for (int index = 0; index < m_districtsMapping.Count; index++)
-                    {
-                        UIDistrictsDropDown.SetChecked(index, false);
-                    }
-                }
-            }
-            else
-            {
-                UITitle.text = "(Enhanced District Services Tool)";
-                UIBuildingId.text = "";
-                UIHomeDistrict.text = $"Home district:";
-                UISupplyChainIn.text = "";
-                UISupplyChainOut.text = "";
-                UIDistrictsSummary.text = string.Empty;
-
-                m_currBuildingId = 0;
-
-                for (int index = 0; index < m_districtsMapping.Count; index++)
-                {
-                    UIDistrictsDropDown.SetChecked(index, false);
-                }
-            }
-        }
-
-        private void UpdateBuildingId(int buildingId)
-        {
-            if (buildingId != 0)
-            {
-                UIBuildingId.text = $"{buildingId}";
-            }
-            else
-            {
-                UIBuildingId.text = $"";
-            }
-        }
-
-        private void UpdateHomeDistrict(int buildingId)
-        {
-            var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
-            var homeDistrict = DistrictManager.instance.GetDistrict(position);
-
-            if (homeDistrict != 0)
-            {
-                var homeDistrictName = DistrictManager.instance.GetDistrictName((int)homeDistrict);
-                UIHomeDistrict.text = $"Home district: {homeDistrictName}";
-            }
-            else
-            {
-                UIHomeDistrict.text = $"Home district:";
-            }
-        }
-
-        private void UpdateSupplyChainIn(ushort buildingId)
-        {
-            string buildingNameList()
-            {
-                if (Constraints.SupplySources(buildingId)?.Count > 0)
-                {
-                    var buildingNames = Constraints.SupplySources(buildingId)
-                        .Select(b => TransferManagerInfo.GetBuildingName(b))
-                        .OrderBy(s => s);
-
-                    var sb = new StringBuilder();
-                    sb.AppendLine("Incoming Shipments Only From:");
-                    foreach (var buildingName in buildingNames)
-                    {
-                        sb.AppendLine(buildingName);
-                    }
-
-                    return sb.ToString();
-                }
-                else
-                {
-                    return string.Empty;
-                }
-            }
-
-            if (Constraints.SupplySources(buildingId)?.Count > 0)
-            {
-                UISupplyChainIn.text = string.Join(",", Constraints.SupplySources(buildingId).Select(b => b.ToString()).ToArray());
-                UISupplyChainIn.tooltip = buildingNameList();
-            }
-            else
-            {
-                UISupplyChainIn.text = "";
-                UISupplyChainIn.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict incoming shipments to those buildings.";
-            }
-        }
-
-        private void UpdateSupplyChainOut(ushort buildingId)
-        {
-            string buildingNameList()
-            {
-                if (Constraints.SupplyDestinations(buildingId)?.Count > 0)
-                {
-                    var buildingNames = Constraints.SupplyDestinations(buildingId)
-                        .Select(b => TransferManagerInfo.GetBuildingName(b))
-                        .OrderBy(s => s);
-
-                    var sb = new StringBuilder();
-                    sb.AppendLine("Outgoing Shipments Only To:");
-                    foreach (var buildingName in buildingNames)
-                    {
-                        sb.AppendLine(buildingName);
-                    }
-
-                    return sb.ToString();
-                }
-                else
-                {
-                    return string.Empty;
-                }
-            }
-
-            if (Constraints.SupplyDestinations(buildingId)?.Count > 0)
-            {
-                UISupplyChainOut.text = string.Join(",", Constraints.SupplyDestinations(buildingId).Select(b => b.ToString()).ToArray());
-                UISupplyChainOut.tooltip = buildingNameList();
-            }
-            else
-            {
-                UISupplyChainOut.text = "";
-                UISupplyChainOut.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict outgoing shipments to those buildings.\nOverrides all other options below.";
-            }
-        }
-
-        private void UpdateRestrictionSummary(ushort buildingId)
-        {
-            string districtNameList()
-            {
-                var districts = Constraints.DistrictServiced(buildingId);
-                if (districts?.Count == 0)
-                {
-                    return string.Empty;
-                }
-
-                if (districts.Count == 1)
-                {
-                    return $"Districts served: {DistrictManager.instance.GetDistrictName(districts[0])}";
-                }
-                else
-                {
-                    var sb = new StringBuilder();
-                    sb.AppendLine("Districts served:");
-
-                    foreach (var districtName in districts.Select(d => DistrictManager.instance.GetDistrictName(d)).OrderBy(d => d))
-                    {
-                        sb.AppendLine(districtName);
-                    }
-
-                    return sb.ToString();
-                }
-            }
-
-            var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
-            var homeDistrict = DistrictManager.instance.GetDistrict(position);
-
-            var restrictions = Constraints.DistrictServiced(buildingId);
-            if (Constraints.AllLocalAreas(buildingId))
+            if (Constraints.AllLocalAreas(m_currBuildingId))
             {
                 UIDistrictsSummary.text = "Districts served: All local areas";
-                UIDistrictsDropDown.triggerButton.tooltip = "Districts served: All local areas";
             }
-            else if (restrictions == null || restrictions.Count == 0)
+            else if (districtsServed == null || districtsServed.Count == 0)
             {
                 UIDistrictsSummary.text = "Districts served: None";
-                UIDistrictsDropDown.triggerButton.tooltip = "";
             }
-            else if (homeDistrict != 0 && restrictions.Contains(homeDistrict))
+            else if (homeDistrict != 0 && districtsServed.Contains(homeDistrict))
             {
-                if (restrictions.Count == 1)
+                if (districtsServed.Count == 1)
                 {
                     UIDistrictsSummary.text = $"Districts served: home only";
-                    UIDistrictsDropDown.triggerButton.tooltip = districtNameList();
                 }
                 else
                 {
-                    UIDistrictsSummary.text = $"Districts served: home + {restrictions.Count - 1} others";
-                    UIDistrictsDropDown.triggerButton.tooltip = districtNameList();
+                    UIDistrictsSummary.text = $"Districts served: home + {districtsServed.Count - 1} others";
                 }
             }
             else
             {
-                UIDistrictsSummary.text = $"Districts served: {restrictions.Count} others";
-                UIDistrictsDropDown.triggerButton.tooltip = districtNameList();
+                UIDistrictsSummary.text = $"Districts served: {districtsServed.Count} others";
             }
         }
     }

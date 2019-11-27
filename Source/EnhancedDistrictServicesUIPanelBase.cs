@@ -70,7 +70,7 @@ namespace EnhancedDistrictServices
 
         private const int m_componentPadding = 3;
         private const int m_componentWidth = 274;
-        private const int m_componentHeight = 510;
+        private const int m_componentHeight = 530;
         private const int m_listScrollbarWidth = 20;
 
         private Transform m_CameraTransform;
@@ -79,6 +79,7 @@ namespace EnhancedDistrictServices
         public UILabel UITitle;
         public UITextField UIBuildingId;
         public UILabel UIHomeDistrict;
+        public UILabel UIServices;
         public UITextField UISupplyChainIn;
         public UITextField UISupplyChainOut;
         public UICheckBox UIAllLocalAreasCheckBox;
@@ -113,15 +114,16 @@ namespace EnhancedDistrictServices
 
             UIBuildingId = AttachUICompositeTextFieldTo(this, 3, 23, 78, $"Building Id: ");
             UIHomeDistrict = AttachUILabelTo(this, 3, 43);
-            UISupplyChainIn = AttachUICompositeTextFieldTo(this, 3, 63, 111, $"Supply Chain In: ");
-            UISupplyChainOut = AttachUICompositeTextFieldTo(this, 3, 83, 123, $"Supply Chain Out: ");
-            UIAllLocalAreasCheckBox = AttachUICheckBoxTo(this, 3, 103);
-            UIAllOutsideConnectionsCheckBox = AttachUICheckBoxTo(this, 3, 123);
+            UIServices = AttachUILabelTo(this, 3, 63);
+            UISupplyChainIn = AttachUICompositeTextFieldTo(this, 3, 83, 111, $"Supply Chain In: ");
+            UISupplyChainOut = AttachUICompositeTextFieldTo(this, 3, 103, 123, $"Supply Chain Out: ");
+            UIAllLocalAreasCheckBox = AttachUICheckBoxTo(this, 3, 123);
+            UIAllOutsideConnectionsCheckBox = AttachUICheckBoxTo(this, 3, 143);
 
-            UIDistrictsSummary = AttachUILabelTo(this, 3, 146);
+            UIDistrictsSummary = AttachUILabelTo(this, 3, 166);
             UIDistrictsSummary.zOrder = 0;
 
-            UIDistrictsDropDown = AttachUICheckboxDropDownTo(this, 3, 3 + 146);
+            UIDistrictsDropDown = AttachUICheckboxDropDownTo(this, 3, 3 + 166);
             UIDistrictsDropDown.eventDropdownOpen += UIDistrictsDropDown_eventDropdownOpen;
             UIDistrictsDropDown.eventDropdownClose += UIDistrictsDropDown_eventDropdownClose;
             UIDistrictsDropDown.eventSizeChanged += UIDistrictsDropDown_eventSizeChanged;
@@ -153,15 +155,21 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="worldMousePosition"></param>
         /// <param name="building"></param>
-        public void UpdatePositionToBuilding(Vector3 worldMousePosition, ushort building)
+        public void UpdatePositionToBuilding(ushort building)
         {
             if (m_CameraTransform == null)
+            {
                 return;
+            }
 
             if (InstanceManager.GetPosition(new InstanceID { Building = building }, out Vector3 position, out Quaternion _, out Vector3 size))
+            {
                 position.y += size.y * 0.8f;
+            }
             else
-                position = worldMousePosition;
+            {
+                return;
+            }
 
             Vector3 vector3_1 = Camera.main.WorldToScreenPoint(position) * Mathf.Sign(Vector3.Dot(position - m_CameraTransform.position, m_CameraTransform.forward));
             UIView uiView = component.GetUIView();

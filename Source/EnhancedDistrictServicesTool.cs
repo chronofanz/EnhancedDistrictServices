@@ -40,7 +40,7 @@ namespace EnhancedDistrictServices
         protected override void OnEnable()
         {
             base.OnEnable();
-            EnhancedDistrictServicesUIPanel.Instance?.Activate();
+            EnhancedDistrictServicesUIPanel.Instance?.OnEnable();
         }
 
         protected override void OnDisable()
@@ -122,7 +122,7 @@ namespace EnhancedDistrictServices
                             }
 
                             var panel = EnhancedDistrictServicesUIPanel.Instance;
-                            panel.SetTarget(mousePosition, hoverInstance.Building);
+                            panel.SetBuilding(hoverInstance.Building);
                             panel.opacity = 1f;
                         }
 
@@ -151,18 +151,7 @@ namespace EnhancedDistrictServices
             var txtItems = new List<string>();
 
             txtItems.Add($"{TransferManagerInfo.GetBuildingName(buildingId)} ({buildingId})");
-
-            var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
-            var district = DistrictManager.instance.GetDistrict(position);
-            if (district != 0)
-            {
-                var districtName = DistrictManager.instance.GetDistrictName((int)district);
-                txtItems.Add($"Home district: {districtName}");
-            }
-            else
-            {
-                txtItems.Add($"Home district: (Not in a district)");
-            }
+            txtItems.Add(TransferManagerInfo.GetDistrictText(buildingId));
 
             // Early return.  Rest of info pertains to building types that we deal with in the mod.
             if (!TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
@@ -170,86 +159,22 @@ namespace EnhancedDistrictServices
                 return string.Join("\n", txtItems.ToArray());
             }
 
-            var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
-            var service = buildingInfo.GetService();
-            var subService = buildingInfo.GetSubService();
-            if (service == ItemClass.Service.PlayerIndustry)
-            {
-                if (buildingInfo.GetAI() is ExtractingFacilityAI extractingFacilityAI)
-                {
-                    txtItems.Add($"Service: {service} ({buildingInfo.GetAI()}) ({extractingFacilityAI.m_outputResource})");
-                }
-                else if (buildingInfo.GetAI() is ProcessingFacilityAI processingFacilityAI)                    
-                {
-                    txtItems.Add($"Service: {service} ({buildingInfo.GetAI()}) ({processingFacilityAI.m_outputResource})");
-                }
-                else if (buildingInfo.GetAI() is WarehouseAI warehouseAI)
-                {
-                    txtItems.Add($"Service: {service} ({buildingInfo.GetAI()}) ({warehouseAI.m_storageType})");
-                }
-                else
-                {
-                    txtItems.Add($"Service: {service} ({buildingInfo.GetAI()})");
-                }
-            }
-            else
-            {
-                txtItems.Add($"Service: {service} ({subService})");
-            }
+            txtItems.Add(TransferManagerInfo.GetServicesText(buildingId));
 
             if (Constraints.SupplySources(buildingId)?.Count > 0)
             {
                 txtItems.Add("");
-                txtItems.Add($"<<Supply Chain In>>");
-
-                var buildingNames = Constraints.SupplySources(buildingId)
-                    .Select(b => TransferManagerInfo.GetBuildingName(b))
-                    .OrderBy(s => s);
-
-                foreach (var buildingName in buildingNames)
-                {
-                    txtItems.Add(buildingName);
-                }
+                txtItems.Add(TransferManagerInfo.GetSupplySourcesText(buildingId));
             }
 
             if (Constraints.SupplyDestinations(buildingId)?.Count > 0)
             {
                 txtItems.Add("");
-                txtItems.Add($"<<Supply Chain Out>>");
-
-                var buildingNames = Constraints.SupplyDestinations(buildingId)
-                    .Select(b => TransferManagerInfo.GetBuildingName(b))
-                    .OrderBy(s => s);
-
-                foreach (var buildingName in buildingNames)
-                {
-                    txtItems.Add(buildingName);
-                }
+                txtItems.Add(TransferManagerInfo.GetSupplyDestinationsText(buildingId));
             }
 
             txtItems.Add("");
-            txtItems.Add($"<<DistrictsServed>>");
-
-            if (Constraints.OutsideConnections(buildingId))
-            {
-                txtItems.Add($"All outside connections served");
-            }
-
-            if (Constraints.AllLocalAreas(buildingId))
-            {
-                txtItems.Add($"All local areas served");
-            }
-            else if (Constraints.DistrictServiced(buildingId)?.Count > 0)
-            {
-                var districtNames = Constraints.DistrictServiced(buildingId)
-                    .Select(d => DistrictManager.instance.GetDistrictName(d))
-                    .OrderBy(s => s);
-
-                foreach (var districtName in districtNames)
-                {
-                    txtItems.Add(districtName);
-                }
-            }
+            txtItems.Add(TransferManagerInfo.GetDistrictsServedText(buildingId));
 
             return string.Join("\n", txtItems.ToArray());
         }

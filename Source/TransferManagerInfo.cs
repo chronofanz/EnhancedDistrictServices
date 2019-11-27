@@ -1,4 +1,6 @@
 ﻿using ColossalFramework;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace EnhancedDistrictServices
 {
@@ -7,26 +9,6 @@ namespace EnhancedDistrictServices
     /// </summary>
     public static class TransferManagerInfo
     {
-        /// <summary>
-        /// Returns the home district associated with the offer.
-        /// Should return 0 if the home building is not in a district.
-        /// </summary>
-        /// <param name="offer"></param>
-        /// <returns></returns>
-        public static byte GetDistrict(ref TransferManager.TransferOffer offer)
-        {
-            var homeBuilding = GetHomeBuilding(ref offer);
-            if (homeBuilding != 0)
-            {
-                var position = BuildingManager.instance.m_buildings.m_buffer[homeBuilding].m_position;
-                return DistrictManager.instance.GetDistrict(position);
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
         /// <summary>
         /// Returns the building id associated with the offer, if specified.
         /// If a citizen is associated with the offer, returns the citizen's home building id.
@@ -65,6 +47,199 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
+        /// Returns the district of the building.
+        /// Should return 0 if thebuilding is not in a district.
+        /// </summary>
+        /// <returns></returns>
+        public static byte GetDistrict(int building)
+        {
+            if (building != 0)
+            {
+                var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
+                return DistrictManager.instance.GetDistrict(position);
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Returns a descriptive text indicating the home district of the specified building.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        public static string GetDistrictText(ushort buildingId)
+        {
+            if (buildingId == 0)
+            {
+                return string.Empty;
+            }
+
+            var district = GetDistrict(buildingId);
+            if (district != 0)
+            {
+                var districtName = DistrictManager.instance.GetDistrictName((int)district);
+                return $"Home district: {districtName}";
+            }
+            else
+            {
+                return $"Home district: (Not in a district)";
+            }
+        }
+
+        /// <summary>
+        /// Returns a descriptive text indicating the districts that are served by the specified building.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        public static string GetDistrictsServedText(ushort buildingId)
+        {
+            if (buildingId == 0)
+            {
+                return string.Empty;
+            }
+
+            var txtItems = new List<string>();
+            txtItems.Add($"<<DistrictsServed>>");
+
+            if (Constraints.SupplyDestinations(buildingId)?.Count > 0)
+            {
+                txtItems.Add($"Supply chain restricted, only serves specified Supply Chain Out buildings!");
+                return string.Join("\n", txtItems.ToArray());
+            }
+
+            bool addedText = false;
+            if (Constraints.OutsideConnections(buildingId))
+            {              
+                txtItems.Add($"All outside connections served");
+                addedText = true;
+            }
+
+            if (Constraints.AllLocalAreas(buildingId))
+            {
+                txtItems.Add($"All local areas served");
+                addedText = true;
+            }
+            else if (Constraints.DistrictServiced(buildingId)?.Count > 0)
+            {
+                var districtNames = Constraints.DistrictServiced(buildingId)
+                    .Select(d => DistrictManager.instance.GetDistrictName(d))
+                    .OrderBy(s => s);
+
+                foreach (var districtName in districtNames)
+                {
+                    txtItems.Add(districtName);
+                }
+
+                addedText = true;
+            }
+
+            if (!addedText)
+            {
+                txtItems.Add($"No districts served!");
+            }
+
+            return string.Join("\n", txtItems.ToArray());
+        }
+
+        /// <summary>
+        /// Returns a descriptive text about the type of service provided by the building.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        public static string GetServicesText(ushort buildingId)
+        {
+            if (buildingId == 0)
+            {
+                return string.Empty;
+            }
+
+            var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
+            var service = buildingInfo.GetService();
+            var subService = buildingInfo.GetSubService();
+            if (service == ItemClass.Service.PlayerIndustry)
+            {
+                if (buildingInfo.GetAI() is ExtractingFacilityAI extractingFacilityAI)
+                {
+                    return $"Service: {service} ({extractingFacilityAI.m_outputResource})";
+                }
+                else if (buildingInfo.GetAI() is ProcessingFacilityAI processingFacilityAI)
+                {
+                    return $"Service: {service} ({processingFacilityAI.m_outputResource})";
+                }
+                else if (buildingInfo.GetAI() is WarehouseAI warehouseAI)
+                {
+                    return $"Service: {service} ({warehouseAI.m_storageType})";
+                }
+                else
+                {
+                    return $"Service: {service}";
+                }
+            }
+            else
+            {
+                return $"Service: {service}";
+            }
+        }
+
+        /// <summary>
+        /// Returns a descriptive text indicating the supply chain destination buildings that the given building
+        /// will ship to.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        public static string GetSupplyDestinationsText(ushort buildingId)
+        {
+            if (buildingId == 0)
+            {
+                return string.Empty;
+            }
+
+            var txtItems = new List<string>();
+            txtItems.Add($"<<Supply Chain Shipments Only To>>");
+
+            var buildingNames = Constraints.SupplyDestinations(buildingId)
+                .Select(b => TransferManagerInfo.GetBuildingName(b))
+                .OrderBy(s => s);
+
+            foreach (var buildingName in buildingNames)
+            {
+                txtItems.Add(buildingName);
+            }
+
+            return string.Join("\n", txtItems.ToArray());
+        }
+
+        /// <summary>
+        /// Returns a descriptive text indicating the supply chain source buildings that the given building
+        /// will receive shipments from.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        public static string GetSupplySourcesText(ushort buildingId)
+        {
+            if (buildingId == 0)
+            {
+                return string.Empty;
+            }
+
+            var txtItems = new List<string>();
+            txtItems.Add($"<<Supply Chain Shipments Only From>>");
+
+            var buildingNames = Constraints.SupplySources(buildingId)
+                .Select(b => TransferManagerInfo.GetBuildingName(b))
+                .OrderBy(s => s);
+
+            foreach (var buildingName in buildingNames)
+            {
+                txtItems.Add(buildingName);
+            }
+
+            return string.Join("\n", txtItems.ToArray());
+        }
+
+        /// <summary>
         /// Returns true if the building's service is a supported district-only service.
         /// </summary>
         /// <param name="building"></param>
@@ -83,16 +258,17 @@ namespace EnhancedDistrictServices
                 var info = instance.m_buildings.m_buffer[building].Info;
                 switch (info?.GetService())
                 {
+                    case ItemClass.Service.Education:
+                    case ItemClass.Service.FireDepartment:
                     case ItemClass.Service.Garbage:
                     case ItemClass.Service.HealthCare:
                     case ItemClass.Service.PoliceDepartment:
-                    case ItemClass.Service.FireDepartment:
-                    case ItemClass.Service.PlayerEducation:
                         return !(
                             info.GetAI() is HelicopterDepotAI ||
+                            info.GetAI() is LibraryAI ||
                             info.GetAI() is SaunaAI);
 
-                    case ItemClass.Service.Education:
+                    case ItemClass.Service.PlayerEducation:
                         return !(
                             info.GetSubService() == ItemClass.SubService.PlayerEducationLiberalArts ||
                             info.GetSubService() == ItemClass.SubService.PlayerEducationTradeSchool ||
@@ -103,7 +279,8 @@ namespace EnhancedDistrictServices
 
                     case ItemClass.Service.PlayerIndustry:
                         return !(
-                            info.GetAI() is MainIndustryBuildingAI);
+                            info.GetAI() is MainIndustryBuildingAI ||
+                            info.GetAI() is AuxiliaryBuildingAI);
 
                     default:
                         return false;
