@@ -170,6 +170,22 @@ namespace EnhancedDistrictServices
             RemoveAllSupplyChainConnectionsFromSource(buildingId);
         }
 
+        /// <summary>
+        /// Called when a district is removed.
+        /// </summary>
+        /// <param name="district"></param>
+        public static void ReleaseDistrict(byte district)
+        {
+            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
+            {
+                var restrictions = m_buildingToDistrictServiced[buildingId];
+                if (restrictions != null)
+                {
+                    RemoveDistrictServiced(buildingId, district);
+                }
+            }
+        }
+
         #region Accessors
 
         /// <summary>

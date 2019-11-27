@@ -70,6 +70,7 @@
     <Compile Include="Source\EnhancedDistrictServicesUIPanel.cs" />
     <Compile Include="Source\Logger.cs" />
     <Compile Include="Source\EnhancedDistrictServicesUIPanelBase.cs" />
+    <Compile Include="Source\DistrictManagerReleaseDistrictPatch.cs" />
     <Compile Include="Source\TransferManagerAddOfferPatch.cs" />
     <Compile Include="Source\TransferManagerInfo.cs" />
     <Compile Include="Source\TransferManagerMatchOffersPatch.cs" />
@@ -77,6 +78,9 @@
   <ItemGroup>
     <None Include=".editorconfig" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Images\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
