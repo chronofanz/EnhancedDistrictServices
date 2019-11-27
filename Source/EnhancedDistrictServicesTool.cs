@@ -121,6 +121,7 @@ namespace EnhancedDistrictServices
                             }
 
                             var panel = EnhancedDistrictServicesUIPanel.Instance;
+                            panel.UpdatePositionToBuilding(hoverInstance.Building);
                             panel.SetBuilding(hoverInstance.Building);
                             panel.opacity = 1f;
                         }

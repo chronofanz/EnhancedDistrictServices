@@ -43,6 +43,21 @@ namespace EnhancedDistrictServices
         static Constraints()
         {
             Clear();
+
+            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
+            {
+                if (TransferManagerInfo.IsDistrictServicesBuilding(buildingId) || TransferManagerInfo.IsOutsideBuilding(buildingId))
+                {
+                    var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+
+                    var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
+                    var service = buildingInfo.GetService();
+                    var subService = buildingInfo.GetSubService();
+                    var ai = buildingInfo.GetAI();
+
+                    Logger.Log($"Constraints::Found District Services Building {buildingName} (building={buildingId}, service={service}, subService={subService}, ai={ai})");
+                }
+            }
         }
 
         /// <summary>
@@ -67,13 +82,13 @@ namespace EnhancedDistrictServices
             for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
             {
                 var restrictions = data.BuildingToAllLocalAreas[buildingId];
-                SetAllLocalAreas(buildingId, restrictions, false);
+                SetAllLocalAreas(buildingId, restrictions);
             }
 
             for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
             {
                 var restrictions = data.BuildingToOutsideConnections[buildingId];
-                SetAllOutsideConnections(buildingId, restrictions, false);
+                SetAllOutsideConnections(buildingId, restrictions);
             }
 
             for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
@@ -131,13 +146,13 @@ namespace EnhancedDistrictServices
             if (homeDistrict != 0)
             {
                 AddDistrictServiced(buildingId, homeDistrict);
-                SetAllLocalAreas(buildingId, false, true);
-                SetAllOutsideConnections(buildingId, false, true);
+                SetAllLocalAreas(buildingId, false);
+                SetAllOutsideConnections(buildingId, false);
             }
             else
             {
-                SetAllLocalAreas(buildingId, true, true);
-                SetAllOutsideConnections(buildingId, true, true);
+                SetAllLocalAreas(buildingId, true);
+                SetAllOutsideConnections(buildingId, true);
             }
         }
 
@@ -220,17 +235,17 @@ namespace EnhancedDistrictServices
         /// <param name="buildingId"></param>
         /// <param name="status"></param>
         /// <param name="verbose">If true, log the change to the log file</param>
-        public static void SetAllLocalAreas(int buildingId, bool status, bool verbose)
+        public static void SetAllLocalAreas(int buildingId, bool status)
         {
             if (!TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
             {
                 return;
             }
 
-            if (verbose || (m_buildingToAllLocalAreas[buildingId] != status))
+            if (m_buildingToAllLocalAreas[buildingId] != status)
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
-                Logger.Log($"Constraint::SetAllLocalAreas: {buildingName} ({buildingId}) = {status} ...");
+                Logger.Log($"Constraints::SetAllLocalAreas: {buildingName} ({buildingId}) = {status} ...");
             }
 
             m_buildingToAllLocalAreas[buildingId] = status;
@@ -243,17 +258,17 @@ namespace EnhancedDistrictServices
         /// <param name="buildingId"></param>
         /// <param name="status"></param>
         /// <param name="verbose">If true, log the change to the log file</param>
-        public static void SetAllOutsideConnections(int buildingId, bool status, bool verbose)
+        public static void SetAllOutsideConnections(int buildingId, bool status)
         {
             if (!TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
             {
                 return;
             }
 
-            if (verbose || (m_buildingToOutsideConnections[buildingId] != status))
+            if (m_buildingToOutsideConnections[buildingId] != status)
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
-                Logger.Log($"Constraint::SetAllOutgoingConnections: {buildingName} ({buildingId}) = {status} ...");
+                Logger.Log($"Constraints::SetAllOutsideConnections: {buildingName} ({buildingId}) = {status} ...");
             }
 
             m_buildingToOutsideConnections[buildingId] = status;
@@ -284,7 +299,7 @@ namespace EnhancedDistrictServices
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 var districtName = DistrictManager.instance.GetDistrictName(district);
-                Logger.Log($"Constraint::AddDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
+                Logger.Log($"Constraints::AddDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
 
                 m_buildingToDistrictServiced[buildingId].Add(district);
             }
@@ -306,7 +321,7 @@ namespace EnhancedDistrictServices
             {
                 var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
                 var districtName = DistrictManager.instance.GetDistrictName(district);
-                Logger.Log($"Constraint::RemoveDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
+                Logger.Log($"Constraints::RemoveDistrictRestriction: {buildingName} ({buildingId}) => {districtName} ...");
 
                 m_buildingToDistrictServiced[buildingId].Remove(district);
             }
@@ -362,7 +377,7 @@ namespace EnhancedDistrictServices
             {
                 var sourceBuildingName = TransferManagerInfo.GetBuildingName(source);
                 var destinationBuildingName = TransferManagerInfo.GetBuildingName(destination);
-                Logger.Log($"Constraint::AddSupplyChainConnection: {sourceBuildingName} ({source}) => {destinationBuildingName} ({destination}) ...");
+                Logger.Log($"Constraints::AddSupplyChainConnection: {sourceBuildingName} ({source}) => {destinationBuildingName} ({destination}) ...");
             }
         }
 

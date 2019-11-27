@@ -279,8 +279,9 @@ namespace EnhancedDistrictServices
 
                     case ItemClass.Service.PlayerIndustry:
                         return !(
-                            info.GetAI() is MainIndustryBuildingAI ||
-                            info.GetAI() is AuxiliaryBuildingAI);
+                            info.GetAI() is AuxiliaryBuildingAI ||
+                            info.GetAI() is DummyBuildingAI ||
+                            info.GetAI() is MainIndustryBuildingAI);
 
                     default:
                         return false;
@@ -288,6 +289,16 @@ namespace EnhancedDistrictServices
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Returns true if the building corresponds to an outside connection.
+        /// </summary>
+        /// <param name="building"></param>
+        /// <returns></returns>
+        public static bool IsOutsideBuilding(int building)
+        {
+            return building != 0 && Singleton<BuildingManager>.instance.m_buildings.m_buffer[building].Info.m_buildingAI is OutsideConnectionAI;
         }
 
         /// <summary>
@@ -385,7 +396,7 @@ namespace EnhancedDistrictServices
         /// <returns></returns>
         public static bool IsOutsideOffer(ref TransferManager.TransferOffer offer)
         {
-            return offer.Building != 0 && Singleton<BuildingManager>.instance.m_buildings.m_buffer[offer.Building].Info.m_buildingAI is OutsideConnectionAI;
+            return IsOutsideBuilding(GetHomeBuilding(ref offer));
         }
     }
 }

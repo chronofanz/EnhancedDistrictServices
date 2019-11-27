@@ -149,14 +149,14 @@ namespace EnhancedDistrictServices
 
             UIAllLocalAreasCheckBox.eventCheckChanged += (c, t) =>
             {
-                Constraints.SetAllLocalAreas(m_currBuildingId, t, true);
+                Constraints.SetAllLocalAreas(m_currBuildingId, t);
                 UpdateUIDistrictsDropdown();
                 UpdateUIDistrictsSummary();
             };
 
             UIAllOutsideConnectionsCheckBox.eventCheckChanged += (c, t) =>
             {
-                Constraints.SetAllOutsideConnections(m_currBuildingId, t, true);
+                Constraints.SetAllOutsideConnections(m_currBuildingId, t);
                 UpdateUIDistrictsSummary();
             };
 
@@ -234,12 +234,26 @@ namespace EnhancedDistrictServices
 
         private void UpdateUIHomeDistrict()
         {
-            UIHomeDistrict.text = TransferManagerInfo.GetDistrictText(m_currBuildingId);
+            if (m_currBuildingId != 0)
+            {
+                UIHomeDistrict.text = TransferManagerInfo.GetDistrictText(m_currBuildingId);
+            }
+            else
+            {
+                UIHomeDistrict.text = "Home district:";
+            }
         }
 
         private void UpdateUIServices()
         {
-            UIServices.text = TransferManagerInfo.GetServicesText(m_currBuildingId);
+            if (m_currBuildingId != 0)
+            {
+                UIServices.text = TransferManagerInfo.GetServicesText(m_currBuildingId);
+            }
+            else
+            {
+                UIServices.text = "Service:";
+            }
         }
 
         private void UpdateUISupplyChainIn()
@@ -330,7 +344,12 @@ namespace EnhancedDistrictServices
 
         private void UpdateUIDistrictsDropdown()
         {
-            if (m_currBuildingId != 0 && !Constraints.AllLocalAreas(m_currBuildingId) && Constraints.SupplyDestinations(m_currBuildingId)?.Count == 0)
+            if (m_currBuildingId == 0 || Constraints.AllLocalAreas(m_currBuildingId) || Constraints.SupplyDestinations(m_currBuildingId)?.Count > 0)
+            {
+                UIDistrictsDropDown.triggerButton.Disable();
+                UIDistrictsDropDown.SetChecked(m_districtsMapping.Select(district => false).ToArray());
+            }
+            else
             {
                 UIDistrictsDropDown.triggerButton.Enable();
 
@@ -343,11 +362,6 @@ namespace EnhancedDistrictServices
                 {
                     UIDistrictsDropDown.SetChecked(m_districtsMapping.Select(district => false).ToArray());
                 }
-            }
-            else
-            {
-                UIDistrictsDropDown.triggerButton.Disable();
-                UIDistrictsDropDown.SetChecked(m_districtsMapping.Select(district => false).ToArray());
             }
 
             UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetDistrictsServedText(m_currBuildingId);
