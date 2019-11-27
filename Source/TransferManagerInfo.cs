@@ -67,16 +67,16 @@ namespace EnhancedDistrictServices
         /// <summary>
         /// Returns a descriptive text indicating the home district of the specified building.
         /// </summary>
-        /// <param name="buildingId"></param>
+        /// <param name="building"></param>
         /// <returns></returns>
-        public static string GetDistrictText(ushort buildingId)
+        public static string GetDistrictText(ushort building)
         {
-            if (buildingId == 0)
+            if (building == 0)
             {
                 return string.Empty;
             }
 
-            var district = GetDistrict(buildingId);
+            var district = GetDistrict(building);
             if (district != 0)
             {
                 var districtName = DistrictManager.instance.GetDistrictName((int)district);
@@ -91,11 +91,11 @@ namespace EnhancedDistrictServices
         /// <summary>
         /// Returns a descriptive text indicating the districts that are served by the specified building.
         /// </summary>
-        /// <param name="buildingId"></param>
+        /// <param name="building"></param>
         /// <returns></returns>
-        public static string GetDistrictsServedText(ushort buildingId)
+        public static string GetDistrictsServedText(ushort building)
         {
-            if (buildingId == 0)
+            if (building == 0)
             {
                 return string.Empty;
             }
@@ -103,27 +103,27 @@ namespace EnhancedDistrictServices
             var txtItems = new List<string>();
             txtItems.Add($"<<DistrictsServed>>");
 
-            if (Constraints.SupplyDestinations(buildingId)?.Count > 0)
+            if (Constraints.SupplyDestinations(building)?.Count > 0)
             {
                 txtItems.Add($"Supply chain restricted, only serves specified Supply Chain Out buildings!");
                 return string.Join("\n", txtItems.ToArray());
             }
 
             bool addedText = false;
-            if (Constraints.OutsideConnections(buildingId))
+            if (Constraints.OutsideConnections(building))
             {              
                 txtItems.Add($"All outside connections served");
                 addedText = true;
             }
 
-            if (Constraints.AllLocalAreas(buildingId))
+            if (Constraints.AllLocalAreas(building))
             {
                 txtItems.Add($"All local areas served");
                 addedText = true;
             }
-            else if (Constraints.DistrictServiced(buildingId)?.Count > 0)
+            else if (Constraints.DistrictServiced(building)?.Count > 0)
             {
-                var districtNames = Constraints.DistrictServiced(buildingId)
+                var districtNames = Constraints.DistrictServiced(building)
                     .Select(d => DistrictManager.instance.GetDistrictName(d))
                     .OrderBy(s => s);
 
@@ -146,16 +146,16 @@ namespace EnhancedDistrictServices
         /// <summary>
         /// Returns a descriptive text about the type of service provided by the building.
         /// </summary>
-        /// <param name="buildingId"></param>
+        /// <param name="building"></param>
         /// <returns></returns>
-        public static string GetServicesText(ushort buildingId)
+        public static string GetServicesText(ushort building)
         {
-            if (buildingId == 0)
+            if (building == 0)
             {
                 return string.Empty;
             }
 
-            var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
+            var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[building].Info;
             var service = buildingInfo.GetService();
             var subService = buildingInfo.GetSubService();
             if (service == ItemClass.Service.PlayerIndustry)
@@ -187,11 +187,11 @@ namespace EnhancedDistrictServices
         /// Returns a descriptive text indicating the supply chain destination buildings that the given building
         /// will ship to.
         /// </summary>
-        /// <param name="buildingId"></param>
+        /// <param name="building"></param>
         /// <returns></returns>
-        public static string GetSupplyDestinationsText(ushort buildingId)
+        public static string GetSupplyDestinationsText(ushort building)
         {
-            if (buildingId == 0)
+            if (building == 0)
             {
                 return string.Empty;
             }
@@ -199,7 +199,7 @@ namespace EnhancedDistrictServices
             var txtItems = new List<string>();
             txtItems.Add($"<<Supply Chain Shipments Only To>>");
 
-            var buildingNames = Constraints.SupplyDestinations(buildingId)
+            var buildingNames = Constraints.SupplyDestinations(building)
                 .Select(b => TransferManagerInfo.GetBuildingName(b))
                 .OrderBy(s => s);
 
@@ -215,11 +215,11 @@ namespace EnhancedDistrictServices
         /// Returns a descriptive text indicating the supply chain source buildings that the given building
         /// will receive shipments from.
         /// </summary>
-        /// <param name="buildingId"></param>
+        /// <param name="building"></param>
         /// <returns></returns>
-        public static string GetSupplySourcesText(ushort buildingId)
+        public static string GetSupplySourcesText(ushort building)
         {
-            if (buildingId == 0)
+            if (building == 0)
             {
                 return string.Empty;
             }
@@ -227,7 +227,7 @@ namespace EnhancedDistrictServices
             var txtItems = new List<string>();
             txtItems.Add($"<<Supply Chain Shipments Only From>>");
 
-            var buildingNames = Constraints.SupplySources(buildingId)
+            var buildingNames = Constraints.SupplySources(building)
                 .Select(b => TransferManagerInfo.GetBuildingName(b))
                 .OrderBy(s => s);
 

@@ -3,7 +3,6 @@ using ColossalFramework.UI;
 using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace EnhancedDistrictServices
@@ -87,15 +86,15 @@ namespace EnhancedDistrictServices
         {
             base.OnToolUpdate();
 
-            var buildingId = m_hoverInstance.Building;
-            if (m_toolController.IsInsideUI || !Cursor.visible || buildingId == 0)
+            var building = m_hoverInstance.Building;
+            if (m_toolController.IsInsideUI || !Cursor.visible || building == 0)
             {
                 ShowToolInfo(false, null, Vector3.zero);
                 return;
             }
 
-            var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
-            var txt = GetBuildingInfoText(buildingId);
+            var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
+            var txt = GetBuildingInfoText(building);
             ShowToolInfo(true, txt, position);
         }
 
@@ -144,37 +143,37 @@ namespace EnhancedDistrictServices
         /// Helper method for displaying information, including district and supply chain constraints, about the 
         /// building with given building id.
         /// </summary>
-        /// <param name="buildingId"></param>
+        /// <param name="building"></param>
         /// <returns></returns>
-        private static string GetBuildingInfoText(ushort buildingId)
+        private static string GetBuildingInfoText(ushort building)
         {
             var txtItems = new List<string>();
 
-            txtItems.Add($"{TransferManagerInfo.GetBuildingName(buildingId)} ({buildingId})");
-            txtItems.Add(TransferManagerInfo.GetDistrictText(buildingId));
+            txtItems.Add($"{TransferManagerInfo.GetBuildingName(building)} ({building})");
+            txtItems.Add(TransferManagerInfo.GetDistrictText(building));
 
             // Early return.  Rest of info pertains to building types that we deal with in the mod.
-            if (!TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
+            if (!TransferManagerInfo.IsDistrictServicesBuilding(building))
             {
                 return string.Join("\n", txtItems.ToArray());
             }
 
-            txtItems.Add(TransferManagerInfo.GetServicesText(buildingId));
+            txtItems.Add(TransferManagerInfo.GetServicesText(building));
 
-            if (Constraints.SupplySources(buildingId)?.Count > 0)
+            if (Constraints.SupplySources(building)?.Count > 0)
             {
                 txtItems.Add("");
-                txtItems.Add(TransferManagerInfo.GetSupplySourcesText(buildingId));
+                txtItems.Add(TransferManagerInfo.GetSupplySourcesText(building));
             }
 
-            if (Constraints.SupplyDestinations(buildingId)?.Count > 0)
+            if (Constraints.SupplyDestinations(building)?.Count > 0)
             {
                 txtItems.Add("");
-                txtItems.Add(TransferManagerInfo.GetSupplyDestinationsText(buildingId));
+                txtItems.Add(TransferManagerInfo.GetSupplyDestinationsText(building));
             }
 
             txtItems.Add("");
-            txtItems.Add(TransferManagerInfo.GetDistrictsServedText(buildingId));
+            txtItems.Add(TransferManagerInfo.GetDistrictsServedText(building));
 
             return string.Join("\n", txtItems.ToArray());
         }
