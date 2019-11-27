@@ -70,7 +70,7 @@ namespace EnhancedDistrictServices
 
         private const int m_componentPadding = 3;
         private const int m_componentWidth = 274;
-        private const int m_componentHeight = 530;
+        private const int m_componentHeight = 600;
         private const int m_listScrollbarWidth = 20;
 
         private Transform m_CameraTransform;

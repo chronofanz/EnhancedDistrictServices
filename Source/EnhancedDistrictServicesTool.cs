@@ -45,6 +45,7 @@ namespace EnhancedDistrictServices
         protected override void OnDisable()
         {
             base.OnDisable();
+            EnhancedDistrictServicesUIPanel.Instance.UIDistrictsDropDown.ClosePopup();
             EnhancedDistrictServicesUIPanel.Instance.Hide();
         }
 
