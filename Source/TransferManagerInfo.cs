@@ -103,23 +103,28 @@ namespace EnhancedDistrictServices
             var txtItems = new List<string>();
             txtItems.Add($"<<DistrictsServed>>");
 
-            if (Constraints.SupplyDestinations(building)?.Count > 0)
+            bool addedText = false;
+            if (Constraints.AllLocalAreas(building))
             {
-                txtItems.Add($"Supply chain restricted, only serves specified Supply Chain Out buildings!");
-                return string.Join("\n", txtItems.ToArray());
+                txtItems.Add($"All local areas served");
+                addedText = true;
             }
 
-            bool addedText = false;
             if (Constraints.OutsideConnections(building))
-            {              
+            {
                 txtItems.Add($"All outside connections served");
                 addedText = true;
             }
 
             if (Constraints.AllLocalAreas(building))
             {
-                txtItems.Add($"All local areas served");
-                addedText = true;
+                return string.Join("\n", txtItems.ToArray());
+            }
+
+            if (Constraints.SupplyDestinations(building)?.Count > 0)
+            {
+                txtItems.Add($"Supply chain restricted, only serves specified Supply Chain Out buildings!");
+                return string.Join("\n", txtItems.ToArray());
             }
             else if (Constraints.DistrictServiced(building)?.Count > 0)
             {
@@ -275,7 +280,10 @@ namespace EnhancedDistrictServices
                             info.GetSubService() == ItemClass.SubService.PlayerEducationUniversity);
 
                     case ItemClass.Service.PublicTransport:
-                        return info.GetSubService() == ItemClass.SubService.PublicTransportPost;
+                    case ItemClass.Service.Road:
+                        return (
+                            info.GetAI() is OutsideConnectionAI ||
+                            info.GetSubService() == ItemClass.SubService.PublicTransportPost);
 
                     case ItemClass.Service.PlayerIndustry:
                         return !(
@@ -321,10 +329,16 @@ namespace EnhancedDistrictServices
                 switch (info?.GetService())
                 {
                     case ItemClass.Service.PublicTransport:
-                        return info.GetSubService() == ItemClass.SubService.PublicTransportPost;
+                    case ItemClass.Service.Road:
+                        return (
+                            info.GetAI() is OutsideConnectionAI ||
+                            info.GetSubService() == ItemClass.SubService.PublicTransportPost);
 
                     case ItemClass.Service.PlayerIndustry:
-                        return true;
+                        return !(
+                            info.GetAI() is AuxiliaryBuildingAI ||
+                            info.GetAI() is DummyBuildingAI ||
+                            info.GetAI() is MainIndustryBuildingAI);
 
                     default:
                         return false;

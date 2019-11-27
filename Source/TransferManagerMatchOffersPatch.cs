@@ -99,9 +99,6 @@ namespace EnhancedDistrictServices
                 while (requestSubIndex < requestSubCount)
                 {
                     var requestOffer = requestOffers[requestCountIndex * 256 + requestSubIndex];
-                    var requestHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
-                    var requestDistrict = TransferManagerInfo.GetDistrict(requestHomeBuilding);
-
                     var requestPosition = requestOffer.Position;
                     int requestAmount = requestOffer.Amount;
 
@@ -124,11 +121,13 @@ namespace EnhancedDistrictServices
                                 break;
                             }
 
+                            /*
                             // Do not match outside to outside offers, because it clogs up the cargo harbors.
                             if (priorityOut == 0 && priorityIn == 0)
                             {
                                 break;
                             }
+                            */
 
                             int responseCountIndex = (int)material * 8 + priorityIn;
                             int responseSubCount = responseCount[responseCountIndex];
@@ -136,6 +135,7 @@ namespace EnhancedDistrictServices
                             for (int responseSubIndex = 0; responseSubIndex < responseSubCount; ++responseSubIndex)
                             {
                                 TransferManager.TransferOffer responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
+                                // Logger.Log($"TransferManager: request={ToString(ref requestOffer, material)}, response={ToString(ref responseOffer, material)}");
 
                                 if (requestOffer.m_object == responseOffer.m_object)
                                 {
@@ -152,27 +152,14 @@ namespace EnhancedDistrictServices
                                     Logger.Log($"TransferManager::MatchOffersClosest: Considering {ToString(ref responseOffer, material)}!");
                                 }
 
-                                if (IsValidDistrictOffer(requestDistrict, ref responseOffer))
+                                if (!isSupplyChainOffer && !IsValidDistrictOffer(ref requestOffer, ref responseOffer))
                                 {
-                                    // Awesome, from a district restrictions perspective, we can service the offer.
-                                    // But also check for supply chain restrictions.
-                                    if (isSupplyChainOffer && !IsValidSupplyChainOffer(ref responseOffer, ref requestOffer, allowForSpecifiedConnectionOnly: false))
-                                    {
-                                        continue;
-                                    }
+                                    continue;
                                 }
-                                else // Not valid district offer ...
+
+                                if (isSupplyChainOffer && !IsValidSupplyChainOffer(ref requestOffer, ref responseOffer))
                                 {
-                                    // Cannot service from a district restrictions perspective.
-                                    // But can we still service it from a supply chain perspective?
-                                    if (isSupplyChainOffer && IsValidSupplyChainOffer(ref responseOffer, ref requestOffer, allowForSpecifiedConnectionOnly: true))
-                                    {
-                                        // Great, allow the match.
-                                    }
-                                    else
-                                    {
-                                        continue;
-                                    }
+                                    continue;
                                 }
 
                                 var distanceSquared = Vector3.SqrMagnitude(responseOffer.Position - requestPosition);
@@ -290,34 +277,31 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
-        /// Returns true of the given offer can service the given district.
+        /// Returns true if we can potentially match the two given offers.
         /// </summary>
-        /// <param name="district"></param>
-        /// <param name="offer"></param>
+        /// <param name="requestOffer">i.e. offer by a student, residential, commerical building</param>
+        /// <param name="responseOffer">i.e. offer by landfill, hospital, police</param>
         /// <returns></returns>
-        private static bool IsValidDistrictOffer(byte district, ref TransferManager.TransferOffer offer)
+        private static bool IsValidDistrictOffer(ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer)
         {
-            var homeBuilding = TransferManagerInfo.GetHomeBuilding(ref offer);
-
-            if (homeBuilding == 0)
+            var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
+            if (responseBuilding == 0 || !TransferManagerInfo.IsDistrictServicesBuilding(responseBuilding))
             {
                 return true;
             }
 
-            if (Constraints.AllLocalAreas(homeBuilding))
+            if (Constraints.AllLocalAreas(responseBuilding))
             {
                 return true;
             }
 
-            var districtsServed = Constraints.DistrictServiced(homeBuilding);
-            if (districtsServed == null)
-            {
-                return false;
-            }
+            var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
+            var requestDistrict = TransferManagerInfo.GetDistrict(requestBuilding);
 
-            for (int i = 0; i < districtsServed.Count; i++)
+            var responseDistrictsServed = Constraints.DistrictServiced(responseBuilding);
+            for (int i = 0; i < responseDistrictsServed?.Count; i++)
             {
-                if (districtsServed[i] == (int)district)
+                if (responseDistrictsServed[i] == (int)requestDistrict)
                 {
                     return true;
                 }
@@ -327,76 +311,81 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
-        /// Returns true we can match the two given offers, given outside connection and/or supply chain constraints.
+        /// Returns true if we can potentially match the two given offers.
         /// </summary>
-        /// <param name="outgoingOffer"></param>
-        /// <param name="incomingOffer"></param>
-        /// <param name="allowForSpecifiedConnectionOnly"></param>
+        /// <param name="requestOffer">consumer of goods</param>
+        /// <param name="responseOffer">producer of goods</param>
         /// <returns></returns>
-        private static bool IsValidSupplyChainOffer(ref TransferManager.TransferOffer outgoingOffer, ref TransferManager.TransferOffer incomingOffer, bool allowForSpecifiedConnectionOnly)
+        private static bool IsValidSupplyChainOffer(ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer)
         {
-            var outgoingHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref outgoingOffer);
-            var incomingHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref incomingOffer);
-
-            if (outgoingHomeBuilding == 0 || incomingHomeBuilding == 0)
+            var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
+            if (responseBuilding == 0 || !TransferManagerInfo.IsDistrictServicesBuilding(responseBuilding))
             {
-                // Default to false ...
-                return false;
+                return true;
             }
 
-            var outgoingBuildingsServed = Constraints.SupplyDestinations(outgoingHomeBuilding);
-            var incomingOfferRestricted = false;
-            if (Constraints.SupplySources(incomingHomeBuilding)?.Count > 0)
+            // See if the request is from an outside connection ...
+            var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
+            var responseSupplyDestinations = Constraints.SupplyDestinations(responseBuilding);
+            if (TransferManagerInfo.IsOutsideOffer(ref requestOffer))
             {
-                incomingOfferRestricted = true;
+                if (Constraints.OutsideConnections(responseBuilding))
+                {
+                    return true;
+                }
+                else 
+                {
+                    // This method not advertised yet ... we can also allow the outside connection's building id if we 
+                    // specify it in the supply chain out field.
+                    if (responseSupplyDestinations?.Count > 0)
+                    {
+                        for (int i = 0; i < responseSupplyDestinations.Count; i++)
+                        {
+                            if (responseSupplyDestinations[i] == (int)requestBuilding)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+
+                    return false;
+                }
             }
 
-            if (!allowForSpecifiedConnectionOnly)
+            // All requests are now guaranteed to be local.
+            // Next see if all local areas are served.
+            if (Constraints.AllLocalAreas(responseBuilding))
             {
-                if (outgoingBuildingsServed == null && !incomingOfferRestricted)
+                // Serve only if the request is not supply chain restricted.
+                // Otherwise, we'll need to check below if any existing supply chain restriction is tied to the response building.
+                if (Constraints.SupplySources(requestBuilding) == null || Constraints.SupplySources(requestBuilding).Count == 0)
                 {
                     return true;
                 }
             }
 
-            bool AllowOutsideConnections(ushort homeBuilding)
+            // Now check supply chain restrictions.
+            if (responseSupplyDestinations?.Count > 0)
             {
-                if (!TransferManagerInfo.IsDistrictServicesBuilding(homeBuilding))
+                for (int i = 0; i < responseSupplyDestinations.Count; i++)
                 {
-                    return true;
-                }
-
-                if (Constraints.OutsideConnections(homeBuilding))
-                {
-                    return true;
-                }
-
-                return false;
-            }
-
-            if (outgoingBuildingsServed == null)
-            {
-                if (TransferManagerInfo.IsOutsideOffer(ref outgoingOffer))
-                {
-                    return AllowOutsideConnections(incomingHomeBuilding);
-                }
-
-                if (TransferManagerInfo.IsOutsideOffer(ref incomingOffer))
-                {
-                    return AllowOutsideConnections(outgoingHomeBuilding);
+                    if (responseSupplyDestinations[i] == (int)requestBuilding)
+                    {
+                        return true;
+                    }
                 }
             }
-
-            if (outgoingBuildingsServed == null || !incomingOfferRestricted)
+            else // No supply chain restrictions, so now apply district restrictions.
             {
-                return false;
-            }
+                var requestDistrict = TransferManagerInfo.GetDistrict(requestBuilding);
 
-            for (int i = 0; i < outgoingBuildingsServed.Count; i++)
-            {
-                if (outgoingBuildingsServed[i] == (int)incomingHomeBuilding)
+                var responseDistrictsServed = Constraints.DistrictServiced(responseBuilding);
+                for (int i = 0; i < responseDistrictsServed?.Count; i++)
                 {
-                    return true;
+                    if (responseDistrictsServed[i] == (int)requestDistrict)
+                    {
+                        return true;
+                    }
                 }
             }
 
