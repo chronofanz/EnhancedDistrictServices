@@ -375,6 +375,10 @@ namespace EnhancedDistrictServices
                     }
                 }
             }
+            else if (Constraints.SupplySources(requestBuilding)?.Count > 0)
+            {
+                return false;
+            }
             else // No supply chain restrictions, so now apply district restrictions.
             {
                 var requestDistrict = TransferManagerInfo.GetDistrict(requestBuilding);
