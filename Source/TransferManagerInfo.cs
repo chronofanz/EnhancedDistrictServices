@@ -37,6 +37,24 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
+        /// Returns the district of the offer's home building or segment.
+        /// Should return 0 if the offer does not originate from a district.
+        /// </summary>
+        /// <returns></returns>
+        public static byte GetDistrict(ref TransferManager.TransferOffer offer)
+        {
+            if (offer.NetSegment != 0)
+            {
+                var position = NetManager.instance.m_segments.m_buffer[offer.NetSegment].m_middlePosition;
+                return DistrictManager.instance.GetDistrict(position);
+            }
+            else
+            {
+                return GetDistrict(GetHomeBuilding(ref offer));
+            }
+        }
+
+        /// <summary>
         /// Returns the name of the building.
         /// </summary>
         /// <param name="building"></param>
@@ -48,7 +66,7 @@ namespace EnhancedDistrictServices
 
         /// <summary>
         /// Returns the district of the building.
-        /// Should return 0 if thebuilding is not in a district.
+        /// Should return 0 if the building is not in a district.
         /// </summary>
         /// <returns></returns>
         public static byte GetDistrict(int building)
@@ -205,7 +223,7 @@ namespace EnhancedDistrictServices
             txtItems.Add($"<<Supply Chain Shipments Only To>>");
 
             var buildingNames = Constraints.SupplyDestinations(building)
-                .Select(b => TransferManagerInfo.GetBuildingName(b))
+                .Select(b => $"{GetBuildingName(b)} ({b})")
                 .OrderBy(s => s);
 
             foreach (var buildingName in buildingNames)
@@ -233,7 +251,7 @@ namespace EnhancedDistrictServices
             txtItems.Add($"<<Supply Chain Shipments Only From>>");
 
             var buildingNames = Constraints.SupplySources(building)
-                .Select(b => TransferManagerInfo.GetBuildingName(b))
+                .Select(b => $"{GetBuildingName(b)} ({b})")
                 .OrderBy(s => s);
 
             foreach (var buildingName in buildingNames)
@@ -263,13 +281,14 @@ namespace EnhancedDistrictServices
                 var info = instance.m_buildings.m_buffer[building].Info;
                 switch (info?.GetService())
                 {
+                    case ItemClass.Service.Disaster:
                     case ItemClass.Service.Education:
                     case ItemClass.Service.FireDepartment:
                     case ItemClass.Service.Garbage:
                     case ItemClass.Service.HealthCare:
                     case ItemClass.Service.PoliceDepartment:
                         return !(
-                            info.GetAI() is HelicopterDepotAI ||
+                            info.GetAI() is DummyBuildingAI ||
                             info.GetAI() is LibraryAI ||
                             info.GetAI() is SaunaAI);
 
@@ -280,16 +299,24 @@ namespace EnhancedDistrictServices
                             info.GetSubService() == ItemClass.SubService.PlayerEducationUniversity);
 
                     case ItemClass.Service.PublicTransport:
+                        return (
+                            info.GetSubService() == ItemClass.SubService.PublicTransportPost);
+
                     case ItemClass.Service.Road:
                         return (
-                            info.GetAI() is OutsideConnectionAI ||
-                            info.GetSubService() == ItemClass.SubService.PublicTransportPost);
+                            info.GetAI() is MaintenanceDepotAI ||
+                            info.GetAI() is OutsideConnectionAI);
 
                     case ItemClass.Service.PlayerIndustry:
                         return !(
                             info.GetAI() is AuxiliaryBuildingAI ||
                             info.GetAI() is DummyBuildingAI ||
                             info.GetAI() is MainIndustryBuildingAI);
+
+                    case ItemClass.Service.Water:
+                        return (
+                            info.GetAI() is WaterFacilityAI waterFacilityAI &&
+                            waterFacilityAI.m_pumpingVehicles > 0);
 
                     default:
                         return false;
@@ -364,6 +391,23 @@ namespace EnhancedDistrictServices
                 material == TransferManager.TransferReason.Fire ||
                 material == TransferManager.TransferReason.Mail ||
 
+                material == TransferManager.TransferReason.RoadMaintenance ||
+
+                material == TransferManager.TransferReason.ForestFire ||
+                material == TransferManager.TransferReason.Collapsed ||
+                material == TransferManager.TransferReason.Collapsed2 ||
+                material == TransferManager.TransferReason.Fire2 ||
+                material == TransferManager.TransferReason.Sick2 ||
+                material == TransferManager.TransferReason.FloodWater ||
+                material == TransferManager.TransferReason.EvacuateA ||
+                material == TransferManager.TransferReason.EvacuateB ||
+                material == TransferManager.TransferReason.EvacuateC ||
+                material == TransferManager.TransferReason.EvacuateD ||
+                material == TransferManager.TransferReason.EvacuateVipA ||
+                material == TransferManager.TransferReason.EvacuateVipB ||
+                material == TransferManager.TransferReason.EvacuateVipC ||
+                material == TransferManager.TransferReason.EvacuateVipD ||
+
                 material == TransferManager.TransferReason.Student1 ||
                 material == TransferManager.TransferReason.Student2 ||
 
@@ -411,6 +455,38 @@ namespace EnhancedDistrictServices
         public static bool IsOutsideOffer(ref TransferManager.TransferOffer offer)
         {
             return IsOutsideBuilding(GetHomeBuilding(ref offer));
+        }
+
+        /// <summary>
+        /// Helper method for dumping the contents of an offer, for debugging purposes.
+        /// </summary>
+        /// <param name="offer"></param>
+        /// <param name="material"></param>
+        /// <returns></returns>
+        public static string ToString(ref TransferManager.TransferOffer offer, TransferManager.TransferReason material)
+        {
+            if (offer.Building != 0)
+            {
+                return $"Id=B{offer.Building}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
+            }
+
+            if (offer.Citizen != 0)
+            {
+                var homeBuilding = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen].m_homeBuilding;
+                return $"Id=C{offer.Citizen}, Home=B{homeBuilding}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
+            }
+
+            if (offer.Vehicle != 0)
+            {
+                return $"Id=V{offer.Vehicle}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
+            }
+
+            if (offer.NetSegment != 0)
+            {
+                return $"Id=S{offer.NetSegment}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
+            }
+
+            return $"Id=0, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
         }
     }
 }

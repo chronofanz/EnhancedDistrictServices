@@ -53,13 +53,18 @@ namespace EnhancedDistrictServices
                     return false;
                 }
 
-                if (TransferManagerInfo.IsDistrictOffer(material))
+                // Road maintenance is switched around ...
+                if (material == TransferManager.TransferReason.RoadMaintenance)
+                {
+                    MatchOffersClosest(material, requestCount: m_incomingCount, requestOffers: m_incomingOffers, responseCount: m_outgoingCount, responseOffers: m_outgoingOffers, isSupplyChainOffer: false, verbose: false);
+                    return false;
+                }
+                else if (TransferManagerInfo.IsDistrictOffer(material))
                 {
                     MatchOffersClosest(material, requestCount: m_outgoingCount, requestOffers: m_outgoingOffers, responseCount: m_incomingCount, responseOffers: m_incomingOffers, isSupplyChainOffer: false, verbose: false);
                     return false;
                 }
-
-                if (TransferManagerInfo.IsSupplyChainOffer(material))
+                else if (TransferManagerInfo.IsSupplyChainOffer(material))
                 {
                     MatchOffersClosest(material, requestCount: m_incomingCount, requestOffers: m_incomingOffers, responseCount: m_outgoingCount, responseOffers: m_outgoingOffers, isSupplyChainOffer: true, verbose: false);
                     return false;
@@ -102,11 +107,6 @@ namespace EnhancedDistrictServices
                     var requestPosition = requestOffer.Position;
                     int requestAmount = requestOffer.Amount;
 
-                    if (verbose)
-                    {
-                        Logger.Log($"TransferManager::MatchOffersClosest: Matching offer for {ToString(ref requestOffer, material)}!");
-                    }
-
                     do
                     {
                         int bestPriorityIn = -1;
@@ -135,7 +135,11 @@ namespace EnhancedDistrictServices
                             for (int responseSubIndex = 0; responseSubIndex < responseSubCount; ++responseSubIndex)
                             {
                                 TransferManager.TransferOffer responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
-                                // Logger.Log($"TransferManager: request={ToString(ref requestOffer, material)}, response={ToString(ref responseOffer, material)}");
+
+                                if (verbose)
+                                {
+                                    Logger.Log($"TransferManager::MatchOffersClosest: request={TransferManagerInfo.ToString(ref requestOffer, material)}, response={TransferManagerInfo.ToString(ref responseOffer, material)}");
+                                }
 
                                 if (requestOffer.m_object == responseOffer.m_object)
                                 {
@@ -145,11 +149,6 @@ namespace EnhancedDistrictServices
                                 if (TransferManagerInfo.GetHomeBuilding(ref requestOffer) == TransferManagerInfo.GetHomeBuilding(ref responseOffer))
                                 {
                                     continue;
-                                }
-
-                                if (verbose)
-                                {
-                                    Logger.Log($"TransferManager::MatchOffersClosest: Considering {ToString(ref responseOffer, material)}!");
                                 }
 
                                 if (!isSupplyChainOffer && !IsValidDistrictOffer(ref requestOffer, ref responseOffer))
@@ -199,7 +198,7 @@ namespace EnhancedDistrictServices
 
                             if (verbose)
                             {
-                                Logger.Log($"TransferManager::MatchOffersClosest: Matched {ToString(ref incomingOffer, material)}!");
+                                Logger.Log($"TransferManager::MatchOffersClosest: Matched {TransferManagerInfo.ToString(ref incomingOffer, material)}!");
                             }
 
                             int delta = Mathf.Min(requestAmount, incomingAmount);
@@ -229,9 +228,9 @@ namespace EnhancedDistrictServices
                             // Don't warn if we could not satisfy an outside connection's offer
                             if (!TransferManagerInfo.IsOutsideOffer(ref requestOffer))
                             {
-                                if (verbose || requestOffer.Priority > 2)
+                                if (verbose)
                                 {
-                                    Logger.LogWarning($"TransferManager::MatchOffersClosest: Could not service request offer {ToString(ref requestOffer, material)}!");
+                                    Logger.LogWarning($"TransferManager::MatchOffersClosest: Could not service request offer {TransferManagerInfo.ToString(ref requestOffer, material)}!");
                                 }
                             }
 
@@ -295,9 +294,9 @@ namespace EnhancedDistrictServices
                 return true;
             }
 
-            var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
-            var requestDistrict = TransferManagerInfo.GetDistrict(requestBuilding);
-
+            // The call to TransferManagerInfo.GetDistrict applies to offers that are come from buildings, service 
+            // vehicles, citizens, AND netSegments.  The latter needs to be considered for road maintenance.
+            var requestDistrict = TransferManagerInfo.GetDistrict(ref requestOffer);
             var responseDistrictsServed = Constraints.DistrictServiced(responseBuilding);
             for (int i = 0; i < responseDistrictsServed?.Count; i++)
             {
@@ -375,7 +374,7 @@ namespace EnhancedDistrictServices
                     }
                 }
             }
-            else if (Constraints.SupplySources(requestBuilding)?.Count > 0)
+            else if (Constraints.SupplySources(requestBuilding) != null && Constraints.SupplySources(requestBuilding).Count > 0)
             {
                 return false;
             }
@@ -394,33 +393,6 @@ namespace EnhancedDistrictServices
             }
 
             return false;
-        }
-
-        /// <summary>
-        /// Helper method for dumping the contents of an offer, for debugging purposes.
-        /// </summary>
-        /// <param name="offer"></param>
-        /// <param name="material"></param>
-        /// <returns></returns>
-        private static string ToString(ref TransferManager.TransferOffer offer, TransferManager.TransferReason material)
-        {
-            if (offer.Building != 0)
-            {
-                return $"Id=B{offer.Building}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
-            }
-
-            if (offer.Citizen != 0)
-            {
-                var homeBuilding = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen].m_homeBuilding;
-                return $"Id=C{offer.Citizen}, Home=B{homeBuilding}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
-            }
-
-            if (offer.Vehicle != 0)
-            {
-                return $"Id=V{offer.Vehicle}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
-            }
-
-            return $"Id=0, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
         }
 
         #region Stock Code
