@@ -10,6 +10,8 @@ namespace EnhancedDistrictServices
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
+            // Logger.Log($"TransferManager::AddIncomingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
+
             // Increase the rate at which we can dispatch vehicles ...
             if (offer.Building != 0 && offer.Vehicle == 0)
             {
@@ -110,6 +112,7 @@ namespace EnhancedDistrictServices
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)        
         {
+            // Logger.Log($"TransferManager::AddOutgoingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
             return true;
         }

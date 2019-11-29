@@ -45,8 +45,8 @@ namespace EnhancedDistrictServices
         protected override void OnDisable()
         {
             base.OnDisable();
-            EnhancedDistrictServicesUIPanel.Instance.UIDistrictsDropDown.ClosePopup();
-            EnhancedDistrictServicesUIPanel.Instance.Hide();
+            EnhancedDistrictServicesUIPanel.Instance?.UIDistrictsDropDown?.ClosePopup();
+            EnhancedDistrictServicesUIPanel.Instance?.Hide();
         }
 
         #endregion
@@ -89,6 +89,13 @@ namespace EnhancedDistrictServices
 
             var building = m_hoverInstance.Building;
             if (m_toolController.IsInsideUI || !Cursor.visible || building == 0)
+            {
+                ShowToolInfo(false, null, Vector3.zero);
+                return;
+            }
+
+            // Don't show info for dummy or sub buildings.
+            if (BuildingManager.instance.m_buildings.m_buffer[building].Info.GetAI() is DummyBuildingAI)
             {
                 ShowToolInfo(false, null, Vector3.zero);
                 return;
