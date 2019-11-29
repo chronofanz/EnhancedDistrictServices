@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ColossalFramework;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -35,113 +36,134 @@ namespace EnhancedDistrictServices
                     return;
                 }
 
-                var info = BuildingManager.instance.m_buildings.m_buffer[m_currBuildingId].Info;
-                var service = info.GetService();
-                var subService = info.GetSubService();
-                var ai = info.GetAI().GetType();
-
-                bool IsSameBuildingType(int buildingId)
+                Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    var other_info = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
-                    if (info.GetAI().GetType() == typeof(OutsideConnectionAI))
-                    {
-                        return other_info.GetAI().GetType() == typeof(OutsideConnectionAI);
-                    }
-                    else
-                    {
-                        return
-                            other_info.GetService() == info.GetService() &&
-                            other_info.GetSubService() == info.GetSubService() &&
-                            other_info.GetAI().GetType() == info.GetAI().GetType();
-                    }
-                }
+                    var info = BuildingManager.instance.m_buildings.m_buffer[m_currBuildingId].Info;
+                    var service = info.GetService();
+                    var subService = info.GetSubService();
+                    var ai = info.GetAI().GetType();
 
-                for (int buildingId = m_currBuildingId + 1; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-                {
-                    if (IsSameBuildingType(buildingId))
+                    bool IsSameBuildingType(int buildingId)
                     {
-                        SetBuilding((ushort)buildingId);
-                        UpdatePositionToBuilding((ushort)buildingId);
-                        return;
+                        var other_info = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
+                        if (info.GetAI().GetType() == typeof(OutsideConnectionAI))
+                        {
+                            return other_info.GetAI().GetType() == typeof(OutsideConnectionAI);
+                        }
+                        else
+                        {
+                            return
+                                other_info.GetService() == info.GetService() &&
+                                other_info.GetSubService() == info.GetSubService() &&
+                                other_info.GetAI().GetType() == info.GetAI().GetType();
+                        }
                     }
-                }
 
-                for (int buildingId = 1; buildingId < m_currBuildingId; buildingId++)
-                {
-                    if (IsSameBuildingType(buildingId))
+                    for (int buildingId = m_currBuildingId + 1; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
                     {
-                        SetBuilding((ushort)buildingId);
-                        UpdatePositionToBuilding((ushort)buildingId);
-                        return;
+                        if (IsSameBuildingType(buildingId))
+                        {
+                            SetBuilding((ushort)buildingId);
+                            UpdatePositionToBuilding((ushort)buildingId);
+                            return;
+                        }
                     }
-                }
+
+                    for (int buildingId = 1; buildingId < m_currBuildingId; buildingId++)
+                    {
+                        if (IsSameBuildingType(buildingId))
+                        {
+                            SetBuilding((ushort)buildingId);
+                            UpdatePositionToBuilding((ushort)buildingId);
+                            return;
+                        }
+                    }
+                });
             };
 
             UIBuildingId.eventClicked += (c, p) => 
             {
-                UIBuildingId.text = "";
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    UIBuildingId.text = "";
+                });
             };
 
             UIBuildingId.eventTextCancelled += (c, p) =>
             {
-                UpdateUIBuildingId();
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    UpdateUIBuildingId();
+                });
             };
 
             UIBuildingId.eventTextSubmitted += (c, p) =>
             {
-                if (ushort.TryParse(UIBuildingId.text, out ushort buildingId) &&
-                    TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
+                Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
-                    CameraController.SetTarget(new InstanceID { Building = buildingId }, position, false);
+                    if (ushort.TryParse(UIBuildingId.text, out ushort buildingId) &&
+                        TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
+                    {
+                        var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
+                        CameraController.SetTarget(new InstanceID { Building = buildingId }, position, false);
 
-                    SetBuilding(buildingId);
-                    UpdatePositionToBuilding(buildingId);
-                }
-                else
-                {
-                    UpdateUIBuildingId();
-                }
+                        SetBuilding(buildingId);
+                        UpdatePositionToBuilding(buildingId);
+                    }
+                    else
+                    {
+                        UpdateUIBuildingId();
+                    }
+                });
             };
 
             UIServices.tooltip = "(Experimental) Click to select outside connection.";
             UIServices.eventClicked += (c, p) =>
             {
-                for (int buildingId = m_currBuildingId + 1; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
+                Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    var other_info = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
-                    if (other_info.GetAI() is OutsideConnectionAI)
+                    for (int buildingId = m_currBuildingId + 1; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
                     {
-                        SetBuilding((ushort)buildingId);
-                        UpdatePositionToBuilding((ushort)buildingId);
-                        return;
+                        var other_info = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
+                        if (other_info.GetAI() is OutsideConnectionAI)
+                        {
+                            SetBuilding((ushort)buildingId);
+                            UpdatePositionToBuilding((ushort)buildingId);
+                            return;
+                        }
                     }
-                }
 
-                for (int buildingId = 1; buildingId < m_currBuildingId; buildingId++)
-                {
-                    var other_info = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
-                    if (other_info.GetAI() is OutsideConnectionAI)
+                    for (int buildingId = 1; buildingId < m_currBuildingId; buildingId++)
                     {
-                        SetBuilding((ushort)buildingId);
-                        UpdatePositionToBuilding((ushort)buildingId);
-                        return;
+                        var other_info = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
+                        if (other_info.GetAI() is OutsideConnectionAI)
+                        {
+                            SetBuilding((ushort)buildingId);
+                            UpdatePositionToBuilding((ushort)buildingId);
+                            return;
+                        }
                     }
-                }
+                });
             };
 
             UIAllLocalAreasCheckBox.eventCheckChanged += (c, t) =>
             {
-                Constraints.SetAllLocalAreas(m_currBuildingId, t);
-                UpdateUISupplyChainOut();
-                UpdateUIDistrictsDropdown();
-                UpdateUIDistrictsSummary();
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    Constraints.SetAllLocalAreas(m_currBuildingId, t);
+                    UpdateUISupplyChainOut();
+                    UpdateUIDistrictsDropdown();
+                    UpdateUIDistrictsSummary();
+                });
             };
 
             UIAllOutsideConnectionsCheckBox.eventCheckChanged += (c, t) =>
             {
-                Constraints.SetAllOutsideConnections(m_currBuildingId, t);
-                UpdateUIDistrictsSummary();
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    Constraints.SetAllOutsideConnections(m_currBuildingId, t);
+                    UpdateUIDistrictsSummary();
+                });
             };
 
             UISupplyChainIn.eventClicked += (c, p) =>
@@ -150,45 +172,51 @@ namespace EnhancedDistrictServices
 
             UISupplyChainIn.eventTextCancelled += (c, p) =>
             {
-                UpdateUISupplyChainIn();
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    UpdateUISupplyChainIn();
+                });
             };
 
             UISupplyChainIn.eventTextSubmitted += (c, p) =>
             {
-                if (!TransferManagerInfo.IsSupplyChainBuilding((ushort)m_currBuildingId))
+                Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    UpdateUISupplyChainIn();
-                    return;
-                }
-
-                if (string.IsNullOrEmpty(UISupplyChainIn.text.Trim()))
-                {
-                    Constraints.RemoveAllSupplyChainConnectionsToDestination(m_currBuildingId);
-                }
-                else
-                {
-                    try
+                    if (!TransferManagerInfo.IsSupplyChainBuilding((ushort)m_currBuildingId))
                     {
-                        // TODO, FIXME: Do this in a single transaction.
-                        Constraints.RemoveAllSupplyChainConnectionsToDestination(m_currBuildingId);
+                        UpdateUISupplyChainIn();
+                        return;
+                    }
 
-                        var sources = UISupplyChainIn.text.Split(',').Select(s => ushort.Parse(s));
-                        foreach (var source in sources)
+                    if (string.IsNullOrEmpty(UISupplyChainIn.text.Trim()))
+                    {
+                        Constraints.RemoveAllSupplyChainConnectionsToDestination(m_currBuildingId);
+                    }
+                    else
+                    {
+                        try
                         {
-                            if (TransferManagerInfo.IsSupplyChainBuilding(source))
+                            // TODO, FIXME: Do this in a single transaction.
+                            Constraints.RemoveAllSupplyChainConnectionsToDestination(m_currBuildingId);
+
+                            var sources = UISupplyChainIn.text.Split(',').Select(s => ushort.Parse(s));
+                            foreach (var source in sources)
                             {
-                                Constraints.AddSupplyChainConnection(source, m_currBuildingId);
+                                if (TransferManagerInfo.IsSupplyChainBuilding(source))
+                                {
+                                    Constraints.AddSupplyChainConnection(source, m_currBuildingId);
+                                }
                             }
                         }
+                        catch
+                        {
+                        }
                     }
-                    catch
-                    {
-                    }
-                }
 
-                UpdateUISupplyChainIn();
-                UpdateUIDistrictsDropdown();
-                UpdateUIDistrictsSummary();
+                    UpdateUISupplyChainIn();
+                    UpdateUIDistrictsDropdown();
+                    UpdateUIDistrictsSummary();
+                });
             };
 
             UISupplyChainOut.eventClicked += (c, p) =>
@@ -197,59 +225,68 @@ namespace EnhancedDistrictServices
 
             UISupplyChainOut.eventTextCancelled += (c, p) =>
             {
-                UpdateUISupplyChainOut();
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    UpdateUISupplyChainOut();
+                });
             };
 
             UISupplyChainOut.eventTextSubmitted += (c, p) =>
             {
-                if (!TransferManagerInfo.IsSupplyChainBuilding((ushort)m_currBuildingId))
+                Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    UpdateUISupplyChainOut();
-                    return;
-                }
-
-                if (string.IsNullOrEmpty(UISupplyChainOut.text.Trim()))
-                {
-                    Constraints.RemoveAllSupplyChainConnectionsFromSource(m_currBuildingId);
-                }
-                else
-                {
-                    try
+                    if (!TransferManagerInfo.IsSupplyChainBuilding((ushort)m_currBuildingId))
                     {
-                        // TODO, FIXME: Do this in a single transaction.
-                        Constraints.RemoveAllSupplyChainConnectionsFromSource(m_currBuildingId);
+                        UpdateUISupplyChainOut();
+                        return;
+                    }
 
-                        var destinations = UISupplyChainOut.text.Split(',').Select(s => ushort.Parse(s));
-                        foreach (var destination in destinations)
+                    if (string.IsNullOrEmpty(UISupplyChainOut.text.Trim()))
+                    {
+                        Constraints.RemoveAllSupplyChainConnectionsFromSource(m_currBuildingId);
+                    }
+                    else
+                    {
+                        try
                         {
-                            if (TransferManagerInfo.IsSupplyChainBuilding(destination))
+                            // TODO, FIXME: Do this in a single transaction.
+                            Constraints.RemoveAllSupplyChainConnectionsFromSource(m_currBuildingId);
+
+                            var destinations = UISupplyChainOut.text.Split(',').Select(s => ushort.Parse(s));
+                            foreach (var destination in destinations)
                             {
-                                Constraints.AddSupplyChainConnection(m_currBuildingId, destination);
+                                if (TransferManagerInfo.IsSupplyChainBuilding(destination))
+                                {
+                                    Constraints.AddSupplyChainConnection(m_currBuildingId, destination);
+                                }
                             }
                         }
+                        catch
+                        {
+                        }
                     }
-                    catch
-                    {
-                    }
-                }
 
-                UpdateUISupplyChainOut();
-                UpdateUIDistrictsDropdown();
-                UpdateUIDistrictsSummary();
+                    UpdateUISupplyChainOut();
+                    UpdateUIDistrictsDropdown();
+                    UpdateUIDistrictsSummary();
+                });
             };
 
             UIDistrictsDropDown.eventCheckedChanged += (c, t) =>
             {
-                if (UIDistrictsDropDown.GetChecked(t))
+                Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    Constraints.AddDistrictServiced(m_currBuildingId, m_districtsMapping[t]);
-                }
-                else
-                {
-                    Constraints.RemoveDistrictServiced(m_currBuildingId, m_districtsMapping[t]);
-                }
+                    if (UIDistrictsDropDown.GetChecked(t))
+                    {
+                        Constraints.AddDistrictServiced(m_currBuildingId, m_districtsMapping[t]);
+                    }
+                    else
+                    {
+                        Constraints.RemoveDistrictServiced(m_currBuildingId, m_districtsMapping[t]);
+                    }
 
-                UpdateUIDistrictsSummary();
+                    UpdateUIDistrictsSummary();
+                });
             };
         }
 
