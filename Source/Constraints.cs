@@ -405,13 +405,13 @@ namespace EnhancedDistrictServices
         private static void RemoveSupplyChainConnection(int source, int destination)
         {
             m_supplyDestinations[source]?.Remove(destination);
-            if (m_supplyDestinations[source]?.Count > 0)
+            if (m_supplyDestinations[source]?.Count == 0)
             {
                 m_supplyDestinations[source] = null;
             }
 
             m_supplySources[destination]?.Remove(source);
-            if (m_supplySources[destination]?.Count > 0)
+            if (m_supplySources[destination]?.Count == 0)
             {
                 m_supplySources[destination] = null;
             }
@@ -453,7 +453,7 @@ namespace EnhancedDistrictServices
             {
                 if (m_supplyDestinations[b] != null && m_supplyDestinations[b].Contains(buildingId))
                 {
-                    RemoveSupplyChainConnection((int)b, buildingId);
+                    RemoveSupplyChainConnection(b, buildingId);
                     removed = true;
                 }
             }

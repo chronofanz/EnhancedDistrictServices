@@ -375,7 +375,7 @@ namespace EnhancedDistrictServices
                     }
                 }
             }
-            else if (Constraints.SupplySources(requestBuilding)?.Count > 0)
+            else if (Constraints.SupplySources(requestBuilding) != null && Constraints.SupplySources(requestBuilding).Count > 0)
             {
                 return false;
             }
