@@ -181,7 +181,18 @@ namespace EnhancedDistrictServices
             var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[building].Info;
             var service = buildingInfo.GetService();
             var subService = buildingInfo.GetSubService();
-            if (service == ItemClass.Service.PlayerIndustry)
+            if (buildingInfo.GetAI() is OutsideConnectionAI)
+            {
+                if (buildingInfo.GetService() == ItemClass.Service.Road)
+                {
+                    return $"Service: OutsideConnection (Road)";
+                }
+                else
+                {
+                    return $"Service: OutsideConnection ({subService})";
+                }
+            }
+            else if (service == ItemClass.Service.PlayerIndustry)
             {
                 if (buildingInfo.GetAI() is ExtractingFacilityAI extractingFacilityAI)
                 {
@@ -300,7 +311,8 @@ namespace EnhancedDistrictServices
 
                     case ItemClass.Service.PublicTransport:
                         return (
-                            info.GetSubService() == ItemClass.SubService.PublicTransportPost);
+                            info.GetSubService() == ItemClass.SubService.PublicTransportPost ||
+                            info.GetAI() is OutsideConnectionAI);
 
                     case ItemClass.Service.Road:
                         return (
