@@ -77,13 +77,16 @@ namespace EnhancedDistrictServices
         private UIComponent m_FullscreenContainer;
 
         public UILabel UITitle;
+        public UILabel UIBuildingIdLabel;
         public UITextField UIBuildingId;
         public UILabel UIHomeDistrict;
         public UILabel UIServices;
-        public UITextField UISupplyChainIn;
-        public UITextField UISupplyChainOut;
         public UICheckBox UIAllLocalAreasCheckBox;
         public UICheckBox UIAllOutsideConnectionsCheckBox;
+        public UILabel UISupplyChainInLabel;
+        public UITextField UISupplyChainIn;
+        public UILabel UISupplyChainOutLabel;
+        public UITextField UISupplyChainOut;
         public UILabel UIDistrictsSummary;
         public UICheckboxDropDown UIDistrictsDropDown;
 
@@ -111,14 +114,18 @@ namespace EnhancedDistrictServices
 
             UITitle = AttachUILabelTo(this, 3, 3);
             UITitle.textAlignment = UIHorizontalAlignment.Center;
+            UITitle.textScale = 0.9f;
 
-            UIBuildingId = AttachUICompositeTextFieldTo(this, 3, 23, 78, $"Building Id: ");
+            UIBuildingIdLabel = AttachUILabelTo(this, 3, 23, $"Building Id: ");
+            UIBuildingId = AttachUITextFieldTo(this, 3, 23, 78);
             UIHomeDistrict = AttachUILabelTo(this, 3, 43);
             UIServices = AttachUILabelTo(this, 3, 63);
-            UISupplyChainIn = AttachUICompositeTextFieldTo(this, 3, 83, 111, $"Supply Chain In: ");
-            UISupplyChainOut = AttachUICompositeTextFieldTo(this, 3, 103, 123, $"Supply Chain Out: ");
-            UIAllLocalAreasCheckBox = AttachUICheckBoxTo(this, 3, 123);
-            UIAllOutsideConnectionsCheckBox = AttachUICheckBoxTo(this, 3, 143);
+            UIAllLocalAreasCheckBox = AttachUICheckBoxTo(this, 3, 83);
+            UIAllOutsideConnectionsCheckBox = AttachUICheckBoxTo(this, 3, 103);
+            UISupplyChainInLabel = AttachUILabelTo(this, 3, 126, $"Supply Chain In: ");
+            UISupplyChainIn = AttachUITextFieldTo(this, 3, 126, 111);
+            UISupplyChainOutLabel = AttachUILabelTo(this, 3, 146, $"Supply Chain Out: ");
+            UISupplyChainOut = AttachUITextFieldTo(this, 3, 146, 124);
 
             UIDistrictsSummary = AttachUILabelTo(this, 3, 166);
             UIDistrictsSummary.zOrder = 0;
@@ -151,11 +158,10 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
-        /// Move the main camera to the building's position.
+        /// Shift the policies panel to the building.
         /// </summary>
-        /// <param name="worldMousePosition"></param>
         /// <param name="building"></param>
-        public void UpdatePositionToBuilding(ushort building)
+        public void UpdatePanelToBuilding(ushort building)
         {
             if (m_CameraTransform == null)
             {
@@ -186,6 +192,19 @@ namespace EnhancedDistrictServices
             if (vector3_3.y + (double)m_componentHeight > vector2.y)
                 vector3_3.y = vector2.y - m_componentHeight;
             component.relativePosition = vector3_3;
+        }
+
+        /// <summary>
+        /// Move the main camera to the building's position.
+        /// </summary>
+        /// <param name="building"></param>
+        public void UpdatePositionToBuilding(ushort building)
+        {
+            if (TransferManagerInfo.IsDistrictServicesBuilding(building))
+            {
+                var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
+                CameraController.SetTarget(new InstanceID { Building = building }, position, false);
+            }
         }
 
         private void UIDistrictsDropDown_eventDropdownOpen(UICheckboxDropDown checkboxdropdown, UIScrollablePanel popup, ref bool overridden)
@@ -298,18 +317,10 @@ namespace EnhancedDistrictServices
             return dropDown;
         }
 
-        private static UITextField AttachUICompositeTextFieldTo(UIComponent parent, int x, int y, int textFieldOffset, string labelText)
-        {
-            var label = AttachUILabelTo(parent, x, y);
-            label.text = labelText;
-
-            var textField = AttachUITextField(parent, x + textFieldOffset, y + 2, m_componentWidth - (textFieldOffset + 3));
-            return textField;
-        }
-
-        private static UILabel AttachUILabelTo(UIComponent parent, int x, int y)
+        private static UILabel AttachUILabelTo(UIComponent parent, int x, int y, string text = "")
         {
             var label = parent.AddUIComponent<UILabel>();
+            label.text = text;
             label.relativePosition = new Vector3(x, y);
             label.size = new Vector2(m_componentWidth, 20f);
             label.autoSize = false;
@@ -319,11 +330,15 @@ namespace EnhancedDistrictServices
             return label;
         }
 
-        private static UITextField AttachUITextField(UIComponent parent, int x, int y, int width)
+        private static UITextField AttachUITextFieldTo(UIComponent parent, int x, int y, int xOffset)
         {
+            x = x + xOffset;
+            y = y + 2;
+            xOffset = m_componentWidth - (xOffset + 3);
+
             var textField = parent.AddUIComponent<UITextField>();
             textField.relativePosition = new Vector3(x, y);
-            textField.size = new Vector2(width, 14f);
+            textField.size = new Vector2(xOffset, 14f);
             textField.autoSize = false;
 
             textField.builtinKeyNavigation = true;

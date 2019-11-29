@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace EnhancedDistrictServices
@@ -43,21 +44,6 @@ namespace EnhancedDistrictServices
         static Constraints()
         {
             Clear();
-
-            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-            {
-                if (TransferManagerInfo.IsDistrictServicesBuilding(buildingId) || TransferManagerInfo.IsOutsideBuilding(buildingId))
-                {
-                    var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
-
-                    var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
-                    var service = buildingInfo.GetService();
-                    var subService = buildingInfo.GetSubService();
-                    var ai = buildingInfo.GetAI();
-
-                    Logger.Log($"Constraints::Found District Services Building {buildingName} (building={buildingId}, service={service}, subService={subService}, ai={ai})");
-                }
-            }
         }
 
         /// <summary>
@@ -72,6 +58,35 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
+        /// Helper struct for sorting buildings by their names, to make debugging nicer.
+        /// </summary>
+        private struct Building : IComparable<Building>
+        {
+            public string Name { get; set; }
+            public int Id { get; set; }
+
+            public int CompareTo(Building other)
+            {
+                if (Name == null)
+                {
+                    return -1;
+                }
+                else if (other.Name == null)
+                {
+                    return +1;
+                }
+                else if (!string.Equals(Name, other.Name))
+                {
+                    return Name.CompareTo(other.Name);
+                }
+                else
+                {
+                    return Id.CompareTo(other.Id);
+                }
+            }
+        }
+
+        /// <summary>
         /// Load data from given object.
         /// </summary>
         /// <param name="data"></param>
@@ -79,42 +94,56 @@ namespace EnhancedDistrictServices
         {
             Clear();
 
+            var bs = new List<Building>();
             for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
             {
-                var restrictions = data.BuildingToAllLocalAreas[buildingId];
-                SetAllLocalAreas(buildingId, restrictions);
-            }
-
-            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-            {
-                var restrictions = data.BuildingToOutsideConnections[buildingId];
-                SetAllOutsideConnections(buildingId, restrictions);
-            }
-
-            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-            {
-                var restrictions = data.BuildingToBuildingServiced[buildingId];
-
-                if (restrictions != null)
+                if (TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
                 {
-                    foreach (var destination in restrictions)
+                    var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+                    bs.Add(new Building
                     {
-                        AddSupplyChainConnection(buildingId, destination);
-                    }
+                        Name = TransferManagerInfo.GetBuildingName(buildingId),
+                        Id = buildingId
+                    });
                 }
             }
 
-            for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-            {
-                var restrictions = data.BuildingToDistrictServiced[buildingId];
+            bs.Sort();
 
-                if (restrictions != null)
+            foreach (var b in bs)
+            {
+                var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[b.Id].Info;
+                var service = buildingInfo.GetService();
+                var subService = buildingInfo.GetSubService();
+                var ai = buildingInfo.GetAI();
+
+                Logger.Log($"Constraints::LoadData: buildingName={b.Name}, buildingId={b.Id}, service={service}, subService={subService}, ai={ai}");
+
+                var restrictions1 = data.BuildingToAllLocalAreas[b.Id];
+                SetAllLocalAreas(b.Id, restrictions1);
+
+                var restrictions2 = data.BuildingToOutsideConnections[b.Id];
+                SetAllOutsideConnections(b.Id, restrictions2);
+
+                var restrictions3 = data.BuildingToBuildingServiced[b.Id];
+                if (restrictions3 != null)
                 {
-                    foreach (var district in restrictions)
+                    foreach (var destination in restrictions3)
                     {
-                        AddDistrictServiced(buildingId, district);
+                        AddSupplyChainConnection(b.Id, destination);
                     }
                 }
+
+                var restrictions4 = data.BuildingToDistrictServiced[b.Id];
+                if (restrictions4 != null)
+                {
+                    foreach (var district in restrictions4)
+                    {
+                        AddDistrictServiced(b.Id, district);
+                    }
+                }
+
+                Logger.Log("");
             }
         }
 

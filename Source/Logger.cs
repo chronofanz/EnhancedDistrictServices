@@ -54,13 +54,26 @@ namespace EnhancedDistrictServices
         private static readonly MyLogger m_instance = new MyLogger();
 
         /// <summary>
+        /// Logs the message only if the dll was compiled with "VERBOSE" and if <paramref name="logIf"/> is true.
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <param name="logIf"></param>
+        [Conditional("VERBOSE")]
+        public static void LogVerbose(string msg, bool logIf)
+        {
+            if (logIf)
+            {
+                m_instance.WriteLine(msg);
+            }
+        }
+
+        /// <summary>
         /// Log a regular message.
         /// </summary>
-        /// <param name="format"></param>
-        /// <param name="args"></param>
-        public static void Log(string format, params object[] args)
+        /// <param name="msg"></param>
+        public static void Log(string msg)
         {
-            m_instance.WriteLine(format, args);
+            m_instance.WriteLine(msg);
         }
 
         /// <summary>

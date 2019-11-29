@@ -136,10 +136,9 @@ namespace EnhancedDistrictServices
                             {
                                 TransferManager.TransferOffer responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
 
-                                if (verbose)
-                                {
-                                    Logger.Log($"TransferManager::MatchOffersClosest: request={TransferManagerInfo.ToString(ref requestOffer, material)}, response={TransferManagerInfo.ToString(ref responseOffer, material)}");
-                                }
+                                Logger.LogVerbose(
+                                    $"TransferManager::MatchOffersClosest: request={TransferManagerInfo.ToString(ref requestOffer, material)}, response={TransferManagerInfo.ToString(ref responseOffer, material)}", 
+                                    verbose);
 
                                 if (requestOffer.m_object == responseOffer.m_object)
                                 {
@@ -151,12 +150,12 @@ namespace EnhancedDistrictServices
                                     continue;
                                 }
 
-                                if (!isSupplyChainOffer && !IsValidDistrictOffer(ref requestOffer, ref responseOffer))
+                                if (!isSupplyChainOffer && !IsValidDistrictOffer(ref requestOffer, ref responseOffer, verbose))
                                 {
                                     continue;
                                 }
 
-                                if (isSupplyChainOffer && !IsValidSupplyChainOffer(ref requestOffer, ref responseOffer))
+                                if (isSupplyChainOffer && !IsValidSupplyChainOffer(ref requestOffer, ref responseOffer, verbose))
                                 {
                                     continue;
                                 }
@@ -196,10 +195,9 @@ namespace EnhancedDistrictServices
                             var incomingOffer = responseOffers[incomingCountIndex * 256 + bestResponseSubIndex];
                             int incomingAmount = incomingOffer.Amount;
 
-                            if (verbose)
-                            {
-                                Logger.Log($"TransferManager::MatchOffersClosest: Matched {TransferManagerInfo.ToString(ref incomingOffer, material)}!");
-                            }
+                            Logger.LogVerbose(
+                                $"TransferManager::MatchOffersClosest: Matched {TransferManagerInfo.ToString(ref incomingOffer, material)}!",
+                                verbose);
 
                             int delta = Mathf.Min(requestAmount, incomingAmount);
                             if (delta != 0)
@@ -228,10 +226,9 @@ namespace EnhancedDistrictServices
                             // Don't warn if we could not satisfy an outside connection's offer
                             if (!TransferManagerInfo.IsOutsideOffer(ref requestOffer))
                             {
-                                if (verbose)
-                                {
-                                    Logger.LogWarning($"TransferManager::MatchOffersClosest: Could not service request offer {TransferManagerInfo.ToString(ref requestOffer, material)}!");
-                                }
+                                Logger.LogVerbose(
+                                    $"TransferManager::MatchOffersClosest: Could not service request offer {TransferManagerInfo.ToString(ref requestOffer, material)}!",
+                                    verbose);
                             }
 
                             break;
@@ -281,16 +278,22 @@ namespace EnhancedDistrictServices
         /// <param name="requestOffer">i.e. offer by a student, residential, commerical building</param>
         /// <param name="responseOffer">i.e. offer by landfill, hospital, police</param>
         /// <returns></returns>
-        private static bool IsValidDistrictOffer(ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer)
+        private static bool IsValidDistrictOffer(ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer, bool verbose)
         {
             var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
-            if (responseBuilding == 0 || !TransferManagerInfo.IsDistrictServicesBuilding(responseBuilding))
+            if (responseBuilding == 0)
             {
-                return true;
+                Logger.LogVerbose(
+                    "TransferManager::IsValidDistrictOffer: Not a district services building",
+                    verbose);
+                return false;
             }
 
             if (Constraints.AllLocalAreas(responseBuilding))
             {
+                Logger.LogVerbose(
+                    "TransferManager::IsValidDistrictOffer: Serves all local areas",
+                    verbose);
                 return true;
             }
 
@@ -302,10 +305,16 @@ namespace EnhancedDistrictServices
             {
                 if (responseDistrictsServed[i] == (int)requestDistrict)
                 {
+                    Logger.LogVerbose(
+                        $"TransferManager::IsValidDistrictOffer: Matched district {requestDistrict}",
+                        verbose);
                     return true;
                 }
             }
 
+            Logger.LogVerbose(
+                $"TransferManager::IsValidDistrictOffer: Not valid",
+                verbose);
             return false;
         }
 
@@ -315,12 +324,15 @@ namespace EnhancedDistrictServices
         /// <param name="requestOffer">consumer of goods</param>
         /// <param name="responseOffer">producer of goods</param>
         /// <returns></returns>
-        private static bool IsValidSupplyChainOffer(ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer)
+        private static bool IsValidSupplyChainOffer(ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer, bool verbose)
         {
             var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
-            if (responseBuilding == 0 || !TransferManagerInfo.IsDistrictServicesBuilding(responseBuilding))
+            if (responseBuilding == 0)
             {
-                return true;
+                Logger.LogVerbose(
+                    "TransferManager::IsValidSupplyChainOffer: Not a district services building",
+                    verbose);
+                return false;
             }
 
             // See if the request is from an outside connection ...
@@ -330,6 +342,12 @@ namespace EnhancedDistrictServices
             {
                 if (Constraints.OutsideConnections(responseBuilding))
                 {
+                    Logger.LogVerbose(
+                        "TransferManager::IsValidSupplyChainOffer: Matched local to outside offer",
+                        verbose && !TransferManagerInfo.IsOutsideOffer(ref responseOffer));
+                    Logger.LogVerbose(
+                        "TransferManager::IsValidSupplyChainOffer: Matched outside to outside offer",
+                        verbose && TransferManagerInfo.IsOutsideOffer(ref responseOffer));
                     return true;
                 }
                 else 
@@ -342,11 +360,17 @@ namespace EnhancedDistrictServices
                         {
                             if (responseSupplyDestinations[i] == (int)requestBuilding)
                             {
+                                Logger.LogVerbose(
+                                    "TransferManager::IsValidSupplyChainOffer: Matched outside to outside offer",
+                                    verbose);
                                 return true;
                             }
                         }
                     }
 
+                    Logger.LogVerbose(
+                        "TransferManager::IsValidSupplyChainOffer: Disallowed outside offer",
+                        verbose);
                     return false;
                 }
             }
@@ -359,6 +383,9 @@ namespace EnhancedDistrictServices
                 // Otherwise, we'll need to check below if any existing supply chain restriction is tied to the response building.
                 if (Constraints.SupplySources(requestBuilding) == null || Constraints.SupplySources(requestBuilding).Count == 0)
                 {
+                    Logger.LogVerbose(
+                        "TransferManager::IsValidSupplyChainOffer: Serves all local areas",
+                        verbose);
                     return true;
                 }
             }
@@ -370,28 +397,39 @@ namespace EnhancedDistrictServices
                 {
                     if (responseSupplyDestinations[i] == (int)requestBuilding)
                     {
+                        Logger.LogVerbose(
+                            "TransferManager::IsValidSupplyChainOffer: Supply link allowed",
+                            verbose);
                         return true;
                     }
                 }
             }
             else if (Constraints.SupplySources(requestBuilding) != null && Constraints.SupplySources(requestBuilding).Count > 0)
             {
+                Logger.LogVerbose(
+                    "TransferManager::IsValidSupplyChainOffer: Supply link disallowed",
+                    verbose);
                 return false;
             }
             else // No supply chain restrictions, so now apply district restrictions.
             {
                 var requestDistrict = TransferManagerInfo.GetDistrict(requestBuilding);
-
                 var responseDistrictsServed = Constraints.DistrictServiced(responseBuilding);
                 for (int i = 0; i < responseDistrictsServed?.Count; i++)
                 {
                     if (responseDistrictsServed[i] == (int)requestDistrict)
                     {
+                        Logger.LogVerbose(
+                            $"TransferManager::IsValidSupplyChainOffer: Matched district {requestDistrict}",
+                            verbose);
                         return true;
                     }
                 }
             }
 
+            Logger.LogVerbose(
+                $"TransferManager::IsValidSupplyChainOffer: Not valid",
+                verbose);
             return false;
         }
 
