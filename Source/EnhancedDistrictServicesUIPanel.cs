@@ -36,53 +36,29 @@ namespace EnhancedDistrictServices
                     return;
                 }
 
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIBuildingIdLabel Clicked");
+
+                var info = BuildingManager.instance.m_buildings.m_buffer[m_currBuildingId].Info;
+                var service = info.GetService();
+                var subService = info.GetSubService();
+                var aiType = info.GetAI().GetType();
+
+                var nextBuildingId = FindSimilarBuilding(m_currBuildingId, service, subService, aiType);
+                if (!TransferManagerInfo.IsDistrictServicesBuilding(nextBuildingId))
+                {
+                    return;
+                }
+
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    var info = BuildingManager.instance.m_buildings.m_buffer[m_currBuildingId].Info;
-                    var service = info.GetService();
-                    var subService = info.GetSubService();
-                    var ai = info.GetAI().GetType();
-
-                    bool IsSameBuildingType(int buildingId)
-                    {
-                        var other_info = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
-                        if (info.GetAI().GetType() == typeof(OutsideConnectionAI))
-                        {
-                            return other_info.GetAI().GetType() == typeof(OutsideConnectionAI);
-                        }
-                        else
-                        {
-                            return
-                                other_info.GetService() == info.GetService() &&
-                                other_info.GetSubService() == info.GetSubService() &&
-                                other_info.GetAI().GetType() == info.GetAI().GetType();
-                        }
-                    }
-
-                    for (int buildingId = m_currBuildingId + 1; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-                    {
-                        if (IsSameBuildingType(buildingId))
-                        {
-                            SetBuilding((ushort)buildingId);
-                            UpdatePositionToBuilding((ushort)buildingId);
-                            return;
-                        }
-                    }
-
-                    for (int buildingId = 1; buildingId < m_currBuildingId; buildingId++)
-                    {
-                        if (IsSameBuildingType(buildingId))
-                        {
-                            SetBuilding((ushort)buildingId);
-                            UpdatePositionToBuilding((ushort)buildingId);
-                            return;
-                        }
-                    }
+                    SetBuilding((ushort)nextBuildingId);
+                    UpdatePositionToBuilding((ushort)nextBuildingId);
                 });
             };
 
             UIBuildingId.eventClicked += (c, p) => 
             {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIBuildingId Clicked");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
                     UIBuildingId.text = "";
@@ -91,6 +67,7 @@ namespace EnhancedDistrictServices
 
             UIBuildingId.eventTextCancelled += (c, p) =>
             {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIBuildingId TextCancelled");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
                     UpdateUIBuildingId();
@@ -99,10 +76,10 @@ namespace EnhancedDistrictServices
 
             UIBuildingId.eventTextSubmitted += (c, p) =>
             {
+                Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIBuildingId TextSubmitted {p}");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    if (ushort.TryParse(UIBuildingId.text, out ushort buildingId) &&
-                        TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
+                    if (ushort.TryParse(p, out ushort buildingId) && TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
                     {
                         var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
                         CameraController.SetTarget(new InstanceID { Building = buildingId }, position, false);
@@ -120,45 +97,46 @@ namespace EnhancedDistrictServices
             UIServices.tooltip = "(Experimental) Click to select outside connection.";
             UIServices.eventClicked += (c, p) =>
             {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIServices Clicked");
+
+                var nextBuildingId = FindSimilarBuilding(m_currBuildingId, ItemClass.Service.None, ItemClass.SubService.None, typeof(OutsideConnectionAI));
+                if (!TransferManagerInfo.IsDistrictServicesBuilding(nextBuildingId))
+                {
+                    return;
+                }
+
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    for (int buildingId = m_currBuildingId + 1; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
-                    {
-                        var other_info = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
-                        if (other_info.GetAI() is OutsideConnectionAI)
-                        {
-                            SetBuilding((ushort)buildingId);
-                            UpdatePositionToBuilding((ushort)buildingId);
-                            return;
-                        }
-                    }
-
-                    for (int buildingId = 1; buildingId < m_currBuildingId; buildingId++)
-                    {
-                        var other_info = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
-                        if (other_info.GetAI() is OutsideConnectionAI)
-                        {
-                            SetBuilding((ushort)buildingId);
-                            UpdatePositionToBuilding((ushort)buildingId);
-                            return;
-                        }
-                    }
+                    SetBuilding((ushort)nextBuildingId);
+                    UpdatePositionToBuilding((ushort)nextBuildingId);
                 });
             };
 
             UIAllLocalAreasCheckBox.eventCheckChanged += (c, t) =>
             {
+                if (m_currBuildingId == 0 || t == Constraints.AllLocalAreas(m_currBuildingId))
+                {
+                    return;
+                }
+
+                Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIAllLocalAreasCheckBox CheckChanged {t}");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
                     Constraints.SetAllLocalAreas(m_currBuildingId, t);
                     UpdateUISupplyChainOut();
-                    UpdateUIDistrictsDropdown();
+                    UpdateUIDistrictsDropdown(updateChecked: false);
                     UpdateUIDistrictsSummary();
                 });
             };
 
             UIAllOutsideConnectionsCheckBox.eventCheckChanged += (c, t) =>
             {
+                if (m_currBuildingId == 0 || t == Constraints.OutsideConnections(m_currBuildingId))
+                {
+                    return;
+                }
+
+                Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIAllOutsideConnectionsCheckBox CheckChanged {t}");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
                     Constraints.SetAllOutsideConnections(m_currBuildingId, t);
@@ -168,10 +146,12 @@ namespace EnhancedDistrictServices
 
             UISupplyChainIn.eventClicked += (c, p) =>
             {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChainIn Clicked");
             };
 
             UISupplyChainIn.eventTextCancelled += (c, p) =>
             {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChainIn TextCancelled");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
                     UpdateUISupplyChainIn();
@@ -180,9 +160,10 @@ namespace EnhancedDistrictServices
 
             UISupplyChainIn.eventTextSubmitted += (c, p) =>
             {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChainIn TextSubmitted");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    if (!TransferManagerInfo.IsSupplyChainBuilding((ushort)m_currBuildingId))
+                    if (!TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
                     {
                         UpdateUISupplyChainIn();
                         return;
@@ -196,10 +177,18 @@ namespace EnhancedDistrictServices
                     {
                         try
                         {
-                            // TODO, FIXME: Do this in a single transaction.
-                            Constraints.RemoveAllSupplyChainConnectionsToDestination(m_currBuildingId);
-
+                            // TODO, FIXME: Do this in a single transaction and clean up hacky implementation below.
                             var sources = UISupplyChainIn.text.Split(',').Select(s => ushort.Parse(s));
+
+                            foreach (var source in sources)
+                            {
+                                if (TransferManagerInfo.IsSupplyChainBuilding(source))
+                                {
+                                    Constraints.AddSupplyChainConnection(source, m_currBuildingId);
+                                }
+                            }
+
+                            Constraints.RemoveAllSupplyChainConnectionsToDestination(m_currBuildingId);
                             foreach (var source in sources)
                             {
                                 if (TransferManagerInfo.IsSupplyChainBuilding(source))
@@ -208,23 +197,26 @@ namespace EnhancedDistrictServices
                                 }
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            Logger.LogException(ex);
                         }
                     }
 
                     UpdateUISupplyChainIn();
-                    UpdateUIDistrictsDropdown();
+                    UpdateUIDistrictsDropdown(updateChecked: false);
                     UpdateUIDistrictsSummary();
                 });
             };
 
             UISupplyChainOut.eventClicked += (c, p) =>
             {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChainOut Clicked");
             };
 
             UISupplyChainOut.eventTextCancelled += (c, p) =>
             {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChainOut TextCancelled");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
                     UpdateUISupplyChainOut();
@@ -233,9 +225,10 @@ namespace EnhancedDistrictServices
 
             UISupplyChainOut.eventTextSubmitted += (c, p) =>
             {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChainOut TextSubmitted");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    if (!TransferManagerInfo.IsSupplyChainBuilding((ushort)m_currBuildingId))
+                    if (!TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
                     {
                         UpdateUISupplyChainOut();
                         return;
@@ -249,10 +242,18 @@ namespace EnhancedDistrictServices
                     {
                         try
                         {
-                            // TODO, FIXME: Do this in a single transaction.
-                            Constraints.RemoveAllSupplyChainConnectionsFromSource(m_currBuildingId);
-
+                            // TODO, FIXME: Do this in a single transaction and clean up hacky implementation below.
                             var destinations = UISupplyChainOut.text.Split(',').Select(s => ushort.Parse(s));
+
+                            foreach (var destination in destinations)
+                            {
+                                if (TransferManagerInfo.IsSupplyChainBuilding(destination))
+                                {
+                                    Constraints.AddSupplyChainConnection(m_currBuildingId, destination);
+                                }
+                            }
+
+                            Constraints.RemoveAllSupplyChainConnectionsFromSource(m_currBuildingId);
                             foreach (var destination in destinations)
                             {
                                 if (TransferManagerInfo.IsSupplyChainBuilding(destination))
@@ -261,19 +262,31 @@ namespace EnhancedDistrictServices
                                 }
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            Logger.LogException(ex);
                         }
                     }
 
                     UpdateUISupplyChainOut();
-                    UpdateUIDistrictsDropdown();
+                    UpdateUIDistrictsDropdown(updateChecked: false);
                     UpdateUIDistrictsSummary();
                 });
             };
 
             UIDistrictsDropDown.eventCheckedChanged += (c, t) =>
             {
+                if (m_currBuildingId == 0 || m_districtsMapping == null)
+                {
+                    return;
+                }
+
+                if (UIDistrictsDropDown.GetChecked(t) == Constraints.DistrictServiced(m_currBuildingId)?.Contains(m_districtsMapping[t]))
+                {
+                    return;
+                }
+
+                Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIDistrictsDropDown CheckChanged: {t}");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
                     if (UIDistrictsDropDown.GetChecked(t))
@@ -284,10 +297,15 @@ namespace EnhancedDistrictServices
                     {
                         Constraints.RemoveDistrictServiced(m_currBuildingId, m_districtsMapping[t]);
                     }
-
-                    UpdateUIDistrictsSummary();
                 });
             };
+
+            UIDistrictsDropDown.eventDropdownClose += UIDistrictsDropDown_eventDropdownClose;
+        }
+
+        private void UIDistrictsDropDown_eventDropdownClose(ColossalFramework.UI.UICheckboxDropDown checkboxdropdown, ColossalFramework.UI.UIScrollablePanel popup, ref bool overridden)
+        {
+            UpdateUIDistrictsSummary();
         }
 
         public override void OnEnable()
@@ -308,6 +326,7 @@ namespace EnhancedDistrictServices
 
         public void SetBuilding(ushort building)
         {
+            Logger.Log($"EnhancedDistrictServicedUIPanel::SetBuilding: buildingId={building}");
             if (TransferManagerInfo.IsDistrictServicesBuilding(building))
             {
                 m_currBuildingId = building;
@@ -331,7 +350,7 @@ namespace EnhancedDistrictServices
             UpdateUIAllOutsideConnectionsCheckBox();
             UpdateUISupplyChainIn();
             UpdateUISupplyChainOut();
-            UpdateUIDistrictsDropdown();
+            UpdateUIDistrictsDropdown(updateChecked: true);
 
             UpdateUIDistrictsSummary();
             Show();
@@ -339,6 +358,7 @@ namespace EnhancedDistrictServices
 
         private void UpdateUITitle()
         {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UITitle Update");
             if (m_currBuildingId != 0)
             {
                 UITitle.text = TransferManagerInfo.GetBuildingName(m_currBuildingId);
@@ -353,12 +373,14 @@ namespace EnhancedDistrictServices
 
         private void UpdateUIBuildingId()
         {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIBuildingId Update");
             UIBuildingId.text = m_currBuildingId != 0 ? $"{m_currBuildingId}" : string.Empty;
             UIBuildingId.tooltip = "Enter a new building id to configure that building";
         }
 
         private void UpdateUIHomeDistrict()
         {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIHomeDistrict Update");
             if (m_currBuildingId != 0)
             {
                 UIHomeDistrict.text = TransferManagerInfo.GetDistrictText(m_currBuildingId);
@@ -371,6 +393,7 @@ namespace EnhancedDistrictServices
 
         private void UpdateUIServices()
         {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIServices Update");
             if (m_currBuildingId != 0)
             {
                 UIServices.text = TransferManagerInfo.GetServicesText(m_currBuildingId);
@@ -383,6 +406,7 @@ namespace EnhancedDistrictServices
 
         private void UpdateUIAllLocalAreasCheckBox()
         {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIAllLocalAreasCheckBox Update");
             if (m_currBuildingId != 0)
             {
                 UIAllLocalAreasCheckBox.isChecked = Constraints.AllLocalAreas(m_currBuildingId);
@@ -400,6 +424,7 @@ namespace EnhancedDistrictServices
 
         private void UpdateUIAllOutsideConnectionsCheckBox()
         {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIAllOutsideConnectionsCheckBox Update");
             if (m_currBuildingId != 0)
             {
                 UIAllOutsideConnectionsCheckBox.isChecked = Constraints.OutsideConnections(m_currBuildingId);
@@ -417,6 +442,7 @@ namespace EnhancedDistrictServices
 
         private void UpdateUISupplyChainIn()
         {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChainIn Update");
             if (m_currBuildingId == 0 || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
             {
                 UISupplyChainIn.readOnly = true;
@@ -443,6 +469,7 @@ namespace EnhancedDistrictServices
 
         private void UpdateUISupplyChainOut()
         {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChainOut Update");
             if (m_currBuildingId == 0 || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
             {
                 UISupplyChainOut.readOnly = true;
@@ -474,31 +501,61 @@ namespace EnhancedDistrictServices
             }
         }
 
-        private void UpdateUIDistrictsDropdown()
+        private void UpdateUIDistrictsDropdown(bool updateChecked)
         {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIDistrictsDropdown Update");
+
+            void SetChecked(int i, bool ischecked)
+            {
+                if (UIDistrictsDropDown.GetChecked(i) != ischecked)
+                {
+                    UIDistrictsDropDown.SetChecked(i, ischecked);
+                }
+            }
+
             if (m_currBuildingId == 0 || Constraints.AllLocalAreas(m_currBuildingId) || Constraints.SupplyDestinations(m_currBuildingId)?.Count > 0)
             {
                 UIDistrictsDropDown.triggerButton.Disable();
-                UIDistrictsDropDown.SetChecked(m_districtsMapping.Select(district => false).ToArray());
+
+                if (updateChecked)
+                {
+                    // Do not used UICheckboxDropDown::SetChecked(bool[] isChecked) because it replaces the underlying array.
+                    for (int i = 0; i < m_districtsMapping.Count; i++)
+                    {
+                        SetChecked(i, false);
+                    }
+                }
             }
             else
             {
                 UIDistrictsDropDown.triggerButton.Enable();
 
-                var districtsServiced = Constraints.DistrictServiced(m_currBuildingId);
-                if (districtsServiced != null)
+                if (updateChecked)
                 {
-                    UIDistrictsDropDown.SetChecked(m_districtsMapping.Select(district => districtsServiced.Contains(district)).ToArray());
-                }
-                else
-                {
-                    UIDistrictsDropDown.SetChecked(m_districtsMapping.Select(district => false).ToArray());
+                    var districtsServed = Constraints.DistrictServiced(m_currBuildingId);
+                    if (districtsServed != null)
+                    {
+                        // Do not used UICheckboxDropDown::SetChecked(bool[] isChecked) because it replaces the underlying array.
+                        for (int i = 0; i < m_districtsMapping.Count; i++)
+                        {
+                            SetChecked(i, districtsServed.Contains(m_districtsMapping[i]));
+                        }
+                    }
+                    else
+                    {
+                        // Do not used UICheckboxDropDown::SetChecked(bool[] isChecked) because it replaces the underlying array.
+                        for (int i = 0; i < m_districtsMapping.Count; i++)
+                        {
+                            SetChecked(i, false);
+                        }
+                    }
                 }
             }
         }
 
         private void UpdateUIDistrictsDropdownDistrictItems()
         {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIDistrictsDropdownDistrictItems Update");
             var districtNames = new SortedDictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
             for (byte district = 1; district < DistrictManager.MAX_DISTRICT_COUNT; district++)
             {
@@ -517,10 +574,18 @@ namespace EnhancedDistrictServices
                 UIDistrictsDropDown.AddItem(kvp.Key, isChecked: false);
                 m_districtsMapping.Add(kvp.Value);
             }
+
+            Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIDistrictsDropdownDistrictItems Found {m_districtsMapping.Count} districts.");
         }
 
         private void UpdateUIDistrictsSummary()
         {
+            if (m_currBuildingId == 0)
+            {
+                return;
+            }
+
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIDistrictsSummary Update");
             var homeDistrict = TransferManagerInfo.GetDistrict(m_currBuildingId);
             var districtsServed = Constraints.DistrictServiced(m_currBuildingId);
 
@@ -559,5 +624,57 @@ namespace EnhancedDistrictServices
                 UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetDistrictsServedText(m_currBuildingId);
             }
         }
+
+        #region Helper methods
+
+        /// <summary>
+        /// Used by UIBuildingIdLabel.eventClicked to find another building that is in the given service category.
+        /// </summary>
+        private static int FindSimilarBuilding(int currBuildingId, ItemClass.Service service, ItemClass.SubService subService, Type aiType)
+        {
+            try
+            {
+                bool IsSameBuildingType(int buildingId)
+                {
+                    var other_info = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
+                    if (aiType == typeof(OutsideConnectionAI))
+                    {
+                        return other_info?.GetAI()?.GetType() == typeof(OutsideConnectionAI);
+                    }
+                    else
+                    {
+                        return
+                            other_info?.GetService() == service &&
+                            other_info?.GetSubService() == subService &&
+                            other_info?.GetAI()?.GetType() == aiType;
+                    }
+                }
+
+                for (int buildingId = currBuildingId + 1; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
+                {
+                    if (IsSameBuildingType(buildingId))
+                    {
+                        return buildingId;
+                    }
+                }
+
+                for (int buildingId = 1; buildingId < currBuildingId; buildingId++)
+                {
+                    if (IsSameBuildingType(buildingId))
+                    {
+                        return buildingId;
+                    }
+                }
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex);
+                return 0;
+            }
+        }
+
+        #endregion
     }
 }

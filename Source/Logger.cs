@@ -59,7 +59,7 @@ namespace EnhancedDistrictServices
         /// <param name="msg"></param>
         /// <param name="logIf"></param>
         [Conditional("VERBOSE")]
-        public static void LogVerbose(string msg, bool logIf)
+        public static void LogVerbose(string msg, bool logIf = true)
         {
             if (logIf)
             {

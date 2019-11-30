@@ -208,14 +208,22 @@ namespace EnhancedDistrictServices
 
         private void UIDistrictsDropDown_eventDropdownOpen(UICheckboxDropDown checkboxdropdown, UIScrollablePanel popup, ref bool overridden)
         {
-            checkboxdropdown.triggerButton.Hide();
-            popup.verticalScrollbar.isVisible = true;
+            checkboxdropdown?.triggerButton?.Hide();
+
+            if (popup != null)
+            {
+                popup.verticalScrollbar.isVisible = true;
+            }
         }
 
         private void UIDistrictsDropDown_eventDropdownClose(UICheckboxDropDown checkboxdropdown, UIScrollablePanel popup, ref bool overridden)
         {
-            checkboxdropdown.triggerButton.Show();
-            popup.verticalScrollbar.isVisible = false;
+            checkboxdropdown?.triggerButton?.Show();
+
+            if (popup != null)
+            {
+                popup.verticalScrollbar.isVisible = false;
+            }
         }
 
         #endregion
