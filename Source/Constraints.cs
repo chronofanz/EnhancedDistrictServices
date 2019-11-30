@@ -155,10 +155,10 @@ namespace EnhancedDistrictServices
         {
             return new CitiesMod.EnhancedDistrictServicesSerializableData.Data
             {
-                BuildingToAllLocalAreas = Constraints.m_buildingToAllLocalAreas.ToArray(),
-                BuildingToOutsideConnections = Constraints.m_buildingToOutsideConnections.ToArray(),
-                BuildingToBuildingServiced = Constraints.m_supplyDestinations.ToArray(),
-                BuildingToDistrictServiced = Constraints.m_buildingToDistrictServiced.ToArray()
+                BuildingToAllLocalAreas = m_buildingToAllLocalAreas.ToArray(),
+                BuildingToOutsideConnections = m_buildingToOutsideConnections.ToArray(),
+                BuildingToBuildingServiced = m_supplyDestinations.ToArray(),
+                BuildingToDistrictServiced = m_buildingToDistrictServiced.ToArray()
             };
         }
 

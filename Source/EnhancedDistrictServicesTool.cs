@@ -145,7 +145,7 @@ namespace EnhancedDistrictServices
             }
             catch (Exception ex)
             {
-                Logger.LogWarning($"Could not open district services world info panel!");
+                Logger.LogWarning($"EnhancedDistrictServicesTool::OnToolGUI: Could not open district services world info panel!");
                 Logger.LogException(ex);
             }
         }
