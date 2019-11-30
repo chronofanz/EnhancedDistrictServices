@@ -128,16 +128,17 @@ namespace EnhancedDistrictServices
                                 return;
                             }
 
-                            var panel = EnhancedDistrictServicesUIPanel.Instance;
-                            panel.SetBuilding(hoverInstance.Building);
-                            panel.UpdatePositionToBuilding(hoverInstance.Building);
-                            panel.UpdatePanelToBuilding(hoverInstance.Building);
-                            panel.opacity = 1f;
-                        }
+                            Singleton<SimulationManager>.instance.AddAction(() =>
+                            {
+                                var panel = EnhancedDistrictServicesUIPanel.Instance;
+                                panel.SetBuilding(hoverInstance.Building);
+                                panel.UpdatePositionToBuilding(hoverInstance.Building);
+                                panel.UpdatePanelToBuilding(hoverInstance.Building);
+                                panel.opacity = 1f;
 
-                        if (!hoverInstance.IsEmpty)
-                        {
-                            Singleton<SimulationManager>.instance.AddAction(() => Singleton<GuideManager>.instance.m_worldInfoNotUsed.Disable());
+                                Singleton<GuideManager>.instance.m_worldInfoNotUsed.Disable();
+                            });
+
                         }
                     }
                 }
