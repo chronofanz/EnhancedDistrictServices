@@ -133,7 +133,6 @@ namespace EnhancedDistrictServices
             UIDistrictsDropDown = AttachUICheckboxDropDownTo(this, 3, 3 + 166);
             UIDistrictsDropDown.eventDropdownOpen += UIDistrictsDropDown_eventDropdownOpen;
             UIDistrictsDropDown.eventDropdownClose += UIDistrictsDropDown_eventDropdownClose;
-            UIDistrictsDropDown.eventSizeChanged += UIDistrictsDropDown_eventSizeChanged;
 
             m_FullscreenContainer = UIView.Find("FullScreenContainer");
             m_FullscreenContainer.AttachUIComponent(gameObject);
@@ -209,18 +208,14 @@ namespace EnhancedDistrictServices
 
         private void UIDistrictsDropDown_eventDropdownOpen(UICheckboxDropDown checkboxdropdown, UIScrollablePanel popup, ref bool overridden)
         {
+            checkboxdropdown.triggerButton.Hide();
             popup.verticalScrollbar.isVisible = true;
         }
 
         private void UIDistrictsDropDown_eventDropdownClose(UICheckboxDropDown checkboxdropdown, UIScrollablePanel popup, ref bool overridden)
         {
+            checkboxdropdown.triggerButton.Show();
             popup.verticalScrollbar.isVisible = false;
-        }
-
-        private void UIDistrictsDropDown_eventSizeChanged(UIComponent component, Vector2 value)
-        {
-            UIDistrictsDropDown.triggerButton.size = value;
-            UIDistrictsDropDown.listWidth = (int)value.x;
         }
 
         #endregion

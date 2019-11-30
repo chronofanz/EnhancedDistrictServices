@@ -9,8 +9,8 @@ namespace EnhancedDistrictServices
     /// </summary>
     public class EnhancedDistrictServicesMod : IUserMod, ILoadingExtension
     {
-        public const string version = "1.0.4";
-        public string Name => "EnhancedDistrictServices 1.0.4";
+        public const string version = "1.0.5";
+        public string Name => "EnhancedDistrictServices 1.0.5";
         public string Description => "EnhancedDistrictServices mod for Cities Skylines, which allows more granular control of services and supply chains.";
 
         public void OnCreated(ILoading loading)
