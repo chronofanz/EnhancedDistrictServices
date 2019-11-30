@@ -298,8 +298,12 @@ namespace EnhancedDistrictServices
             }
 
             base.OnEnable();
-            UpdateUIDistrictsDropdownDistrictItems();
-            SetBuilding(0);
+
+            Singleton<SimulationManager>.instance.AddAction(() =>
+            {
+                UpdateUIDistrictsDropdownDistrictItems();
+                SetBuilding(0);
+            });
         }
 
         public void SetBuilding(ushort building)
