@@ -59,7 +59,7 @@ namespace CitiesMod
         {
             if (!serializableDataManager.EnumerateData().Contains(id))
             {
-                Logger.Log($"SerializableDataWithHelperMethods::LoadData: Data does not contain data with id {id}");
+                Logger.Log($"EnhancedDistrictServicesSerializableData::LoadData: Data does not contain data with id {id}");
                 target = null;
                 return false;
             }
@@ -76,7 +76,7 @@ namespace CitiesMod
                 target = (T)binaryFormatter.Deserialize(memStream);
                 if (target == null)
                 {
-                    Logger.LogWarning($"SerializableDataWithHelperMethods::LoadData: Data failed to load with id {id}");
+                    Logger.LogWarning($"EnhancedDistrictServicesSerializableData::LoadData: Data failed to load with id {id}");
                 }
 
                 return true;

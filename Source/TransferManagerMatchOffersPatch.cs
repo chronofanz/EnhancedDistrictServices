@@ -150,12 +150,12 @@ namespace EnhancedDistrictServices
                                     continue;
                                 }
 
-                                if (!isSupplyChainOffer && !IsValidDistrictOffer(ref requestOffer, ref responseOffer, verbose))
+                                if (!isSupplyChainOffer && !IsValidDistrictOffer(material, ref requestOffer, ref responseOffer, verbose))
                                 {
                                     continue;
                                 }
 
-                                if (isSupplyChainOffer && !IsValidSupplyChainOffer(ref requestOffer, ref responseOffer, verbose))
+                                if (isSupplyChainOffer && !IsValidSupplyChainOffer(material, ref requestOffer, ref responseOffer, verbose))
                                 {
                                     continue;
                                 }
@@ -278,7 +278,7 @@ namespace EnhancedDistrictServices
         /// <param name="requestOffer">i.e. offer by a student, residential, commerical building</param>
         /// <param name="responseOffer">i.e. offer by landfill, hospital, police</param>
         /// <returns></returns>
-        private static bool IsValidDistrictOffer(ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer, bool verbose)
+        private static bool IsValidDistrictOffer(TransferManager.TransferReason material, ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer, bool verbose)
         {
             var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
             if (responseBuilding == 0)
@@ -299,7 +299,7 @@ namespace EnhancedDistrictServices
 
             // The call to TransferManagerInfo.GetDistrict applies to offers that are come from buildings, service 
             // vehicles, citizens, AND netSegments.  The latter needs to be considered for road maintenance.
-            var requestDistrict = TransferManagerInfo.GetDistrict(ref requestOffer);
+            var requestDistrict = TransferManagerInfo.GetDistrict(material, ref requestOffer);
             var responseDistrictsServed = Constraints.DistrictServiced(responseBuilding);
             for (int i = 0; i < responseDistrictsServed?.Count; i++)
             {
@@ -324,7 +324,7 @@ namespace EnhancedDistrictServices
         /// <param name="requestOffer">consumer of goods</param>
         /// <param name="responseOffer">producer of goods</param>
         /// <returns></returns>
-        private static bool IsValidSupplyChainOffer(ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer, bool verbose)
+        private static bool IsValidSupplyChainOffer(TransferManager.TransferReason material, ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer, bool verbose)
         {
             var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
             if (responseBuilding == 0)
