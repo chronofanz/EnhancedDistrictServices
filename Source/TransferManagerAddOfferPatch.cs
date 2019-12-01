@@ -15,9 +15,8 @@ namespace EnhancedDistrictServices
                 return true;
             }
 
-            Logger.LogVerbose($"TransferManager::AddIncomingOffer: {TransferManagerInfo.ToString(ref offer, material)}!", material == TransferManager.TransferReason.Logs);
+            Logger.LogVerbose($"TransferManager::AddIncomingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
-
 
             if (offer.Vehicle != 0)
             {
@@ -42,7 +41,7 @@ namespace EnhancedDistrictServices
                 return true;
             }
 
-            Logger.LogVerbose($"TransferManager::AddOutgoingOffer: {TransferManagerInfo.ToString(ref offer, material)}!", material == TransferManager.TransferReason.Logs);
+            Logger.LogVerbose($"TransferManager::AddOutgoingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
 
             if (offer.Vehicle != 0)

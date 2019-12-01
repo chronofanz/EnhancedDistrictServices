@@ -82,11 +82,7 @@ namespace EnhancedDistrictServices
                     int index3 = index1 * 256 + index2;
                     if (offers[index3].m_object == offer.m_object)
                     {
-                        // Found an existing offer.  We only need to modify the amount.
-                        amount[(int)material] -= offers[index3].Amount;
-
-                        offers[index3].Amount = offer.Amount;
-                        amount[(int)material] += offer.Amount;
+                        // Found an existing offer.
                         return;
                     }
                 }
@@ -130,7 +126,7 @@ namespace EnhancedDistrictServices
                 }
                 else if (TransferManagerInfo.IsSupplyChainOffer(material))
                 {
-                    MatchOffersClosest(material, requestCount: m_incomingCount, requestOffers: m_incomingOffers, responseCount: m_outgoingCount, responseOffers: m_outgoingOffers, isSupplyChainOffer: true, verbose: material == TransferManager.TransferReason.Logs);
+                    MatchOffersClosest(material, requestCount: m_incomingCount, requestOffers: m_incomingOffers, responseCount: m_outgoingCount, responseOffers: m_outgoingOffers, isSupplyChainOffer: true, verbose: false);
                     return true;
                 }
             }
