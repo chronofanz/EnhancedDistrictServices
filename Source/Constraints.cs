@@ -169,9 +169,21 @@ namespace EnhancedDistrictServices
         /// <param name="buildingId"></param>
         public static void CreateBuilding(ushort buildingId)
         {
+            if (!TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
+            {
+                return;
+            }
+
+            var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
+            var service = buildingInfo.GetService();
+            var subService = buildingInfo.GetSubService();
+            var ai = buildingInfo.GetAI();
+
             var position = BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position;
             var homeDistrict = DistrictManager.instance.GetDistrict(position);
 
+            Logger.Log($"Constraints::CreateBuilding: buildingId={buildingId}, homeDistrict={homeDistrict}, service={service}, subService={subService}, ai={ai}");
+            
             if (homeDistrict != 0)
             {
                 AddDistrictServiced(buildingId, homeDistrict);

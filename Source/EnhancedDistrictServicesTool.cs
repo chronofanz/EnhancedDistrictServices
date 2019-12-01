@@ -177,7 +177,7 @@ namespace EnhancedDistrictServices
                 txtItems.Add(TransferManagerInfo.GetSupplySourcesText(building));
             }
 
-            if (Constraints.SupplyDestinations(building)?.Count > 0)
+            if (!Constraints.AllLocalAreas(building) && Constraints.SupplyDestinations(building)?.Count > 0)
             {
                 txtItems.Add("");
                 txtItems.Add(TransferManagerInfo.GetSupplyDestinationsText(building));
