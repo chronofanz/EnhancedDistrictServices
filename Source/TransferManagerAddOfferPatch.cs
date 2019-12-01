@@ -10,99 +10,24 @@ namespace EnhancedDistrictServices
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
-            // Logger.Log($"TransferManager::AddIncomingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
-
-            // Increase the rate at which we can dispatch vehicles ...
-            if (offer.Building != 0 && offer.Vehicle == 0)
+            if (!(TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material)))
             {
-                if (material == TransferManager.TransferReason.Crime || material == TransferManager.TransferReason.Dead || material == TransferManager.TransferReason.Garbage || material == TransferManager.TransferReason.Sick)
-                {
-                    int capacity = GetVehicleCapacity(
-                        offer.Building,
-                        ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[offer.Building],
-                        material);
-
-                    int count = GetVehicleCount(
-                        offer.Building,
-                        ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[offer.Building],
-                        material);
-
-                    if (count <= capacity - 4)
-                    {
-                        offer.Amount = Math.Min(capacity - count, 2);
-                        offer.Priority = 3;
-                    }
-                }
+                return true;
             }
 
+            Logger.LogVerbose($"TransferManager::AddIncomingOffer: {TransferManagerInfo.ToString(ref offer, material)}!", material == TransferManager.TransferReason.Logs);
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
-            return true;
-        }
 
-        private static int GetVehicleCapacity(ushort buildingID, ref Building _, TransferManager.TransferReason material)
-        {
-            if (material == TransferManager.TransferReason.Crime)
+
+            if (offer.Vehicle != 0)
             {
-                var buildingAI = Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingID].Info.GetAI();
-                if (buildingAI is PoliceStationAI policeStationAI)
-                {
-                    return policeStationAI.PoliceCarCount;
-                }
+                TransferManagerMod.AddIncomingOffer(material, offer);
+                return false;
             }
-
-            if (material == TransferManager.TransferReason.Dead)
+            else
             {
-                var buildingAI = Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingID].Info.GetAI();
-                if (buildingAI is CemeteryAI cemetaryAI)
-                {
-                    return cemetaryAI.m_hearseCount;
-                }
+                return true;
             }
-
-            if (material == TransferManager.TransferReason.Garbage)
-            {
-                var buildingAI = Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingID].Info.GetAI();
-                if (buildingAI is LandfillSiteAI landfillSiteAI)
-                {
-                    return landfillSiteAI.m_garbageTruckCount;
-                }
-            }
-
-            if (material == TransferManager.TransferReason.Sick)
-            {
-                var buildingAI = Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingID].Info.GetAI();
-                if (buildingAI is HospitalAI hospitalAI)
-                {
-                    return hospitalAI.AmbulanceCount;
-                }
-            }
-
-            return 0;
-        }
-
-        private static int GetVehicleCount(ushort _, ref Building data, TransferManager.TransferReason material)
-        {
-            int count = 0;
-
-            VehicleManager instance = Singleton<VehicleManager>.instance;
-            ushort vehicleID = data.m_ownVehicles;
-            int num = 0;
-            while ((int)vehicleID != 0)
-            {
-                if ((TransferManager.TransferReason)instance.m_vehicles.m_buffer[(int)vehicleID].m_transferType == material)
-                {
-                    count += 1;
-                }
-
-                vehicleID = instance.m_vehicles.m_buffer[(int)vehicleID].m_nextOwnVehicle;
-                if (++num > 16384)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
-                    break;
-                }
-            }
-
-            return count;
         }
     }
 
@@ -112,9 +37,23 @@ namespace EnhancedDistrictServices
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)        
         {
-            // Logger.Log($"TransferManager::AddOutgoingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
+            if (!(TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material)))
+            {
+                return true;
+            }
+
+            Logger.LogVerbose($"TransferManager::AddOutgoingOffer: {TransferManagerInfo.ToString(ref offer, material)}!", material == TransferManager.TransferReason.Logs);
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
-            return true;
+
+            if (offer.Vehicle != 0)
+            {
+                TransferManagerMod.AddOutgoingOffer(material, offer);
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
     }
 
@@ -135,22 +74,19 @@ namespace EnhancedDistrictServices
         /// <param name="offer"></param>
         public static void ModifyOffer(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
-            if (TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material))
+            var isOutsideOffer = TransferManagerInfo.IsOutsideOffer(ref offer);
+            if (isOutsideOffer)
             {
-                var isOutsideOffer = TransferManagerInfo.IsOutsideOffer(ref offer);
-                if (isOutsideOffer)
-                {
-                    offer.Priority = 0;
-                }
-                else
-                {
-                    offer.Priority = Math.Max(offer.Priority, 1);
-                }
+                offer.Priority = 0;
+            }
+            else
+            {
+                offer.Priority = Math.Max(offer.Priority, 1);
+            }
 
-                if (offer.Vehicle != 0)
-                {
-                    offer.Priority = 7;
-                }
+            if (offer.Vehicle != 0)
+            {
+                offer.Priority = 7;
             }
         }
     }

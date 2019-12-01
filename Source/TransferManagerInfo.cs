@@ -41,12 +41,16 @@ namespace EnhancedDistrictServices
         /// Should return 0 if the offer does not originate from a district.
         /// </summary>
         /// <returns></returns>
-        public static byte GetDistrict(ref TransferManager.TransferOffer offer)
+        public static byte GetDistrict(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
             if (offer.NetSegment != 0)
             {
                 var position = NetManager.instance.m_segments.m_buffer[offer.NetSegment].m_middlePosition;
                 return DistrictManager.instance.GetDistrict(position);
+            }
+            else if (material == TransferManager.TransferReason.Sick && offer.Citizen != 0)
+            {
+                return DistrictManager.instance.GetDistrict(offer.Position);
             }
             else
             {
@@ -311,8 +315,8 @@ namespace EnhancedDistrictServices
 
                     case ItemClass.Service.PublicTransport:
                         return (
-                            info.GetSubService() == ItemClass.SubService.PublicTransportPost ||
-                            info.GetAI() is OutsideConnectionAI);
+                            info.GetAI() is OutsideConnectionAI ||
+                            info.GetSubService() == ItemClass.SubService.PublicTransportPost);
 
                     case ItemClass.Service.Road:
                         return (
