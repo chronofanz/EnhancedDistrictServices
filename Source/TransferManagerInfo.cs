@@ -462,7 +462,7 @@ namespace EnhancedDistrictServices
                 material == TransferManager.TransferReason.LuxuryProducts ||
                 material == TransferManager.TransferReason.SortedMail;
         }
-        
+
         /// <summary>
         /// Returns true if the offer was given from an outside connection.
         /// </summary>

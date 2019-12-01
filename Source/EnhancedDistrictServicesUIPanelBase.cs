@@ -210,7 +210,7 @@ namespace EnhancedDistrictServices
         {
             checkboxdropdown?.triggerButton?.Hide();
 
-            if (popup != null)
+            if (popup != null && popup.verticalScrollbar != null)
             {
                 popup.verticalScrollbar.isVisible = true;
             }
@@ -220,7 +220,7 @@ namespace EnhancedDistrictServices
         {
             checkboxdropdown?.triggerButton?.Show();
 
-            if (popup != null)
+            if (popup != null && popup.verticalScrollbar != null)
             {
                 popup.verticalScrollbar.isVisible = false;
             }
