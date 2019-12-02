@@ -104,7 +104,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="material"></param>
         /// <returns></returns>
-        public static bool MatchOffer(TransferManager.TransferReason material)
+        public static bool MatchOffers(TransferManager.TransferReason material)
         {
             try
             {
