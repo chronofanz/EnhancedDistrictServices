@@ -173,6 +173,9 @@ namespace EnhancedDistrictServices
             }
             else
             {
+                // Shift the GUI out of the way a little bit.
+                // TODO: Make a better GUI with a close button ...
+                component.relativePosition = new Vector3(m_componentWidth, 0); 
                 return;
             }
 

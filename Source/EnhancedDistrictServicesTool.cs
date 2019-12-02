@@ -40,6 +40,7 @@ namespace EnhancedDistrictServices
         {
             base.OnEnable();
             EnhancedDistrictServicesUIPanel.Instance?.OnEnable();
+            EnhancedDistrictServicesUIPanel.Instance?.UpdatePanelToBuilding(0);
         }
 
         protected override void OnDisable()

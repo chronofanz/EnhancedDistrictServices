@@ -10,7 +10,12 @@ namespace EnhancedDistrictServices
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
-            // Logger.Log($"TransferManager::AddIncomingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
+            if (!(TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material)))
+            {
+                return true;
+            }
+
+            Logger.LogVerbose($"TransferManager::AddIncomingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
             return true;
         }
@@ -22,7 +27,12 @@ namespace EnhancedDistrictServices
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)        
         {
-            // Logger.Log($"TransferManager::AddOutgoingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
+            if (!(TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material)))
+            {
+                return true;
+            }
+
+            Logger.LogVerbose($"TransferManager::AddOutgoingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
             return true;
         }
@@ -45,22 +55,19 @@ namespace EnhancedDistrictServices
         /// <param name="offer"></param>
         public static void ModifyOffer(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
-            if (TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material))
+            var isOutsideOffer = TransferManagerInfo.IsOutsideOffer(ref offer);
+            if (isOutsideOffer)
             {
-                var isOutsideOffer = TransferManagerInfo.IsOutsideOffer(ref offer);
-                if (isOutsideOffer)
-                {
-                    offer.Priority = 0;
-                }
-                else
-                {
-                    offer.Priority = Math.Max(offer.Priority, 1);
-                }
+                offer.Priority = 0;
+            }
+            else
+            {
+                offer.Priority = Math.Max(offer.Priority, 1);
+            }
 
-                if (offer.Vehicle != 0)
-                {
-                    offer.Priority = 7;
-                }
+            if (offer.Vehicle != 0)
+            {
+                offer.Priority = 7;
             }
         }
     }

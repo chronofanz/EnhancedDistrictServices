@@ -73,6 +73,7 @@
     <Compile Include="Source\DistrictManagerReleaseDistrictPatch.cs" />
     <Compile Include="Source\TransferManagerAddOfferPatch.cs" />
     <Compile Include="Source\TransferManagerInfo.cs" />
+    <Compile Include="Source\TransferManagerMod.cs" />
     <Compile Include="Source\TransferManagerMatchOffersPatch.cs" />
   </ItemGroup>
   <ItemGroup>
