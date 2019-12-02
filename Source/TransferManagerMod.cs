@@ -186,13 +186,13 @@ namespace EnhancedDistrictServices
                                 break;
                             }
 
-                            /*
                             // Do not match outside to outside offers, because it clogs up the cargo harbors.
+                            // TODO, FIXME: Figure out a better matching algorithm that doesn't generate too much
+                            //              traffic for outside connections ...
                             if (priorityOut == 0 && priorityIn == 0)
                             {
                                 break;
                             }
-                            */
 
                             int responseCountIndex = (int)material * 8 + priorityIn;
                             int responseSubCount = responseCount[responseCountIndex];
