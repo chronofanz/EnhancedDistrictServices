@@ -155,8 +155,7 @@ namespace EnhancedDistrictServices
         {
             // Try to randomize the search a little, to prevent buildings with higher buildingId from always being 
             // starved of services in resource constrained situations.
-            bool searchInIncreasingOrder = (SimulationManager.instance.m_currentFrameIndex >> 4) % 2 == 0;
-            Logger.Log($"TransferManagerMod::MatchOffersClosest: {material}, {SimulationManager.instance.m_currentFrameIndex >> 4}, {searchInIncreasingOrder}");
+            bool searchInIncreasingOrder = (SimulationManager.instance.m_currentFrameIndex >> 8) % 2 == 0;
 
             // We already previously patched the offers so that priority >= 1 correspond to local offers and priority == 0 correspond to outside offers.
             for (int priorityOut = 7; priorityOut >= 0; --priorityOut)
@@ -403,6 +402,30 @@ namespace EnhancedDistrictServices
                     "TransferManager::IsValidSupplyChainOffer: Not a district services building",
                     verbose);
                 return false;
+            }
+
+            // Special logic for recycling centers, since they can produce recycled goods but the district policies
+            // should not apply to these materials.
+            if (responseOffer.Building != 0 && BuildingManager.instance.m_buildings.m_buffer[responseOffer.Building].Info.GetAI() is LandfillSiteAI)
+            {
+                var requestBuilding1 = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
+
+                // Serve only if the request is not supply chain restricted.
+                // Otherwise, we'll need to check below if any existing supply chain restriction is tied to the response building.
+                if (Constraints.SupplySources(requestBuilding1) == null || Constraints.SupplySources(requestBuilding1).Count == 0)
+                {
+                    Logger.LogVerbose(
+                        "TransferManager::IsValidSupplyChainOffer: Serves all local areas (from recycling center)",
+                        verbose);
+                    return true;
+                }
+                else
+                {
+                    Logger.LogVerbose(
+                        "TransferManager::IsValidSupplyChainOffer: Supply link disallowed (from recycling center)",
+                        verbose);
+                    return false;
+                }
             }
 
             // See if the request is from an outside connection ...
