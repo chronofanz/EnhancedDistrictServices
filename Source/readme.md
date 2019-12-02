@@ -13,4 +13,5 @@ The project is simple enough such that all the CS files are in one directory.
 - **Logger**: Yet another logger class ... 
 - **TransferManagerAddOfferPatch**: Modifies the priority and amount of incoming and outgoing orders, including deprioritizing outside connection orders.
 - **TransferManagerInfo**: Helper class containing methods for classifying buildings and offers.
-- **TransferManagerMatchOffersPatch**: Overrides the offer matching algorithm in the TransferManager for supported materials, applying district and supply chain constraints.
+- **TransferManagerMod**: Implements the offer matching algorithm for supported materials, applying district and supply chain constraints.
+- **TransferManagerMatchOffersPatch**: Overrides the TransferManager MatchOffers method for supported materials, calling into TransferManagerMod.

@@ -153,16 +153,22 @@ namespace EnhancedDistrictServices
         /// <param name="verbose"></param>
         private static void MatchOffersClosest(TransferManager.TransferReason material, ushort[] requestCount, TransferManager.TransferOffer[] requestOffers, ushort[] responseCount, TransferManager.TransferOffer[] responseOffers, bool isSupplyChainOffer, bool verbose)
         {
+            // Try to randomize the search a little, to prevent buildings with higher buildingId from always being 
+            // starved of services in resource constrained situations.
+            bool searchInIncreasingOrder = (SimulationManager.instance.m_currentFrameIndex >> 4) % 2 == 0;
+            Logger.Log($"TransferManagerMod::MatchOffersClosest: {material}, {SimulationManager.instance.m_currentFrameIndex >> 4}, {searchInIncreasingOrder}");
+
             // We already previously patched the offers so that priority >= 1 correspond to local offers and priority == 0 correspond to outside offers.
             for (int priorityOut = 7; priorityOut >= 0; --priorityOut)
             {
                 int requestCountIndex = (int)material * 8 + priorityOut;
                 int requestSubCount = requestCount[requestCountIndex];
-                int requestSubIndex = 0;
 
                 // Search request offers in decreasing priority only.  This is appropriate for services where the citizens are the ones calling for help.
-                while (requestSubIndex < requestSubCount)
+                for (int i = 0; i < requestSubCount; i++)
                 {
+                    int requestSubIndex = searchInIncreasingOrder ? i : requestSubCount - 1 - i;
+
                     var requestOffer = requestOffers[requestCountIndex * 256 + requestSubIndex];
                     var requestPosition = requestOffer.Position;
                     int requestAmount = requestOffer.Amount;
@@ -251,32 +257,32 @@ namespace EnhancedDistrictServices
 
                         if (bestPriorityIn != -1)
                         {
-                            int incomingCountIndex = (int)material * 8 + bestPriorityIn;
-                            var incomingOffer = responseOffers[incomingCountIndex * 256 + bestResponseSubIndex];
-                            int incomingAmount = incomingOffer.Amount;
+                            int responseCountIndex = (int)material * 8 + bestPriorityIn;
+                            var responseOffer = responseOffers[responseCountIndex * 256 + bestResponseSubIndex];
+                            int responseAmount = responseOffer.Amount;
 
                             Logger.LogVerbose(
-                                $"TransferManager::MatchOffersClosest: Matched {TransferManagerInfo.ToString(ref incomingOffer, material)}!",
+                                $"TransferManager::MatchOffersClosest: Matched {TransferManagerInfo.ToString(ref requestOffer, material)} to {TransferManagerInfo.ToString(ref responseOffer, material)}!",
                                 verbose);
 
-                            int delta = Mathf.Min(requestAmount, incomingAmount);
+                            int delta = Mathf.Min(requestAmount, responseAmount);
                             if (delta != 0)
                             {
-                                StartTransfer(material, requestOffer, incomingOffer, delta);
+                                StartTransfer(material, requestOffer, responseOffer, delta);
                             }                                
 
                             requestAmount -= delta;
-                            incomingAmount -= delta;
-                            if (incomingAmount == 0)
+                            responseAmount -= delta;
+                            if (responseAmount == 0)
                             {
-                                int incomingSubCount = responseCount[incomingCountIndex] - 1;
-                                responseCount[incomingCountIndex] = (ushort)incomingSubCount;
-                                responseOffers[incomingCountIndex * 256 + bestResponseSubIndex] = responseOffers[incomingCountIndex * 256 + incomingSubCount];
+                                int responseSubCount = responseCount[responseCountIndex] - 1;
+                                responseCount[responseCountIndex] = (ushort)responseSubCount;
+                                responseOffers[responseCountIndex * 256 + bestResponseSubIndex] = responseOffers[responseCountIndex * 256 + responseSubCount];
                             }
                             else
                             {
-                                incomingOffer.Amount = incomingAmount;
-                                responseOffers[incomingCountIndex * 256 + bestResponseSubIndex] = incomingOffer;
+                                responseOffer.Amount = responseAmount;
+                                responseOffers[responseCountIndex * 256 + bestResponseSubIndex] = responseOffer;
                             }
 
                             requestOffer.Amount = requestAmount;
@@ -296,6 +302,7 @@ namespace EnhancedDistrictServices
                     }
                     while (requestAmount != 0);
 
+                    /*
                     if (requestAmount == 0)
                     {
                         --requestSubCount;
@@ -305,9 +312,10 @@ namespace EnhancedDistrictServices
                     else
                     {
                         requestOffer.Amount = requestAmount;
-                        m_outgoingOffers[requestCountIndex * 256 + requestSubIndex] = requestOffer;
+                        requestOffers[requestCountIndex * 256 + requestSubIndex] = requestOffer;
                         ++requestSubIndex;
                     }
+                    */
                 }
             }
 

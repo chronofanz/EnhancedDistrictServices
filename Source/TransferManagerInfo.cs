@@ -313,6 +313,12 @@ namespace EnhancedDistrictServices
                             info.GetSubService() == ItemClass.SubService.PlayerEducationTradeSchool ||
                             info.GetSubService() == ItemClass.SubService.PlayerEducationUniversity);
 
+                    case ItemClass.Service.PlayerIndustry:
+                        return !(
+                            info.GetAI() is AuxiliaryBuildingAI ||
+                            info.GetAI() is DummyBuildingAI ||
+                            info.GetAI() is MainIndustryBuildingAI);
+
                     case ItemClass.Service.PublicTransport:
                         return (
                             info.GetAI() is OutsideConnectionAI ||
@@ -321,13 +327,8 @@ namespace EnhancedDistrictServices
                     case ItemClass.Service.Road:
                         return (
                             info.GetAI() is MaintenanceDepotAI ||
-                            info.GetAI() is OutsideConnectionAI);
-
-                    case ItemClass.Service.PlayerIndustry:
-                        return !(
-                            info.GetAI() is AuxiliaryBuildingAI ||
-                            info.GetAI() is DummyBuildingAI ||
-                            info.GetAI() is MainIndustryBuildingAI);
+                            info.GetAI() is OutsideConnectionAI ||
+                            info.GetAI() is SnowDumpAI);
 
                     case ItemClass.Service.Water:
                         return (
@@ -371,17 +372,20 @@ namespace EnhancedDistrictServices
                 var info = instance.m_buildings.m_buffer[building].Info;
                 switch (info?.GetService())
                 {
-                    case ItemClass.Service.PublicTransport:
-                    case ItemClass.Service.Road:
-                        return (
-                            info.GetAI() is OutsideConnectionAI ||
-                            info.GetSubService() == ItemClass.SubService.PublicTransportPost);
-
                     case ItemClass.Service.PlayerIndustry:
                         return !(
                             info.GetAI() is AuxiliaryBuildingAI ||
                             info.GetAI() is DummyBuildingAI ||
                             info.GetAI() is MainIndustryBuildingAI);
+
+                    case ItemClass.Service.PublicTransport:
+                        return (
+                            info.GetAI() is OutsideConnectionAI ||
+                            info.GetSubService() == ItemClass.SubService.PublicTransportPost);
+
+                    case ItemClass.Service.Road:
+                        return (
+                            info.GetAI() is OutsideConnectionAI);
 
                     default:
                         return false;
@@ -408,6 +412,7 @@ namespace EnhancedDistrictServices
                 material == TransferManager.TransferReason.Mail ||
 
                 material == TransferManager.TransferReason.RoadMaintenance ||
+                material == TransferManager.TransferReason.Snow ||
 
                 material == TransferManager.TransferReason.ForestFire ||
                 material == TransferManager.TransferReason.Collapsed ||
