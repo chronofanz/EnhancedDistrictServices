@@ -75,6 +75,7 @@
     <Compile Include="Source\TransferManagerInfo.cs" />
     <Compile Include="Source\TransferManagerMod.cs" />
     <Compile Include="Source\TransferManagerMatchOffersPatch.cs" />
+    <Compile Include="Source\VehicleAIPatch.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
