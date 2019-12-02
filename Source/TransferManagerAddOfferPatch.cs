@@ -17,16 +17,7 @@ namespace EnhancedDistrictServices
 
             Logger.LogVerbose($"TransferManager::AddIncomingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
-
-            if (offer.Vehicle != 0)
-            {
-                TransferManagerMod.AddIncomingOffer(material, offer);
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+            return true;
         }
     }
 
@@ -43,16 +34,7 @@ namespace EnhancedDistrictServices
 
             Logger.LogVerbose($"TransferManager::AddOutgoingOffer: {TransferManagerInfo.ToString(ref offer, material)}!");
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
-
-            if (offer.Vehicle != 0)
-            {
-                TransferManagerMod.AddOutgoingOffer(material, offer);
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+            return true;
         }
     }
 
