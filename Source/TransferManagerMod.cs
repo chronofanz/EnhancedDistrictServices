@@ -1,5 +1,5 @@
 ﻿using ColossalFramework;
-using Harmony;
+using ColossalFramework.Math;
 using System;
 using System.Reflection;
 using UnityEngine;
@@ -8,6 +8,8 @@ namespace EnhancedDistrictServices
 {
     public static class TransferManagerMod
     {
+        private static readonly Randomizer m_randomizer = new Randomizer(0);
+
         private static readonly TransferManager.TransferOffer[] m_outgoingOffers;
         private static readonly TransferManager.TransferOffer[] m_incomingOffers;
         private static readonly ushort[] m_outgoingCount;
@@ -158,7 +160,7 @@ namespace EnhancedDistrictServices
             bool searchInIncreasingOrder = (SimulationManager.instance.m_currentFrameIndex >> 8) % 2 == 0;
 
             // We already previously patched the offers so that priority >= 1 correspond to local offers and priority == 0 correspond to outside offers.
-            for (int priorityOut = 7; priorityOut >= 0; --priorityOut)
+            for (int priorityOut = 7; priorityOut >= 1; --priorityOut)
             {
                 int requestCountIndex = (int)material * 8 + priorityOut;
                 int requestSubCount = requestCount[requestCountIndex];
@@ -180,16 +182,14 @@ namespace EnhancedDistrictServices
 
                         for (int priorityIn = 7; priorityIn >= 0; --priorityIn)
                         {
-                            // Do not match to outside offer if we can match locally.
-                            if (bestPriorityIn != -1 && priorityIn == 0)
+                            // Don't be so aggressive in trying to serve low priority orders with outside connections.
+                            if (priorityOut <= 2 && priorityIn == 0)
                             {
                                 break;
                             }
 
-                            // Do not match outside to outside offers, because it clogs up the cargo harbors.
-                            // TODO, FIXME: Figure out a better matching algorithm that doesn't generate too much
-                            //              traffic for outside connections ...
-                            if (priorityOut == 0 && priorityIn == 0)
+                            // Do not match to outside offer if we can match locally.
+                            if (bestPriorityIn != -1 && priorityIn == 0)
                             {
                                 break;
                             }
@@ -199,7 +199,7 @@ namespace EnhancedDistrictServices
 
                             for (int responseSubIndex = 0; responseSubIndex < responseSubCount; ++responseSubIndex)
                             {
-                                TransferManager.TransferOffer responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
+                                var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
 
                                 Logger.LogVerbose(
                                     $"TransferManager::MatchOffersClosest: request={TransferManagerInfo.ToString(ref requestOffer, material)}, response={TransferManagerInfo.ToString(ref responseOffer, material)}", 
@@ -300,24 +300,51 @@ namespace EnhancedDistrictServices
                         }
                     }
                     while (requestAmount != 0);
-
-                    /*
-                    if (requestAmount == 0)
-                    {
-                        --requestSubCount;
-                        requestCount[requestCountIndex] = (ushort)requestSubCount;
-                        requestOffers[requestCountIndex * 256 + requestSubIndex] = requestOffers[requestCountIndex * 256 + requestSubCount];
-                    }
-                    else
-                    {
-                        requestOffer.Amount = requestAmount;
-                        requestOffers[requestCountIndex * 256 + requestSubIndex] = requestOffer;
-                        ++requestSubIndex;
-                    }
-                    */
                 }
             }
 
+            // We don't want to get rid of outside-outside connections completely, but at the same time we don't want
+            // to get overwhelmed with traffic.  Pick N random pairs of outside connections to match, that's it.
+            {
+                // TODO, FIXME: We can also honor the allow outside connections option here as well!
+                var priorityOut = 0;
+                var priorityIn = 0;
+
+                int requestCountIndex = (int)material * 8 + priorityOut;
+                int requestSubCount = requestCount[requestCountIndex];
+
+                int responseCountIndex = (int)material * 8 + priorityIn;
+                int responseSubCount = responseCount[responseCountIndex];
+               
+                for (int iter = 0; requestSubCount >= 1 && responseSubCount >= 1; iter++)
+                {
+                    if (iter >= 1)
+                    {
+                        break;
+                    }
+
+                    int requestSubIndex = m_randomizer.Int32(0, requestSubCount - 1);
+                    var requestOffer = requestOffers[requestCountIndex * 256 + requestSubIndex];
+
+                    int responseSubIndex = m_randomizer.Int32(0, responseSubCount - 1);
+                    var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
+
+                    int delta = Mathf.Min(requestOffer.Amount, responseOffer.Amount);
+                    if (delta != 0)
+                    {
+                        StartTransfer(material, requestOffer, responseOffer, delta);
+                    }
+
+                    --requestSubCount;
+                    requestCount[requestCountIndex] = (ushort)requestSubCount;
+                    requestOffers[requestCountIndex * 256 + requestSubIndex] = requestOffers[requestCountIndex * 256 + requestSubCount];
+
+                    --responseSubCount;
+                    responseCount[responseCountIndex] = (ushort)responseSubCount;
+                    responseOffers[responseCountIndex * 256 + responseSubIndex] = responseOffers[responseCountIndex * 256 + responseSubCount];
+                }
+            }
+                
             Clear(material);
         }
 
@@ -428,9 +455,37 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            // See if the request is from an outside connection ...
             var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
             var responseSupplyDestinations = Constraints.SupplyDestinations(responseBuilding);
+
+            // Special logic if both buildings are warehouses.  Used to prevent goods from being shuffled back and forth between warehouses.
+            if (BuildingManager.instance.m_buildings.m_buffer[requestOffer.Building].Info.GetAI() is WarehouseAI &&
+                BuildingManager.instance.m_buildings.m_buffer[responseOffer.Building].Info.GetAI() is WarehouseAI)
+            {
+                // Only match if a supply chain link is specified.
+                if (responseSupplyDestinations?.Count > 0)
+                {
+                    for (int i = 0; i < responseSupplyDestinations.Count; i++)
+                    {
+                        if (responseSupplyDestinations[i] == (int)requestBuilding)
+                        {
+                            Logger.LogVerbose(
+                                "TransferManager::IsValidSupplyChainOffer: Supply link allowed",
+                                verbose);
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    Logger.LogVerbose(
+                        "TransferManager::IsValidSupplyChainOffer: Disallow warehouse to warehouse transfer",
+                        verbose);
+                    return false;
+                }
+            }
+
+            // See if the request is from an outside connection ...
             if (TransferManagerInfo.IsOutsideOffer(ref requestOffer))
             {
                 if (Constraints.OutsideConnections(responseBuilding))
@@ -445,22 +500,6 @@ namespace EnhancedDistrictServices
                 }
                 else 
                 {
-                    // This method not advertised yet ... we can also allow the outside connection's building id if we 
-                    // specify it in the supply chain out field.
-                    if (responseSupplyDestinations?.Count > 0)
-                    {
-                        for (int i = 0; i < responseSupplyDestinations.Count; i++)
-                        {
-                            if (responseSupplyDestinations[i] == (int)requestBuilding)
-                            {
-                                Logger.LogVerbose(
-                                    "TransferManager::IsValidSupplyChainOffer: Matched outside to outside offer",
-                                    verbose);
-                                return true;
-                            }
-                        }
-                    }
-
                     Logger.LogVerbose(
                         "TransferManager::IsValidSupplyChainOffer: Disallowed outside offer",
                         verbose);
