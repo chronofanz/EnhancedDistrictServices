@@ -182,6 +182,12 @@ namespace EnhancedDistrictServices
 
                         for (int priorityIn = 7; priorityIn >= 0; --priorityIn)
                         {
+                            // Don't be so aggressive in trying to serve low priority orders with outside connections.
+                            if (priorityOut <= 3 && priorityIn == 0)
+                            {
+                                break;
+                            }
+
                             // Do not match to outside offer if we can match locally.
                             if (bestPriorityIn != -1 && priorityIn == 0)
                             {
@@ -312,7 +318,7 @@ namespace EnhancedDistrictServices
                
                 for (int iter = 0; requestSubCount >= 1 && responseSubCount >= 1; iter++)
                 {
-                    if (iter >= 2)
+                    if (iter >= 1)
                     {
                         break;
                     }
