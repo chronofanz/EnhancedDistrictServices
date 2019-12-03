@@ -455,9 +455,37 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            // See if the request is from an outside connection ...
             var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
             var responseSupplyDestinations = Constraints.SupplyDestinations(responseBuilding);
+
+            // Special logic if both buildings are warehouses.  Used to prevent goods from being shuffled back and forth between warehouses.
+            if (BuildingManager.instance.m_buildings.m_buffer[requestOffer.Building].Info.GetAI() is WarehouseAI &&
+                BuildingManager.instance.m_buildings.m_buffer[responseOffer.Building].Info.GetAI() is WarehouseAI)
+            {
+                // Only match if a supply chain link is specified.
+                if (responseSupplyDestinations?.Count > 0)
+                {
+                    for (int i = 0; i < responseSupplyDestinations.Count; i++)
+                    {
+                        if (responseSupplyDestinations[i] == (int)requestBuilding)
+                        {
+                            Logger.LogVerbose(
+                                "TransferManager::IsValidSupplyChainOffer: Supply link allowed",
+                                verbose);
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    Logger.LogVerbose(
+                        "TransferManager::IsValidSupplyChainOffer: Disallow warehouse to warehouse transfer",
+                        verbose);
+                    return false;
+                }
+            }
+
+            // See if the request is from an outside connection ...
             if (TransferManagerInfo.IsOutsideOffer(ref requestOffer))
             {
                 if (Constraints.OutsideConnections(responseBuilding))
