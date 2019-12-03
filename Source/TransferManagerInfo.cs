@@ -307,6 +307,10 @@ namespace EnhancedDistrictServices
                             info.GetAI() is LibraryAI ||
                             info.GetAI() is SaunaAI);
 
+                    case ItemClass.Service.Electricity:
+                        return (
+                            info.GetAI() is PowerPlantAI);
+
                     case ItemClass.Service.PlayerEducation:
                         return !(
                             info.GetSubService() == ItemClass.SubService.PlayerEducationLiberalArts ||
@@ -372,6 +376,10 @@ namespace EnhancedDistrictServices
                 var info = instance.m_buildings.m_buffer[building].Info;
                 switch (info?.GetService())
                 {
+                    case ItemClass.Service.Electricity:
+                        return (
+                            info.GetAI() is PowerPlantAI);
+
                     case ItemClass.Service.PlayerIndustry:
                         return !(
                             info.GetAI() is AuxiliaryBuildingAI ||

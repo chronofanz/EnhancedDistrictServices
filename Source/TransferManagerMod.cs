@@ -183,7 +183,7 @@ namespace EnhancedDistrictServices
                         for (int priorityIn = 7; priorityIn >= 0; --priorityIn)
                         {
                             // Don't be so aggressive in trying to serve low priority orders with outside connections.
-                            if (priorityOut <= 3 && priorityIn == 0)
+                            if (priorityOut <= 2 && priorityIn == 0)
                             {
                                 break;
                             }
