@@ -60,6 +60,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Source\DistrictPark\DistrictPark.cs" />
     <Compile Include="Source\EnhancedDistrictServicesThreadingExtension.cs" />
     <Compile Include="Source\EnhancedDistrictServicesMod.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -70,8 +71,9 @@
     <Compile Include="Source\EnhancedDistrictServicesUIPanel.cs" />
     <Compile Include="Source\Logger.cs" />
     <Compile Include="Source\EnhancedDistrictServicesUIPanelBase.cs" />
-    <Compile Include="Source\DistrictManagerReleaseDistrictPatch.cs" />
+    <Compile Include="Source\DistrictPark\DistrictManagerReleasePatch.cs" />
     <Compile Include="Source\TransferManagerAddOfferPatch.cs" />
+    <Compile Include="Source\Utils.cs" />
     <Compile Include="Source\TransferManagerInfo.cs" />
     <Compile Include="Source\TransferManagerMod.cs" />
     <Compile Include="Source\TransferManagerMatchOffersPatch.cs" />
@@ -79,6 +81,7 @@
   <ItemGroup>
     <None Include=".editorconfig" />
     <None Include="packages.config" />
+    <None Include="Source\readme.md" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Images\" />

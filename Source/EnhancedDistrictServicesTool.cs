@@ -162,7 +162,7 @@ namespace EnhancedDistrictServices
             var txtItems = new List<string>();
 
             txtItems.Add($"{TransferManagerInfo.GetBuildingName(building)} ({building})");
-            txtItems.Add(TransferManagerInfo.GetDistrictText(building));
+            txtItems.Add(TransferManagerInfo.GetDistrictParkText(building));
 
             // Early return.  Rest of info pertains to building types that we deal with in the mod.
             if (!TransferManagerInfo.IsDistrictServicesBuilding(building))
