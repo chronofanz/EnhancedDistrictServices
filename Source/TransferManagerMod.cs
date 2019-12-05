@@ -202,7 +202,7 @@ namespace EnhancedDistrictServices
                                 var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
 
                                 Logger.LogVerbose(
-                                    $"TransferManager::MatchOffersClosest: request={TransferManagerInfo.ToString(ref requestOffer, material)}, response={TransferManagerInfo.ToString(ref responseOffer, material)}", 
+                                    $"TransferManager::MatchOffersClosest: request={Utils.ToString(ref requestOffer, material)}, response={Utils.ToString(ref responseOffer, material)}", 
                                     verbose);
 
                                 if (requestOffer.m_object == responseOffer.m_object)
@@ -261,7 +261,7 @@ namespace EnhancedDistrictServices
                             int responseAmount = responseOffer.Amount;
 
                             Logger.LogVerbose(
-                                $"TransferManager::MatchOffersClosest: Matched {TransferManagerInfo.ToString(ref requestOffer, material)} to {TransferManagerInfo.ToString(ref responseOffer, material)}!",
+                                $"TransferManager::MatchOffersClosest: Matched {Utils.ToString(ref requestOffer, material)} to {Utils.ToString(ref responseOffer, material)}!",
                                 verbose);
 
                             int delta = Mathf.Min(requestAmount, responseAmount);
@@ -292,7 +292,7 @@ namespace EnhancedDistrictServices
                             if (!TransferManagerInfo.IsOutsideOffer(ref requestOffer))
                             {
                                 Logger.LogVerbose(
-                                    $"TransferManager::MatchOffersClosest: Could not service request offer {TransferManagerInfo.ToString(ref requestOffer, material)}!",
+                                    $"TransferManager::MatchOffersClosest: Could not service request offer {Utils.ToString(ref requestOffer, material)}!",
                                     verbose);
                             }
 
@@ -394,17 +394,14 @@ namespace EnhancedDistrictServices
 
             // The call to TransferManagerInfo.GetDistrict applies to offers that are come from buildings, service 
             // vehicles, citizens, AND netSegments.  The latter needs to be considered for road maintenance.
-            var requestDistrict = TransferManagerInfo.GetDistrict(material, ref requestOffer);
-            var responseDistrictsServed = Constraints.DistrictServiced(responseBuilding);
-            for (int i = 0; i < responseDistrictsServed?.Count; i++)
+            var requestDistrictPark = TransferManagerInfo.GetDistrictPark(material, ref requestOffer);
+            var responseDistrictParksServed = Constraints.DistrictParkServiced(responseBuilding);
+            if (requestDistrictPark.IsServedBy(responseDistrictParksServed))
             {
-                if (responseDistrictsServed[i] == (int)requestDistrict)
-                {
-                    Logger.LogVerbose(
-                        $"TransferManager::IsValidDistrictOffer: Matched district {requestDistrict}",
-                        verbose);
-                    return true;
-                }
+                Logger.LogVerbose(
+                    $"TransferManager::IsValidDistrictOffer: Matched district {requestDistrictPark.Name}",
+                    verbose);
+                return true;
             }
 
             Logger.LogVerbose(
@@ -545,17 +542,14 @@ namespace EnhancedDistrictServices
             }
             else // No supply chain restrictions, so now apply district restrictions.
             {
-                var requestDistrict = TransferManagerInfo.GetDistrict(requestBuilding);
-                var responseDistrictsServed = Constraints.DistrictServiced(responseBuilding);
-                for (int i = 0; i < responseDistrictsServed?.Count; i++)
+                var requestDistrictPark = TransferManagerInfo.GetDistrictPark(material, ref requestOffer);
+                var responseDistrictParksServed = Constraints.DistrictParkServiced(responseBuilding);
+                if (requestDistrictPark.IsServedBy(responseDistrictParksServed))
                 {
-                    if (responseDistrictsServed[i] == (int)requestDistrict)
-                    {
-                        Logger.LogVerbose(
-                            $"TransferManager::IsValidSupplyChainOffer: Matched district {requestDistrict}",
-                            verbose);
-                        return true;
-                    }
+                    Logger.LogVerbose(
+                        $"TransferManager::IsValidSupplyChainOffer: Matched district {requestDistrictPark.Name}",
+                        verbose);
+                    return true;
                 }
             }
 

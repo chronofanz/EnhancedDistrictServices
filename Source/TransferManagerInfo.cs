@@ -41,20 +41,20 @@ namespace EnhancedDistrictServices
         /// Should return 0 if the offer does not originate from a district.
         /// </summary>
         /// <returns></returns>
-        public static byte GetDistrict(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
+        public static DistrictPark GetDistrictPark(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
             if (offer.NetSegment != 0)
             {
                 var position = NetManager.instance.m_segments.m_buffer[offer.NetSegment].m_middlePosition;
-                return DistrictManager.instance.GetDistrict(position);
+                return DistrictPark.FromPosition(position);
             }
             else if (material == TransferManager.TransferReason.Sick && offer.Citizen != 0)
             {
-                return DistrictManager.instance.GetDistrict(offer.Position);
+                return DistrictPark.FromPosition(offer.Position);
             }
             else
             {
-                return GetDistrict(GetHomeBuilding(ref offer));
+                return GetDistrictPark(GetHomeBuilding(ref offer));
             }
         }
 
@@ -69,40 +69,39 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
-        /// Returns the district of the building.
-        /// Should return 0 if the building is not in a district.
+        /// Returns the district and/or park of the building.
+        /// Should return 0 if the building is not in a district and/or park.
         /// </summary>
         /// <returns></returns>
-        public static byte GetDistrict(int building)
+        public static DistrictPark GetDistrictPark(int building)
         {
             if (building != 0)
             {
                 var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
-                return DistrictManager.instance.GetDistrict(position);
+                return DistrictPark.FromPosition(position);
             }
             else
             {
-                return 0;
+                return new DistrictPark();
             }
         }
 
         /// <summary>
-        /// Returns a descriptive text indicating the home district of the specified building.
+        /// Returns a descriptive text indicating the home district and/or park of the specified building.
         /// </summary>
         /// <param name="building"></param>
         /// <returns></returns>
-        public static string GetDistrictText(ushort building)
+        public static string GetDistrictParkText(ushort building)
         {
             if (building == 0)
             {
                 return string.Empty;
             }
 
-            var district = GetDistrict(building);
-            if (district != 0)
+            var districtPark = GetDistrictPark(building);
+            if (!districtPark.IsEmpty)
             {
-                var districtName = DistrictManager.instance.GetDistrictName((int)district);
-                return $"Home district: {districtName}";
+                return $"Home district: {districtPark.Name}";
             }
             else
             {
@@ -148,15 +147,15 @@ namespace EnhancedDistrictServices
                 txtItems.Add($"Supply chain restricted, only serves specified Supply Chain Out buildings!");
                 return string.Join("\n", txtItems.ToArray());
             }
-            else if (Constraints.DistrictServiced(building)?.Count > 0)
+            else if (Constraints.DistrictParkServiced(building)?.Count > 0)
             {
-                var districtNames = Constraints.DistrictServiced(building)
-                    .Select(d => DistrictManager.instance.GetDistrictName(d))
+                var districtParkNames = Constraints.DistrictParkServiced(building)
+                    .Select(dp => dp.Name)
                     .OrderBy(s => s);
 
-                foreach (var districtName in districtNames)
+                foreach (var districtParkName in districtParkNames)
                 {
-                    txtItems.Add(districtName);
+                    txtItems.Add(districtParkName);
                 }
 
                 addedText = true;
@@ -484,38 +483,6 @@ namespace EnhancedDistrictServices
         public static bool IsOutsideOffer(ref TransferManager.TransferOffer offer)
         {
             return IsOutsideBuilding(GetHomeBuilding(ref offer));
-        }
-
-        /// <summary>
-        /// Helper method for dumping the contents of an offer, for debugging purposes.
-        /// </summary>
-        /// <param name="offer"></param>
-        /// <param name="material"></param>
-        /// <returns></returns>
-        public static string ToString(ref TransferManager.TransferOffer offer, TransferManager.TransferReason material)
-        {
-            if (offer.Building != 0)
-            {
-                return $"Id=B{offer.Building}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
-            }
-
-            if (offer.Citizen != 0)
-            {
-                var homeBuilding = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen].m_homeBuilding;
-                return $"Id=C{offer.Citizen}, Home=B{homeBuilding}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
-            }
-
-            if (offer.Vehicle != 0)
-            {
-                return $"Id=V{offer.Vehicle}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
-            }
-
-            if (offer.NetSegment != 0)
-            {
-                return $"Id=S{offer.NetSegment}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
-            }
-
-            return $"Id=0, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
         }
     }
 }

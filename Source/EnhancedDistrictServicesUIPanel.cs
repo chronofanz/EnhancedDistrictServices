@@ -12,9 +12,9 @@ namespace EnhancedDistrictServices
     public class EnhancedDistrictServicesUIPanel : EnhancedDistrictServicesUIPanelBase<EnhancedDistrictServicesUIPanel>
     {
         /// <summary>
-        /// Mapping of dropdown index to district number. 
+        /// Mapping of dropdown index to DistrictPark. 
         /// </summary>
-        private readonly List<int> m_districtsMapping = new List<int>(capacity: DistrictManager.MAX_DISTRICT_COUNT);
+        private readonly List<DistrictPark> m_districtParkMapping = new List<DistrictPark>(capacity: DistrictPark.MAX_DISTRICT_PARK_COUNT);
 
         /// <summary>
         /// Current building whose policies we are editing.
@@ -276,12 +276,12 @@ namespace EnhancedDistrictServices
 
             UIDistrictsDropDown.eventCheckedChanged += (c, t) =>
             {
-                if (m_currBuildingId == 0 || m_districtsMapping == null)
+                if (m_currBuildingId == 0 || m_districtParkMapping == null)
                 {
                     return;
                 }
 
-                if (UIDistrictsDropDown.GetChecked(t) == Constraints.DistrictServiced(m_currBuildingId)?.Contains(m_districtsMapping[t]))
+                if (UIDistrictsDropDown.GetChecked(t) == Constraints.DistrictParkServiced(m_currBuildingId)?.Contains(m_districtParkMapping[t]))
                 {
                     return;
                 }
@@ -291,11 +291,11 @@ namespace EnhancedDistrictServices
                 {
                     if (UIDistrictsDropDown.GetChecked(t))
                     {
-                        Constraints.AddDistrictServiced(m_currBuildingId, m_districtsMapping[t]);
+                        Constraints.AddDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
                     }
                     else
                     {
-                        Constraints.RemoveDistrictServiced(m_currBuildingId, m_districtsMapping[t]);
+                        Constraints.RemoveDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
                     }
                 });
             };
@@ -383,7 +383,7 @@ namespace EnhancedDistrictServices
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIHomeDistrict Update");
             if (m_currBuildingId != 0)
             {
-                UIHomeDistrict.text = TransferManagerInfo.GetDistrictText(m_currBuildingId);
+                UIHomeDistrict.text = TransferManagerInfo.GetDistrictParkText(m_currBuildingId);
             }
             else
             {
@@ -520,7 +520,7 @@ namespace EnhancedDistrictServices
                 if (updateChecked)
                 {
                     // Do not used UICheckboxDropDown::SetChecked(bool[] isChecked) because it replaces the underlying array.
-                    for (int i = 0; i < m_districtsMapping.Count; i++)
+                    for (int i = 0; i < m_districtParkMapping.Count; i++)
                     {
                         SetChecked(i, false);
                     }
@@ -532,23 +532,23 @@ namespace EnhancedDistrictServices
 
                 if (updateChecked)
                 {
-                    var districtsServed = Constraints.DistrictServiced(m_currBuildingId);
-                    if (districtsServed != null)
+                    var districtParkServed = Constraints.DistrictParkServiced(m_currBuildingId);
+                    if (districtParkServed != null)
                     {
                         // Do not used UICheckboxDropDown::SetChecked(bool[] isChecked) because it replaces the underlying array.
-                        for (int i = 0; i < m_districtsMapping.Count; i++)
+                        for (int i = 0; i < m_districtParkMapping.Count; i++)
                         {
-                            SetChecked(i, districtsServed.Contains(m_districtsMapping[i]));
+                            SetChecked(i, districtParkServed.Contains(m_districtParkMapping[i]));
                         }
                     }
                     else
                     {
                         // Do not used UICheckboxDropDown::SetChecked(bool[] isChecked) because it replaces the underlying array.
-                        for (int i = 0; i < m_districtsMapping.Count; i++)
+                        for (int i = 0; i < m_districtParkMapping.Count; i++)
                         {
                             SetChecked(i, false);
                         }
-                    }
+                    } 
                 }
             }
         }
@@ -556,26 +556,18 @@ namespace EnhancedDistrictServices
         private void UpdateUIDistrictsDropdownDistrictItems()
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIDistrictsDropdownDistrictItems Update");
-            var districtNames = new SortedDictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
-            for (byte district = 1; district < DistrictManager.MAX_DISTRICT_COUNT; district++)
-            {
-                if ((DistrictManager.instance.m_districts.m_buffer[district].m_flags & District.Flags.Created) != 0)
-                {
-                    var districtName = DistrictManager.instance.GetDistrictName(district);
-                    districtNames.Add(districtName, district);
-                }
-            }
+            var districtParks = DistrictPark.GetAllDistrictParks();
 
             UIDistrictsDropDown.Clear();
-            m_districtsMapping.Clear();
+            m_districtParkMapping.Clear();
 
-            foreach (var kvp in districtNames)
+            foreach (var districtPark in districtParks)
             {
-                UIDistrictsDropDown.AddItem(kvp.Key, isChecked: false);
-                m_districtsMapping.Add(kvp.Value);
+                UIDistrictsDropDown.AddItem(districtPark.Name, isChecked: false);
+                m_districtParkMapping.Add(districtPark);
             }
 
-            Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIDistrictsDropdownDistrictItems Found {m_districtsMapping.Count} districts.");
+            Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIDistrictsDropdownDistrictItems Found {m_districtParkMapping.Count} districts.");
         }
 
         private void UpdateUIDistrictsSummary()
@@ -586,8 +578,8 @@ namespace EnhancedDistrictServices
             }
 
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIDistrictsSummary Update");
-            var homeDistrict = TransferManagerInfo.GetDistrict(m_currBuildingId);
-            var districtsServed = Constraints.DistrictServiced(m_currBuildingId);
+            var homeDistrictPark = TransferManagerInfo.GetDistrictPark(m_currBuildingId);
+            var districtParkServed = Constraints.DistrictParkServiced(m_currBuildingId);
 
             if (Constraints.AllLocalAreas(m_currBuildingId))
             {
@@ -600,27 +592,30 @@ namespace EnhancedDistrictServices
                 UIDistrictsSummary.text = "Districts served: (Disabled)";
                 UIDistrictsDropDown.triggerButton.tooltip = "Supply Chain Out enabled.  This policy will not be applied if supply chain out specified.";
             }
-            else if (districtsServed == null || districtsServed.Count == 0)
+            else if (districtParkServed == null || districtParkServed.Count == 0)
             {
                 UIDistrictsSummary.text = "Districts served: None";
                 UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetDistrictsServedText(m_currBuildingId);
             }
-            else if (homeDistrict != 0 && districtsServed.Contains(homeDistrict))
+            // Note that using List::Contains is the wrong thing to do, since the districtParkServed array is 
+            // guaranteed to contain elements that refer to either 1 district or 1 park, but not both, while a building
+            // might belong to both the district or park ...
+            else if (!homeDistrictPark.IsEmpty && homeDistrictPark.IsServedBy(districtParkServed))
             {
-                if (districtsServed.Count == 1)
+                if (districtParkServed.Count == 1)
                 {
                     UIDistrictsSummary.text = $"Districts served: Home only";
                 }
                 else
                 {
-                    UIDistrictsSummary.text = $"Districts served: Home + {districtsServed.Count - 1} others";
+                    UIDistrictsSummary.text = $"Districts served: Home + {districtParkServed.Count - 1} others";
                 }
 
                 UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetDistrictsServedText(m_currBuildingId);
             }
             else
             {
-                UIDistrictsSummary.text = $"Districts served: {districtsServed.Count} others";
+                UIDistrictsSummary.text = $"Districts served: {districtParkServed.Count} others";
                 UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetDistrictsServedText(m_currBuildingId);
             }
         }
