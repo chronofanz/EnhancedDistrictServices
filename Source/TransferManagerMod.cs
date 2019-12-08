@@ -172,7 +172,7 @@ namespace EnhancedDistrictServices
                         preFilterRequest: PreFilterLowPriorityOffer);
 
                     // Now finally try and match to outside offers, as well as match using extra supply.
-                    if (m_randomizer.Int32(0, 100) <= 8)
+                    if (m_randomizer.Int32(0, 100) <= 6)
                     {
                         MatchOffersClosest(
                             material,
@@ -409,8 +409,8 @@ namespace EnhancedDistrictServices
             }
 
             // Special logic if both buildings are warehouses.  Used to prevent goods from being shuffled back and forth between warehouses.
-            if (BuildingManager.instance.m_buildings.m_buffer[requestOffer.Building].Info.GetAI() is WarehouseAI &&
-                BuildingManager.instance.m_buildings.m_buffer[responseOffer.Building].Info.GetAI() is WarehouseAI)
+            if (BuildingManager.instance.m_buildings.m_buffer[requestBuilding].Info.GetAI() is WarehouseAI &&
+                BuildingManager.instance.m_buildings.m_buffer[responseBuilding].Info.GetAI() is WarehouseAI)
             {
                 return false;
             }
@@ -494,8 +494,8 @@ namespace EnhancedDistrictServices
             }
 
             // Special logic if both buildings are warehouses.  Used to prevent goods from being shuffled back and forth between warehouses.
-            if (BuildingManager.instance.m_buildings.m_buffer[requestOffer.Building].Info.GetAI() is WarehouseAI &&
-                BuildingManager.instance.m_buildings.m_buffer[responseOffer.Building].Info.GetAI() is WarehouseAI)
+            if (BuildingManager.instance.m_buildings.m_buffer[requestBuilding].Info.GetAI() is WarehouseAI &&
+                BuildingManager.instance.m_buildings.m_buffer[responseBuilding].Info.GetAI() is WarehouseAI)
             {
                 return false;
             }
@@ -506,15 +506,6 @@ namespace EnhancedDistrictServices
                     $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, serves all local areas",
                     material);
                 return true;
-            }
-
-            // Special logic for recycling centers, since they can produce recycled goods but the district policies
-            // should not apply to these materials.
-            if (responseBuilding != 0 && BuildingManager.instance.m_buildings.m_buffer[responseBuilding].Info.GetAI() is LandfillSiteAI)
-            {
-                Logger.LogMaterial(
-                    $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, allow recycling centers",
-                    material);
             }
 
             // Only if there are no supply out restrictions, and no supply in restrictions, do we try to match on 
@@ -580,10 +571,20 @@ namespace EnhancedDistrictServices
             }
 
             // Special logic if both buildings are warehouses.  Used to prevent goods from being shuffled back and forth between warehouses.
-            if (BuildingManager.instance.m_buildings.m_buffer[requestOffer.Building].Info.GetAI() is WarehouseAI &&
-                BuildingManager.instance.m_buildings.m_buffer[responseOffer.Building].Info.GetAI() is WarehouseAI)
+            if (BuildingManager.instance.m_buildings.m_buffer[requestBuilding].Info.GetAI() is WarehouseAI &&
+                BuildingManager.instance.m_buildings.m_buffer[responseBuilding].Info.GetAI() is WarehouseAI)
             {
                 return false;
+            }
+
+            // Special logic for recycling centers, since they can produce recycled goods but the district policies
+            // should not apply to these materials.
+            if (responseBuilding != 0 && BuildingManager.instance.m_buildings.m_buffer[responseBuilding].Info.GetAI() is LandfillSiteAI)
+            {
+                Logger.LogMaterial(
+                    $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, allow recycling centers",
+                    material);
+                return true;
             }
 
             // See if the request is from an outside connection ...
