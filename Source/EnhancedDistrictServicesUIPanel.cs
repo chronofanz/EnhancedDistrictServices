@@ -144,6 +144,54 @@ namespace EnhancedDistrictServices
                 });
             };
 
+            UISupplyReserve.eventClicked += (c, p) =>
+            {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyReserve Clicked");
+            };
+
+            UISupplyReserve.eventTextCancelled += (c, p) =>
+            {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyReserve TextCancelled");
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    UpdateUISupplyReserve();
+                });
+            };
+
+            UISupplyReserve.eventTextSubmitted += (c, p) =>
+            {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyReserve TextSubmitted");
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    if (!TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
+                    {
+                        UpdateUISupplyReserve();
+                        return;
+                    }
+
+                    if (string.IsNullOrEmpty(UISupplyChainIn.text.Trim()))
+                    {
+                        UpdateUISupplyReserve();
+                        return;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            // TODO, FIXME: Do this in a single transaction and clean up hacky implementation below.
+                            var amount = ushort.Parse(UISupplyReserve.text);
+                            Constraints.SetInternalSupplyReserve(m_currBuildingId, amount);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogException(ex);
+                        }
+                    }
+
+                    UpdateUISupplyReserve();
+                });
+            };
+
             UISupplyChainIn.eventClicked += (c, p) =>
             {
                 Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChainIn Clicked");
@@ -348,12 +396,21 @@ namespace EnhancedDistrictServices
             UpdateUIServices();
             UpdateUIAllLocalAreasCheckBox();
             UpdateUIAllOutsideConnectionsCheckBox();
+            UpdateUISupplyReserve();
             UpdateUISupplyChainIn();
             UpdateUISupplyChainOut();
             UpdateUIDistrictsDropdown(updateChecked: true);
 
             UpdateUIDistrictsSummary();
-            Show();
+
+            if (m_currBuildingId != 0)
+            {
+                Show();
+            }
+            else
+            {
+                Hide();
+            }
         }
 
         private void UpdateUITitle()
@@ -418,7 +475,7 @@ namespace EnhancedDistrictServices
                 UIAllLocalAreasCheckBox.readOnly = true;
             }
 
-            UIAllLocalAreasCheckBox.label.text = "All Local Areas";
+            UIAllLocalAreasCheckBox.label.text = "All Local Areas: ";
             UIAllLocalAreasCheckBox.tooltip = "If enabled, serves all local areas.  Overrides Supply Chain Out and Districts Served restrictions.";
         }
 
@@ -437,7 +494,24 @@ namespace EnhancedDistrictServices
             }
 
             UIAllOutsideConnectionsCheckBox.tooltip = "If enabled, serves all outside connections.";
-            UIAllOutsideConnectionsCheckBox.label.text = "All Outside Connections";
+            UIAllOutsideConnectionsCheckBox.label.text = "All Outside Connections: ";
+        }
+
+        private void UpdateUISupplyReserve()
+        {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyReserve Update");
+            if (m_currBuildingId == 0 || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
+            {
+                UISupplyReserve.readOnly = true;
+                UISupplyReserve.text = "(Disabled)";
+                UISupplyReserve.tooltip = "This policy is not applicable for non-supply chain buildings.";
+            }
+            else
+            {
+                UISupplyReserve.readOnly = false;
+                UISupplyReserve.text = Constraints.InternalSupplyBuffer(m_currBuildingId).ToString();
+                UISupplyReserve.tooltip = "(Supply Chain Buildings Only):\nThe percentage of goods to reserve for allowed districts and supply out buildings.\nEnter a value between 0 and 100 inclusive.";
+            }
         }
 
         private void UpdateUISupplyChainIn()
@@ -574,6 +648,8 @@ namespace EnhancedDistrictServices
         {
             if (m_currBuildingId == 0)
             {
+                UIDistrictsSummary.text = "Districts served:";
+                UIDistrictsDropDown.triggerButton.tooltip = "";
                 return;
             }
 

@@ -100,6 +100,15 @@ namespace EnhancedDistrictServices
             }
         }
 
+        public delegate bool MatchFilter(
+            TransferManager.TransferReason material,
+            ref TransferManager.TransferOffer requestOffer, int requestPriority,
+            ref TransferManager.TransferOffer responseOffer, int responsePriority);
+
+        public delegate bool PreFilterRequest(
+            TransferManager.TransferReason material,
+            ref TransferManager.TransferOffer requestOffer, int requestPriority);
+
         /// <summary>
         /// Matches all offers of the given material, if supported.  Returns true if this method did attempt to match 
         /// offers.
@@ -118,17 +127,65 @@ namespace EnhancedDistrictServices
                 // Road maintenance is switched around ...
                 if (material == TransferManager.TransferReason.RoadMaintenance)
                 {
-                    MatchOffersClosest(material, requestCount: m_incomingCount, requestOffers: m_incomingOffers, responseCount: m_outgoingCount, responseOffers: m_outgoingOffers, isSupplyChainOffer: false, verbose: false);
+                    MatchOffersClosest(
+                        material, 
+                        requestCount: m_incomingCount, requestOffers: m_incomingOffers,
+                        requestPriorityMax: 7, requestPriorityMin: 1,
+                        responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
+                        responsePriorityMax: 7, responsePriorityMin: 1,
+                        matchFilter: IsValidDistrictOffer);
+
+                    Clear(material);
                     return true;
                 }
                 else if (TransferManagerInfo.IsDistrictOffer(material))
                 {
-                    MatchOffersClosest(material, requestCount: m_outgoingCount, requestOffers: m_outgoingOffers, responseCount: m_incomingCount, responseOffers: m_incomingOffers, isSupplyChainOffer: false, verbose: false);
+                    MatchOffersClosest(
+                        material, 
+                        requestCount: m_outgoingCount, requestOffers: m_outgoingOffers,
+                        requestPriorityMax: 7, requestPriorityMin: 1,
+                        responseCount: m_incomingCount, responseOffers: m_incomingOffers,
+                        responsePriorityMax: 7, responsePriorityMin: 1,
+                        matchFilter: IsValidDistrictOffer);
+
+                    Clear(material);
                     return true;
                 }
                 else if (TransferManagerInfo.IsSupplyChainOffer(material))
                 {
-                    MatchOffersClosest(material, requestCount: m_incomingCount, requestOffers: m_incomingOffers, responseCount: m_outgoingCount, responseOffers: m_outgoingOffers, isSupplyChainOffer: true, verbose: false);
+                    // First try to match using supply chain rules.
+                    MatchOffersClosest(
+                        material,
+                        requestCount: m_incomingCount, requestOffers: m_incomingOffers,
+                        requestPriorityMax: 7, requestPriorityMin: 1,
+                        responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
+                        responsePriorityMax: 7, responsePriorityMin: 1,
+                        matchFilter: IsValidSupplyChainOffer);
+
+                    MatchOffersClosest(
+                        material,
+                        requestCount: m_incomingCount, requestOffers: m_incomingOffers,
+                        requestPriorityMax: 7, requestPriorityMin: 1,
+                        responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
+                        responsePriorityMax: 7, responsePriorityMin: 1,
+                        matchFilter: IsValidLowPriorityOffer,
+                        preFilterRequest: PreFilterLowPriorityOffer);
+
+                    // Now finally try and match to outside offers, as well as match using extra supply.
+                    if (m_randomizer.Int32(0, 100) <= 8)
+                    {
+                        MatchOffersClosest(
+                            material,
+                            requestCount: m_incomingCount, requestOffers: m_incomingOffers,
+                            requestPriorityMax: 7, requestPriorityMin: 0,
+                            responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
+                            responsePriorityMax: 7, responsePriorityMin: 0,
+                            matchFilter: IsValidLowPriorityOffer,
+                            preFilterRequest: PreFilterLowPriorityOffer,
+                            matchMax: 1);
+                    }
+
+                    Clear(material);
                     return true;
                 }
             }
@@ -151,59 +208,77 @@ namespace EnhancedDistrictServices
         /// <param name="requestOffers"></param>
         /// <param name="responseCount"></param>
         /// <param name="responseOffers"></param>
-        /// <param name="isSupplyChainOffer"></param>
-        /// <param name="verbose"></param>
-        private static void MatchOffersClosest(TransferManager.TransferReason material, ushort[] requestCount, TransferManager.TransferOffer[] requestOffers, ushort[] responseCount, TransferManager.TransferOffer[] responseOffers, bool isSupplyChainOffer, bool verbose)
+        private static void MatchOffersClosest(
+            TransferManager.TransferReason material, 
+            ushort[] requestCount, TransferManager.TransferOffer[] requestOffers, 
+            int requestPriorityMax, int requestPriorityMin,
+            ushort[] responseCount, TransferManager.TransferOffer[] responseOffers,
+            int responsePriorityMax, int responsePriorityMin,
+            MatchFilter matchFilter, PreFilterRequest preFilterRequest = null, int matchMax = int.MaxValue)
         {
-            // Try to randomize the search a little, to prevent buildings with higher buildingId from always being 
-            // starved of services in resource constrained situations.
-            bool searchInIncreasingOrder = (SimulationManager.instance.m_currentFrameIndex >> 8) % 2 == 0;
+            int matches = 0;
 
             // We already previously patched the offers so that priority >= 1 correspond to local offers and priority == 0 correspond to outside offers.
-            for (int priorityOut = 7; priorityOut >= 1; --priorityOut)
+            for (int requestPriority = requestPriorityMax; requestPriority >= requestPriorityMin; --requestPriority)
             {
-                int requestCountIndex = (int)material * 8 + priorityOut;
+                int requestCountIndex = (int)material * 8 + requestPriority;
                 int requestSubCount = requestCount[requestCountIndex];
 
+                // Start searching at a random index!
+                int requestSubIndex = m_randomizer.Int32(0, requestSubCount - 1);
+
                 // Search request offers in decreasing priority only.  This is appropriate for services where the citizens are the ones calling for help.
-                for (int i = 0; i < requestSubCount; i++)
+                for (int iter = 0; iter < requestSubCount; iter++)
                 {
-                    int requestSubIndex = searchInIncreasingOrder ? i : requestSubCount - 1 - i;
+                    requestSubIndex++;
+                    if (requestSubIndex >= requestSubCount)
+                    {
+                        requestSubIndex = 0;
+                    }
 
                     var requestOffer = requestOffers[requestCountIndex * 256 + requestSubIndex];
                     var requestPosition = requestOffer.Position;
                     int requestAmount = requestOffer.Amount;
 
+                    if (preFilterRequest != null && preFilterRequest(material, ref requestOffer, requestPriority))
+                    {
+                        continue;
+                    }
+
+                    if (requestAmount == 0)
+                    {
+                        continue;
+                    }
+
+                    if (matches >= matchMax)
+                    {
+                        return;
+                    }
+
+                    Logger.LogMaterial(
+                        $"TransferManager::MatchOffersClosest: Searching for match for request={Utils.ToString(ref requestOffer, material)}",
+                        material);
+
                     do
                     {
-                        int bestPriorityIn = -1;
+                        int bestResponsePriority = -1;
                         int bestResponseSubIndex = -1;
                         float bestDistanceSquared = float.MaxValue;
 
-                        for (int priorityIn = 7; priorityIn >= 0; --priorityIn)
+                        for (int responsePriority = responsePriorityMax; responsePriority >= responsePriorityMin; --responsePriority)
                         {
-                            // Don't be so aggressive in trying to serve low priority orders with outside connections.
-                            if (priorityOut <= 2 && priorityIn == 0)
-                            {
-                                break;
-                            }
-
                             // Do not match to outside offer if we can match locally.
-                            if (bestPriorityIn != -1 && priorityIn == 0)
+                            if (bestResponsePriority != -1 && responsePriority == 0)
                             {
                                 break;
                             }
 
-                            int responseCountIndex = (int)material * 8 + priorityIn;
+                            int responseCountIndex = (int)material * 8 + responsePriority;
                             int responseSubCount = responseCount[responseCountIndex];
 
                             for (int responseSubIndex = 0; responseSubIndex < responseSubCount; ++responseSubIndex)
                             {
                                 var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
-
-                                Logger.LogVerbose(
-                                    $"TransferManager::MatchOffersClosest: request={Utils.ToString(ref requestOffer, material)}, response={Utils.ToString(ref responseOffer, material)}", 
-                                    verbose);
 
                                 if (requestOffer.m_object == responseOffer.m_object)
                                 {
@@ -215,12 +290,10 @@ namespace EnhancedDistrictServices
                                     continue;
                                 }
 
-                                if (!isSupplyChainOffer && !IsValidDistrictOffer(material, ref requestOffer, ref responseOffer, verbose))
-                                {
-                                    continue;
-                                }
-
-                                if (isSupplyChainOffer && !IsValidSupplyChainOffer(material, ref requestOffer, ref responseOffer, verbose))
+                                if (!matchFilter(
+                                    material,
+                                    ref requestOffer, requestPriority,
+                                    ref responseOffer, responsePriority))
                                 {
                                     continue;
                                 }
@@ -228,47 +301,48 @@ namespace EnhancedDistrictServices
                                 var distanceSquared = Vector3.SqrMagnitude(responseOffer.Position - requestPosition);
                                 var foundBetterMatch = false;
 
-                                if (bestPriorityIn == -1)
+                                if (bestResponsePriority == -1)
                                 {
                                     foundBetterMatch = true;
                                 }
 
-                                if (priorityIn == bestPriorityIn && distanceSquared < bestDistanceSquared)
+                                if (responsePriority == bestResponsePriority && distanceSquared < bestDistanceSquared)
                                 {
                                     foundBetterMatch = true;
                                 }
 
                                 // Magic number 0.75.  Allow matching a lower priority offer only if it is substantially 
                                 // closer.
-                                if (priorityIn < bestPriorityIn && distanceSquared < 0.75 * bestDistanceSquared)
+                                if (responsePriority < bestResponsePriority && distanceSquared < 0.75 * bestDistanceSquared)
                                 {
                                     foundBetterMatch = true;
                                 }
 
                                 if (foundBetterMatch)
                                 {
-                                    bestPriorityIn = priorityIn;
+                                    bestResponsePriority = responsePriority;
                                     bestResponseSubIndex = responseSubIndex;
                                     bestDistanceSquared = distanceSquared;
                                 }
                             }
                         }
 
-                        if (bestPriorityIn != -1)
+                        if (bestResponsePriority != -1)
                         {
-                            int responseCountIndex = (int)material * 8 + bestPriorityIn;
+                            int responseCountIndex = (int)material * 8 + bestResponsePriority;
                             var responseOffer = responseOffers[responseCountIndex * 256 + bestResponseSubIndex];
                             int responseAmount = responseOffer.Amount;
 
-                            Logger.LogVerbose(
+                            Logger.LogMaterial(
                                 $"TransferManager::MatchOffersClosest: Matched {Utils.ToString(ref requestOffer, material)} to {Utils.ToString(ref responseOffer, material)}!",
-                                verbose);
+                                material);
 
                             int delta = Mathf.Min(requestAmount, responseAmount);
                             if (delta != 0)
                             {
+                                matches++;
                                 StartTransfer(material, requestOffer, responseOffer, delta);
-                            }                                
+                            }
 
                             requestAmount -= delta;
                             responseAmount -= delta;
@@ -288,64 +362,12 @@ namespace EnhancedDistrictServices
                         }
                         else
                         {
-                            // Don't warn if we could not satisfy an outside connection's offer
-                            if (!TransferManagerInfo.IsOutsideOffer(ref requestOffer))
-                            {
-                                Logger.LogVerbose(
-                                    $"TransferManager::MatchOffersClosest: Could not service request offer {Utils.ToString(ref requestOffer, material)}!",
-                                    verbose);
-                            }
-
                             break;
                         }
                     }
                     while (requestAmount != 0);
                 }
             }
-
-            // We don't want to get rid of outside-outside connections completely, but at the same time we don't want
-            // to get overwhelmed with traffic.  Pick N random pairs of outside connections to match, that's it.
-            {
-                // TODO, FIXME: We can also honor the allow outside connections option here as well!
-                var priorityOut = 0;
-                var priorityIn = 0;
-
-                int requestCountIndex = (int)material * 8 + priorityOut;
-                int requestSubCount = requestCount[requestCountIndex];
-
-                int responseCountIndex = (int)material * 8 + priorityIn;
-                int responseSubCount = responseCount[responseCountIndex];
-               
-                for (int iter = 0; requestSubCount >= 1 && responseSubCount >= 1; iter++)
-                {
-                    if (iter >= 1)
-                    {
-                        break;
-                    }
-
-                    int requestSubIndex = m_randomizer.Int32(0, requestSubCount - 1);
-                    var requestOffer = requestOffers[requestCountIndex * 256 + requestSubIndex];
-
-                    int responseSubIndex = m_randomizer.Int32(0, responseSubCount - 1);
-                    var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
-
-                    int delta = Mathf.Min(requestOffer.Amount, responseOffer.Amount);
-                    if (delta != 0)
-                    {
-                        StartTransfer(material, requestOffer, responseOffer, delta);
-                    }
-
-                    --requestSubCount;
-                    requestCount[requestCountIndex] = (ushort)requestSubCount;
-                    requestOffers[requestCountIndex * 256 + requestSubIndex] = requestOffers[requestCountIndex * 256 + requestSubCount];
-
-                    --responseSubCount;
-                    responseCount[responseCountIndex] = (ushort)responseSubCount;
-                    responseOffers[responseCountIndex * 256 + responseSubIndex] = responseOffers[responseCountIndex * 256 + responseSubCount];
-                }
-            }
-                
-            Clear(material);
         }
 
         /// <summary>
@@ -369,117 +391,199 @@ namespace EnhancedDistrictServices
         /// <summary>
         /// Returns true if we can potentially match the two given offers.
         /// </summary>
-        /// <param name="material"></param>
-        /// <param name="requestOffer">i.e. offer by a student, residential, commerical building</param>
-        /// <param name="responseOffer">i.e. offer by landfill, hospital, police</param>
         /// <returns></returns>
-        private static bool IsValidDistrictOffer(TransferManager.TransferReason material, ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer, bool verbose)
+        private static bool IsValidDistrictOffer(
+            TransferManager.TransferReason material, 
+            ref TransferManager.TransferOffer requestOffer, int requestPriority,
+            ref TransferManager.TransferOffer responseOffer, int responsePriority)
         {
+            var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
             var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
+
             if (responseBuilding == 0)
             {
-                Logger.LogVerbose(
-                    "TransferManager::IsValidDistrictOffer: Not a district services building",
-                    verbose);
+                Logger.LogMaterial(
+                    $"TransferManager::IsValidDistrictOffer: {Utils.ToString(ref responseOffer, material)}, not a district services building",
+                    material);
+                return false;
+            }
+
+            // Special logic if both buildings are warehouses.  Used to prevent goods from being shuffled back and forth between warehouses.
+            if (BuildingManager.instance.m_buildings.m_buffer[requestOffer.Building].Info.GetAI() is WarehouseAI &&
+                BuildingManager.instance.m_buildings.m_buffer[responseOffer.Building].Info.GetAI() is WarehouseAI)
+            {
                 return false;
             }
 
             if (Constraints.AllLocalAreas(responseBuilding))
             {
-                Logger.LogVerbose(
-                    "TransferManager::IsValidDistrictOffer: Serves all local areas",
-                    verbose);
+                Logger.LogMaterial(
+                    $"TransferManager::IsValidDistrictOffer: {Utils.ToString(ref responseOffer, material)}, serves all local areas",
+                    material);
                 return true;
             }
 
             // The call to TransferManagerInfo.GetDistrict applies to offers that are come from buildings, service 
-            // vehicles, citizens, AND netSegments.  The latter needs to be considered for road maintenance.
+            // vehicles, citizens, AND segments.  The latter needs to be considered for road maintenance.
             var requestDistrictPark = TransferManagerInfo.GetDistrictPark(material, ref requestOffer);
             var responseDistrictParksServed = Constraints.DistrictParkServiced(responseBuilding);
             if (requestDistrictPark.IsServedBy(responseDistrictParksServed))
             {
-                Logger.LogVerbose(
-                    $"TransferManager::IsValidDistrictOffer: Matched district {requestDistrictPark.Name}",
-                    verbose);
+                Logger.LogMaterial(
+                    $"TransferManager::IsValidDistrictOffer: {Utils.ToString(ref responseOffer, material)}, serves district {requestDistrictPark.Name}",
+                    material);
                 return true;
             }
 
-            Logger.LogVerbose(
-                $"TransferManager::IsValidDistrictOffer: Not valid",
-                verbose);
+            Logger.LogMaterial(
+                $"TransferManager::IsValidDistrictOffer: {Utils.ToString(ref responseOffer, material)}, not valid",
+                material);
             return false;
         }
 
         /// <summary>
         /// Returns true if we can potentially match the two given offers.
         /// </summary>
-        /// <param name="material"></param>
-        /// <param name="requestOffer">consumer of goods</param>
-        /// <param name="responseOffer">producer of goods</param>
         /// <returns></returns>
-        private static bool IsValidSupplyChainOffer(TransferManager.TransferReason material, ref TransferManager.TransferOffer requestOffer, ref TransferManager.TransferOffer responseOffer, bool verbose)
+        private static bool IsValidSupplyChainOffer(
+            TransferManager.TransferReason material,
+            ref TransferManager.TransferOffer requestOffer, int requestPriority,
+            ref TransferManager.TransferOffer responseOffer, int responsePriority)
         {
+            var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
             var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
+
             if (responseBuilding == 0)
             {
-                Logger.LogVerbose(
-                    "TransferManager::IsValidSupplyChainOffer: Not a district services building",
-                    verbose);
+                Logger.LogMaterial(
+                    $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, not a district services building",
+                    material);
                 return false;
             }
 
-            // Special logic for recycling centers, since they can produce recycled goods but the district policies
-            // should not apply to these materials.
-            if (responseOffer.Building != 0 && BuildingManager.instance.m_buildings.m_buffer[responseOffer.Building].Info.GetAI() is LandfillSiteAI)
-            {
-                var requestBuilding1 = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
-
-                // Serve only if the request is not supply chain restricted.
-                // Otherwise, we'll need to check below if any existing supply chain restriction is tied to the response building.
-                if (Constraints.SupplySources(requestBuilding1) == null || Constraints.SupplySources(requestBuilding1).Count == 0)
-                {
-                    Logger.LogVerbose(
-                        "TransferManager::IsValidSupplyChainOffer: Serves all local areas (from recycling center)",
-                        verbose);
-                    return true;
-                }
-                else
-                {
-                    Logger.LogVerbose(
-                        "TransferManager::IsValidSupplyChainOffer: Supply link disallowed (from recycling center)",
-                        verbose);
-                    return false;
-                }
-            }
-
-            var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
+            // First check if a supply link exists.
             var responseSupplyDestinations = Constraints.SupplyDestinations(responseBuilding);
-
-            // Special logic if both buildings are warehouses.  Used to prevent goods from being shuffled back and forth between warehouses.
-            if (BuildingManager.instance.m_buildings.m_buffer[requestOffer.Building].Info.GetAI() is WarehouseAI &&
-                BuildingManager.instance.m_buildings.m_buffer[responseOffer.Building].Info.GetAI() is WarehouseAI)
+            if (requestBuilding != 0 && Constraints.SupplySources(requestBuilding)?.Count > 0)
             {
-                // Only match if a supply chain link is specified.
                 if (responseSupplyDestinations?.Count > 0)
                 {
                     for (int i = 0; i < responseSupplyDestinations.Count; i++)
                     {
                         if (responseSupplyDestinations[i] == (int)requestBuilding)
                         {
-                            Logger.LogVerbose(
-                                "TransferManager::IsValidSupplyChainOffer: Supply link allowed",
-                                verbose);
+                            Logger.LogMaterial(
+                                $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, supply link allowed",
+                                material);
                             return true;
                         }
                     }
+
+                    Logger.LogMaterial(
+                        $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, supply link disallowed",
+                        material);
+                    return false;
                 }
                 else
                 {
-                    Logger.LogVerbose(
-                        "TransferManager::IsValidSupplyChainOffer: Disallow warehouse to warehouse transfer",
-                        verbose);
+                    // If supply source restriction exists, then do not attempt to match offer with any other source!
+                    Logger.LogMaterial(
+                        $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, supply link disallowed",
+                        material);
                     return false;
                 }
+            }
+
+            // Special logic if both buildings are warehouses.  Used to prevent goods from being shuffled back and forth between warehouses.
+            if (BuildingManager.instance.m_buildings.m_buffer[requestOffer.Building].Info.GetAI() is WarehouseAI &&
+                BuildingManager.instance.m_buildings.m_buffer[responseOffer.Building].Info.GetAI() is WarehouseAI)
+            {
+                return false;
+            }
+
+            if (Constraints.AllLocalAreas(responseBuilding))
+            {
+                Logger.LogMaterial(
+                    $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, serves all local areas",
+                    material);
+                return true;
+            }
+
+            // Special logic for recycling centers, since they can produce recycled goods but the district policies
+            // should not apply to these materials.
+            if (responseBuilding != 0 && BuildingManager.instance.m_buildings.m_buffer[responseBuilding].Info.GetAI() is LandfillSiteAI)
+            {
+                Logger.LogMaterial(
+                    $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, allow recycling centers",
+                    material);
+            }
+
+            // Only if there are no supply out restrictions, and no supply in restrictions, do we try to match on 
+            // district.
+            if (responseSupplyDestinations == null || responseSupplyDestinations.Count == 0)
+            {
+                // The call to TransferManagerInfo.GetDistrict applies to offers that are come from buildings, service 
+                // vehicles, citizens, AND segments.  The latter needs to be considered for road maintenance.
+                var requestDistrictPark = TransferManagerInfo.GetDistrictPark(material, ref requestOffer);
+                var responseDistrictParksServed = Constraints.DistrictParkServiced(responseBuilding);
+                if (requestDistrictPark.IsServedBy(responseDistrictParksServed))
+                {
+                    Logger.LogMaterial(
+                        $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, serves district {requestDistrictPark.Name}",
+                        material);
+                    return true;
+                }
+            }
+
+            Logger.LogMaterial(
+                $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, not valid",
+                material);
+            return false;
+        }
+
+        private static bool PreFilterLowPriorityOffer(
+            TransferManager.TransferReason material,
+            ref TransferManager.TransferOffer requestOffer, int requestPriority)
+        {
+            if (requestOffer.Amount == 0)
+                return true;
+
+            // First check if a supply link exists.
+            var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
+            if (requestBuilding != 0 && Constraints.SupplySources(requestBuilding)?.Count > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Returns true if we can potentially match the two given offers.
+        /// </summary>
+        /// <returns></returns>
+        private static bool IsValidLowPriorityOffer(
+            TransferManager.TransferReason material,
+            ref TransferManager.TransferOffer requestOffer, int requestPriority,
+            ref TransferManager.TransferOffer responseOffer, int responsePriority)
+        {
+            var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
+            var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
+
+            if (responseBuilding == 0)
+            {
+                Logger.LogMaterial(
+                    $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, not a district services building",
+                    material);
+                return false;
+            }
+
+            // Special logic if both buildings are warehouses.  Used to prevent goods from being shuffled back and forth between warehouses.
+            if (BuildingManager.instance.m_buildings.m_buffer[requestOffer.Building].Info.GetAI() is WarehouseAI &&
+                BuildingManager.instance.m_buildings.m_buffer[responseOffer.Building].Info.GetAI() is WarehouseAI)
+            {
+                return false;
             }
 
             // See if the request is from an outside connection ...
@@ -487,75 +591,48 @@ namespace EnhancedDistrictServices
             {
                 if (Constraints.OutsideConnections(responseBuilding))
                 {
-                    Logger.LogVerbose(
-                        "TransferManager::IsValidSupplyChainOffer: Matched local to outside offer",
-                        verbose && !TransferManagerInfo.IsOutsideOffer(ref responseOffer));
-                    Logger.LogVerbose(
-                        "TransferManager::IsValidSupplyChainOffer: Matched outside to outside offer",
-                        verbose && TransferManagerInfo.IsOutsideOffer(ref responseOffer));
+                    Logger.LogMaterial(
+                        $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, matched to outside offer",
+                        material);
                     return true;
                 }
-                else 
+                else if (TransferManagerInfo.GetSupplyBuildingAmount(responseBuilding) > Constraints.InternalSupplyBuffer(responseBuilding))
                 {
-                    Logger.LogVerbose(
-                        "TransferManager::IsValidSupplyChainOffer: Disallowed outside offer",
-                        verbose);
+                    Logger.LogMaterial(
+                        $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, matched to outside offer, internal supply buffer override, supply amount={TransferManagerInfo.GetSupplyBuildingAmount(responseBuilding)}, supply buffer={Constraints.InternalSupplyBuffer(responseBuilding)}",
+                        material);
+                    return true;
+                }
+                else
+                {
+                    Logger.LogMaterial(
+                        $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, disallowed outside offer",
+                        material);
                     return false;
                 }
             }
 
-            // All requests are now guaranteed to be local.
-            // Next see if all local areas are served.
-            if (Constraints.AllLocalAreas(responseBuilding))
+            // Here, we are guaranteed that the request is a local offer.
+            // Don't be so aggressive in trying to serve low priority orders with outside connections.
+            if (1 <= requestPriority && requestPriority <= 2 && responsePriority == 0)
             {
-                // Serve only if the request is not supply chain restricted.
-                // Otherwise, we'll need to check below if any existing supply chain restriction is tied to the response building.
-                if (Constraints.SupplySources(requestBuilding) == null || Constraints.SupplySources(requestBuilding).Count == 0)
-                {
-                    Logger.LogVerbose(
-                        "TransferManager::IsValidSupplyChainOffer: Serves all local areas",
-                        verbose);
-                    return true;
-                }
-            }
-
-            // Now check supply chain restrictions.
-            if (responseSupplyDestinations?.Count > 0)
-            {
-                for (int i = 0; i < responseSupplyDestinations.Count; i++)
-                {
-                    if (responseSupplyDestinations[i] == (int)requestBuilding)
-                    {
-                        Logger.LogVerbose(
-                            "TransferManager::IsValidSupplyChainOffer: Supply link allowed",
-                            verbose);
-                        return true;
-                    }
-                }
-            }
-            else if (Constraints.SupplySources(requestBuilding) != null && Constraints.SupplySources(requestBuilding).Count > 0)
-            {
-                Logger.LogVerbose(
-                    "TransferManager::IsValidSupplyChainOffer: Supply link disallowed",
-                    verbose);
+                Logger.LogMaterial(
+                    $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, disallow serving low pri internal offer",
+                    material);
                 return false;
             }
-            else // No supply chain restrictions, so now apply district restrictions.
+
+            if (TransferManagerInfo.GetSupplyBuildingAmount(responseBuilding) > Constraints.InternalSupplyBuffer(responseBuilding))
             {
-                var requestDistrictPark = TransferManagerInfo.GetDistrictPark(material, ref requestOffer);
-                var responseDistrictParksServed = Constraints.DistrictParkServiced(responseBuilding);
-                if (requestDistrictPark.IsServedBy(responseDistrictParksServed))
-                {
-                    Logger.LogVerbose(
-                        $"TransferManager::IsValidSupplyChainOffer: Matched district {requestDistrictPark.Name}",
-                        verbose);
-                    return true;
-                }
+                Logger.LogMaterial(
+                    $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, internal supply buffer override, supply amount={TransferManagerInfo.GetSupplyBuildingAmount(responseBuilding)}, supply buffer={Constraints.InternalSupplyBuffer(responseBuilding)}",
+                    material);
+                return true;
             }
 
-            Logger.LogVerbose(
-                $"TransferManager::IsValidSupplyChainOffer: Not valid",
-                verbose);
+            Logger.LogMaterial(
+                $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, not valid",
+                material);
             return false;
         }
 

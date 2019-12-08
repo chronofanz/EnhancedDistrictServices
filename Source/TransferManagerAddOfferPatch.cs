@@ -15,7 +15,7 @@ namespace EnhancedDistrictServices
                 return true;
             }
 
-            Logger.LogVerbose($"TransferManager::AddIncomingOffer: {Utils.ToString(ref offer, material)}!");
+            Logger.LogMaterial($"TransferManager::AddIncomingOffer: {Utils.ToString(ref offer, material)}!", material);
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
             return true;
         }
@@ -32,7 +32,7 @@ namespace EnhancedDistrictServices
                 return true;
             }
 
-            Logger.LogVerbose($"TransferManager::AddOutgoingOffer: {Utils.ToString(ref offer, material)}!");
+            Logger.LogMaterial($"TransferManager::AddOutgoingOffer: {Utils.ToString(ref offer, material)}!", material);
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
             return true;
         }
