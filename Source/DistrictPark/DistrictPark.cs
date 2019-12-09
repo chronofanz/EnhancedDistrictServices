@@ -141,7 +141,14 @@ namespace EnhancedDistrictServices
         /// <returns></returns>
         public bool IsServedBy(DistrictPark other)
         {
-            return District == other.District || Park == other.Park;
+            if (IsEmpty && other.IsEmpty)
+            {
+                return true;
+            }
+
+            return
+                (District == other.District && District != 0) ||
+                (Park == other.Park && Park != 0);
         }
 
         /// <summary>

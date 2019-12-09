@@ -69,20 +69,23 @@ namespace EnhancedDistrictServices
         #region GUI layout
 
         private const int m_componentPadding = 3;
-        private const int m_componentWidth = 274;
-        private const int m_componentHeight = 600;
+        private const int m_componentWidth = 400;
+        private const int m_componentHeight = 800;
         private const int m_listScrollbarWidth = 20;
 
         private Transform m_CameraTransform;
         private UIComponent m_FullscreenContainer;
 
         public UILabel UITitle;
+        public UIButton UICloseButton;
         public UILabel UIBuildingIdLabel;
         public UITextField UIBuildingId;
         public UILabel UIHomeDistrict;
         public UILabel UIServices;
         public UICheckBox UIAllLocalAreasCheckBox;
         public UICheckBox UIAllOutsideConnectionsCheckBox;
+        public UILabel UISupplyReserveLabel;
+        public UITextField UISupplyReserve;
         public UILabel UISupplyChainInLabel;
         public UITextField UISupplyChainIn;
         public UILabel UISupplyChainOutLabel;
@@ -109,28 +112,34 @@ namespace EnhancedDistrictServices
             base.Start();
 
             name = GetType().Name;
-            backgroundSprite = "InfoPanelBack";
+            backgroundSprite = "MenuPanel2";
             size = new Vector2(m_componentWidth + 2 * m_componentPadding, 200);
 
-            UITitle = AttachUILabelTo(this, 3, 3);
+            UITitle = AttachUILabelTo(this, 3, 3, height: 25);
             UITitle.textAlignment = UIHorizontalAlignment.Center;
-            UITitle.textScale = 0.9f;
+            UITitle.textScale = 1.0f;
 
-            UIBuildingIdLabel = AttachUILabelTo(this, 3, 23, $"Building Id: ");
-            UIBuildingId = AttachUITextFieldTo(this, 3, 23, 78);
-            UIHomeDistrict = AttachUILabelTo(this, 3, 43);
-            UIServices = AttachUILabelTo(this, 3, 63);
-            UIAllLocalAreasCheckBox = AttachUICheckBoxTo(this, 3, 83);
-            UIAllOutsideConnectionsCheckBox = AttachUICheckBoxTo(this, 3, 103);
-            UISupplyChainInLabel = AttachUILabelTo(this, 3, 126, $"Supply Chain In: ");
-            UISupplyChainIn = AttachUITextFieldTo(this, 3, 126, 111);
-            UISupplyChainOutLabel = AttachUILabelTo(this, 3, 146, $"Supply Chain Out: ");
-            UISupplyChainOut = AttachUITextFieldTo(this, 3, 146, 124);
+            UICloseButton = AttachUIButtonTo(this, 372, 0);
 
-            UIDistrictsSummary = AttachUILabelTo(this, 3, 166);
+            UIBuildingIdLabel = AttachUILabelTo(this, 3, 28, text: $"Building Id: ");
+            UIBuildingId = AttachUITextFieldTo(this, 3, 28, 78);
+            UIHomeDistrict = AttachUILabelTo(this, 3, 48);
+            UIServices = AttachUILabelTo(this, 3, 68);
+            UIAllLocalAreasCheckBox = AttachUICheckBoxTo(this, 113, 88);
+            UIAllLocalAreasCheckBox.label = AttachUILabelTo(UIAllLocalAreasCheckBox, -110, 0);
+            UIAllOutsideConnectionsCheckBox = AttachUICheckBoxTo(this, 336, 88);
+            UIAllOutsideConnectionsCheckBox.label = AttachUILabelTo(UIAllOutsideConnectionsCheckBox, -173, 0);
+            UISupplyReserveLabel = AttachUILabelTo(this, 3, 108, text: $"Supply Reserve: ");
+            UISupplyReserve = AttachUITextFieldTo(this, 3, 108, 112);
+            UISupplyChainInLabel = AttachUILabelTo(this, 3, 128, text: $"Supply Chain In: ");
+            UISupplyChainIn = AttachUITextFieldTo(this, 3, 128, 111);
+            UISupplyChainOutLabel = AttachUILabelTo(this, 3, 148, text: $"Supply Chain Out: ");
+            UISupplyChainOut = AttachUITextFieldTo(this, 3, 148, 124);
+
+            UIDistrictsSummary = AttachUILabelTo(this, 3, 168);
             UIDistrictsSummary.zOrder = 0;
 
-            UIDistrictsDropDown = AttachUICheckboxDropDownTo(this, 3, 3 + 166);
+            UIDistrictsDropDown = AttachUICheckboxDropDownTo(this, 3, 168 + 3);
             UIDistrictsDropDown.eventDropdownOpen += UIDistrictsDropDown_eventDropdownOpen;
             UIDistrictsDropDown.eventDropdownClose += UIDistrictsDropDown_eventDropdownClose;
 
@@ -233,15 +242,45 @@ namespace EnhancedDistrictServices
 
         #region Graphical elements setup
 
+        private static UIButton AttachUIButtonTo(UIComponent parent, int x, int y)
+        {
+            var uiButton = parent.AddUIComponent<UIButton>();
+            uiButton.relativePosition = new Vector3(x, y);
+            uiButton.size = new Vector2(28f, 28f);
+            uiButton.normalFgSprite = "buttonclose";
+            uiButton.hoveredFgSprite = "buttonclosehover";
+            uiButton.pressedFgSprite = "buttonclosepressed";
+            uiButton.foregroundSpriteMode = UIForegroundSpriteMode.Scale;
+            uiButton.horizontalAlignment = UIHorizontalAlignment.Right;
+            uiButton.verticalAlignment = UIVerticalAlignment.Middle;
+            uiButton.zOrder = 1;
+
+            uiButton.text = "";
+            uiButton.textVerticalAlignment = UIVerticalAlignment.Middle;
+            uiButton.textHorizontalAlignment = UIHorizontalAlignment.Left;
+            uiButton.textScale = 0.8f;
+
+            uiButton.normalBgSprite = "ButtonMenu";
+            uiButton.disabledBgSprite = "ButtonMenuDisabled";
+            uiButton.hoveredBgSprite = "ButtonMenuHovered";
+            uiButton.focusedBgSprite = "ButtonMenu";
+            uiButton.pressedBgSprite = "ButtonMenuPressed";
+
+            uiButton.eventClick += (c, p) =>
+            {
+                uiButton?.parent?.Hide();
+            };
+
+            return uiButton;
+        }
+
         private static UICheckBox AttachUICheckBoxTo(UIComponent parent, int x, int y)
         {
             var checkBox = parent.AttachUIComponent(UITemplateManager.GetAsGameObject("OptionsCheckBoxTemplate")) as UICheckBox;
             checkBox.relativePosition = new Vector3(x, y);
             checkBox.text = "";
-            checkBox.size = new Vector2(m_componentWidth, 20f);
+            checkBox.size = new Vector2(14f, 14f);
             checkBox.autoSize = false;
-
-            checkBox.label = AttachUILabelTo(checkBox, 20, 3);
 
             return checkBox;
         }
@@ -276,7 +315,7 @@ namespace EnhancedDistrictServices
             var button = dropDown.AddUIComponent<UIButton>();
             button.text = "";
             button.size = dropDown.size;
-            button.relativePosition = new Vector3(0.0f, 0.0f);
+            button.relativePosition = new Vector3(0.0f, -2.0f);
             button.textVerticalAlignment = UIVerticalAlignment.Middle;
             button.textHorizontalAlignment = UIHorizontalAlignment.Left;
             button.normalFgSprite = "IconDownArrow";
@@ -323,12 +362,12 @@ namespace EnhancedDistrictServices
             return dropDown;
         }
 
-        private static UILabel AttachUILabelTo(UIComponent parent, int x, int y, string text = "")
+        private static UILabel AttachUILabelTo(UIComponent parent, int x, int y, int height = 20, string text = "")
         {
             var label = parent.AddUIComponent<UILabel>();
             label.text = text;
             label.relativePosition = new Vector3(x, y);
-            label.size = new Vector2(m_componentWidth, 20f);
+            label.size = new Vector2(m_componentWidth, height);
             label.autoSize = false;
             label.textAlignment = UIHorizontalAlignment.Left;
             label.verticalAlignment = UIVerticalAlignment.Middle;
@@ -339,7 +378,6 @@ namespace EnhancedDistrictServices
         private static UITextField AttachUITextFieldTo(UIComponent parent, int x, int y, int xOffset)
         {
             x = x + xOffset;
-            y = y + 2;
             xOffset = m_componentWidth - (xOffset + 3);
 
             var textField = parent.AddUIComponent<UITextField>();

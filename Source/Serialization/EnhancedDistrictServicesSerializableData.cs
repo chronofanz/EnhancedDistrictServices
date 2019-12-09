@@ -4,9 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace CitiesMod
+namespace EnhancedDistrictServices.Serialization
 {
     /// <summary>
     /// The game code automatically calls OnLoadData and OnSaveData on classes that extend 
@@ -14,29 +15,21 @@ namespace CitiesMod
     /// </summary>
     public class EnhancedDistrictServicesSerializableData : SerializableDataExtensionBase
     {
-        /// <summary>
-        /// Data that we are serializing to the save game file.
-        /// </summary>
-        [Serializable]
-        public class Data
-        {
-            public bool[] BuildingToAllLocalAreas = new bool[BuildingManager.MAX_BUILDING_COUNT];
-            public bool[] BuildingToOutsideConnections = new bool[BuildingManager.MAX_BUILDING_COUNT];
-            public List<int>[] BuildingToDistrictServiced = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
-            public List<int>[] BuildingToBuildingServiced = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
-        }
-
-        public static readonly string EnhancedDistrictServicesId = "EnhancedDistrictServices_vchronofanz";
-
         public override void OnLoadData()
         {
             base.OnLoadData();
 
             if (managers.loading.currentMode == AppMode.Game)
             {
-                if (this.LoadData(EnhancedDistrictServicesId, out Data data))
+                Datav2 data;
+
+                // Always to try the latest version if possible.
+                if (Datav2.TryLoadData(this, out data))
                 {
-                    Logger.Log("EnhancedDistrictServicesSerializableData::OnLoadData: Loading data ...");
+                    Constraints.LoadData(data);
+                }
+                else if (Datav1.TryLoadData(this, out data))
+                {
                     Constraints.LoadData(data);
                 }
             }
@@ -48,22 +41,28 @@ namespace CitiesMod
 
             if (managers.loading.currentMode == AppMode.Game)
             {
-                Logger.Log("EnhancedDistrictServicesSerializableData::OnSaveData: Saving data ...");
-
                 var data = Constraints.SaveData();
-                this.SaveData(EnhancedDistrictServicesId, data);
+                this.SaveData(data.Id, data);
             }
         }
 
-        private bool LoadData<T>(string id, out T target) where T : class
+        /// <summary>
+        /// Helper method called by Datav* classes to load data.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <param name="binder"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public bool TryLoadData<T>(string id, SerializationBinder binder, out T target) where T : class
         {
             if (!serializableDataManager.EnumerateData().Contains(id))
             {
-                Logger.Log($"EnhancedDistrictServicesSerializableData::LoadData: Data does not contain data with id {id}");
                 target = null;
                 return false;
             }
 
+            Logger.Log($"EnhancedDistrictServicesSerializableData::LoadData: version {id}");
             var data = serializableDataManager.LoadData(id);
 
             var memStream = new MemoryStream();
@@ -71,12 +70,17 @@ namespace CitiesMod
             memStream.Position = 0;
 
             var binaryFormatter = new BinaryFormatter();
+            if (binder != null)
+            {
+                binaryFormatter.Binder = binder;
+            }
+
             try
             {
                 target = (T)binaryFormatter.Deserialize(memStream);
                 if (target == null)
                 {
-                    Logger.LogWarning($"EnhancedDistrictServicesSerializableData::LoadData: Data failed to load with id {id}");
+                    Logger.LogWarning($"EnhancedDistrictServicesSerializableData::LoadData: Data failed to load version {id}");
                 }
 
                 return true;
@@ -93,8 +97,16 @@ namespace CitiesMod
             }
         }
 
-        private void SaveData<T>(string id, T target)
+        /// <summary>
+        /// Helper method called by Datav* classes to save their data.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <param name="target"></param>
+        public void SaveData<T>(string id, T target)
         {
+            Logger.Log($"EnhancedDistrictServicesSerializableData::SaveData: version {id}");
+
             var binaryFormatter = new BinaryFormatter();
             var memStream = new MemoryStream();
             try

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ColossalFramework;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace EnhancedDistrictServices
@@ -21,6 +22,13 @@ namespace EnhancedDistrictServices
         private static readonly bool[] m_buildingToOutsideConnections = new bool[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
+        /// Map of building id to the specified supply goods buffer, below which all good sent from this building will
+        /// be to specified districts or supply out buildings only.  Default value is 100, meaning all goods are sent
+        /// to destinations that satisfy district and supply out restrictions.
+        /// </summary>
+        private static readonly int[] m_buildingToInternalSupplyBuffer = new int[BuildingManager.MAX_BUILDING_COUNT];
+
+        /// <summary>
         /// Map of building id to list of districts or parks served by the building.
         /// </summary>
         private static readonly List<DistrictPark>[] m_buildingToDistrictParkServiced = new List<DistrictPark>[BuildingManager.MAX_BUILDING_COUNT];
@@ -36,6 +44,11 @@ namespace EnhancedDistrictServices
         /// For supply chains only.  If specified, this overrides all other constraints.
         /// </summary>
         private static readonly List<int>[] m_supplySources = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
+
+        /// <summary>
+        /// Betweeen 0 and 100 inclusive, this controls how much incoming/outgoing traffic comes into the game.
+        /// </summary>
+        private static int m_globalOutsideConnectionIntensity = 5;
 
         /// <summary>
         /// Static constructor.
@@ -60,8 +73,9 @@ namespace EnhancedDistrictServices
         /// Load data from given object.
         /// </summary>
         /// <param name="data"></param>
-        public static void LoadData(CitiesMod.EnhancedDistrictServicesSerializableData.Data data)
+        public static void LoadData(Serialization.Datav2 data)
         {
+            Logger.Log($"Constraints::LoadData: version {data.Id}");
             Clear();
 
             var buildings = Utils.GetSupportedServiceBuildings();
@@ -81,23 +95,28 @@ namespace EnhancedDistrictServices
                 var restrictions2 = data.BuildingToOutsideConnections[building];
                 SetAllOutsideConnections(building, restrictions2);
 
-                var restrictions3 = data.BuildingToBuildingServiced[building];
-                if (restrictions3 != null)
+                var restrictions3 = data.BuildingToInternalSupplyBuffer[building];
+                SetInternalSupplyReserve(building, restrictions3);
+
+                var restrictions4 = data.BuildingToBuildingServiced[building];
+                if (restrictions4 != null)
                 {
-                    foreach (var destination in restrictions3)
+                    foreach (var destination in restrictions4)
                     {
                         AddSupplyChainConnection(building, destination);
                     }
                 }
 
-                var restrictions4 = data.BuildingToDistrictServiced[building];
-                if (restrictions4 != null)
+                var restrictions5 = data.BuildingToDistrictServiced[building];
+                if (restrictions5 != null)
                 {
-                    foreach (var districtPark in restrictions4)
+                    foreach (var districtPark in restrictions5)
                     {
                         AddDistrictParkServiced(building, DistrictPark.FromSerializedInt(districtPark));
                     }
                 }
+
+                m_globalOutsideConnectionIntensity = data.GlobalOutsideConnectionIntensity;
 
                 Logger.Log("");
             }
@@ -107,16 +126,18 @@ namespace EnhancedDistrictServices
         /// Saves a copy of the data in this object, for serialization.
         /// </summary>
         /// <returns></returns>
-        public static CitiesMod.EnhancedDistrictServicesSerializableData.Data SaveData()        
+        public static Serialization.Datav2 SaveData()        
         {
-            return new CitiesMod.EnhancedDistrictServicesSerializableData.Data
+            return new Serialization.Datav2
             {
                 BuildingToAllLocalAreas = m_buildingToAllLocalAreas.ToArray(),
                 BuildingToOutsideConnections = m_buildingToOutsideConnections.ToArray(),
+                BuildingToInternalSupplyBuffer = m_buildingToInternalSupplyBuffer.ToArray(),
                 BuildingToBuildingServiced = m_supplyDestinations.ToArray(),
                 BuildingToDistrictServiced = m_buildingToDistrictParkServiced
                     .Select(list => list?.Select(districtPark => districtPark.ToSerializedInt()).ToList())
-                    .ToArray()
+                    .ToArray(),
+                GlobalOutsideConnectionIntensity = m_globalOutsideConnectionIntensity
             };
         }
 
@@ -168,6 +189,7 @@ namespace EnhancedDistrictServices
         {
             m_buildingToAllLocalAreas[buildingId] = true;
             m_buildingToOutsideConnections[buildingId] = true;
+            m_buildingToInternalSupplyBuffer[buildingId] = 100;
             m_buildingToDistrictParkServiced[buildingId] = null;
 
             RemoveAllSupplyChainConnectionsToDestination(buildingId);
@@ -213,6 +235,16 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
+        /// Returns the internal supply buffer on the building.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        public static int InternalSupplyBuffer(ushort buildingId)
+        {
+            return m_buildingToInternalSupplyBuffer[buildingId];
+        }
+
+        /// <summary>
         /// Returns the list of districts or parks served by the building.
         /// TODO: Replace with IReadOnlyList.  Can't do it with older version of .NET.
         /// </summary>
@@ -242,6 +274,16 @@ namespace EnhancedDistrictServices
         {
             return m_supplySources[buildingId];
         }
+
+        /// <summary>
+        /// Between 0 and 100 inclusive, controls the intensity of traffic gonig to outside connections.
+        /// </summary>
+        /// <returns></returns>
+        public static int GlobalOutsideConnectionIntensity()
+        {
+            return m_globalOutsideConnectionIntensity;
+        }
+
 
         #endregion
 
@@ -292,6 +334,26 @@ namespace EnhancedDistrictServices
             }
 
             m_buildingToOutsideConnections[buildingId] = status;
+        }
+
+        /// <summary>
+        /// Sets the internal supply reserve.
+        /// </summary>
+        /// <param name="buildingId"></param>
+        /// <param name="amount">Must bet between 0 and 100.</param>
+        public static void SetInternalSupplyReserve(int buildingId, int amount)
+        {
+            m_buildingToInternalSupplyBuffer[buildingId] = COMath.Clamp(amount, 0, 100);
+        }
+
+        /// <summary>
+        /// Set the global outside connection intensity.
+        /// </summary>
+        /// <param name="amount"></param>
+        public static void SetGlobalOutsideConnectionIntensity(int amount)
+        {
+            Logger.Log($"Constraints::SetGlobalOutsideConnectionIntensity: {amount}");
+            m_globalOutsideConnectionIntensity = COMath.Clamp(amount, 0, 100);
         }
 
         #endregion

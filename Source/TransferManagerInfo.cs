@@ -18,19 +18,19 @@ namespace EnhancedDistrictServices
         /// <returns></returns>
         public static ushort GetHomeBuilding(ref TransferManager.TransferOffer offer)
         {
-            if (offer.Building != 0)
+            if (offer.Vehicle != 0)
             {
-                return offer.Building;
+                return VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle].m_sourceBuilding;
             }
 
             if (offer.Citizen != 0)
             {
-                return Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen].m_homeBuilding;
+                return CitizenManager.instance.m_citizens.m_buffer[offer.Citizen].m_homeBuilding;
             }
 
-            if (offer.Vehicle != 0)
+            if (offer.Building != 0)
             {
-                return VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle].m_sourceBuilding;
+                return offer.Building;
             }
 
             return 0;
@@ -131,7 +131,7 @@ namespace EnhancedDistrictServices
                 addedText = true;
             }
 
-            if (Constraints.OutsideConnections(building))
+            if (IsSupplyChainBuilding(building) && Constraints.OutsideConnections(building))
             {
                 txtItems.Add($"All outside connections served");
                 addedText = true;
@@ -274,6 +274,25 @@ namespace EnhancedDistrictServices
             }
 
             return string.Join("\n", txtItems.ToArray());
+        }
+
+        public static int GetSupplyBuildingAmount(int buildingId)
+        {
+            switch (Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingId].Info.GetAI())
+            {
+                case ExtractingFacilityAI extractingFacilityAI:
+                    int outputBufferSize1 = extractingFacilityAI.GetOutputBufferSize((ushort)buildingId, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingId]);
+                    return (int)(((double)Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingId].m_customBuffer1) * 100 / (outputBufferSize1));
+
+                case ProcessingFacilityAI processingFacilityAI:
+                    int outputBufferSize2 = processingFacilityAI.GetOutputBufferSize((ushort)buildingId, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingId]);
+                    return (int)(((double)Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingId].m_customBuffer1) * 100 / (outputBufferSize2));
+
+                case WarehouseAI warehouseAI:
+                    return (int)(((double)Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingId].m_customBuffer1) * 100 * 100 / warehouseAI.m_storageCapacity);
+            }
+
+            return 0;
         }
 
         /// <summary>

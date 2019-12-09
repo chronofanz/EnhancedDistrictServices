@@ -71,25 +71,26 @@ namespace EnhancedDistrictServices
         /// <returns></returns>
         public static string ToString(ref TransferManager.TransferOffer offer, TransferManager.TransferReason material)
         {
-            if (offer.Building != 0)
+            if (offer.NetSegment != 0)
             {
-                return $"Id=B{offer.Building}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
-            }
-
-            if (offer.Citizen != 0)
-            {
-                var homeBuilding = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen].m_homeBuilding;
-                return $"Id=C{offer.Citizen}, Home=B{homeBuilding}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
+                return $"Id=S{offer.NetSegment}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
             }
 
             if (offer.Vehicle != 0)
             {
-                return $"Id=V{offer.Vehicle}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
+                var homeBuilding = VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle].m_sourceBuilding;
+                return $"Id=V{offer.Vehicle}, Home=B{homeBuilding}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
             }
 
-            if (offer.NetSegment != 0)
+            if (offer.Citizen != 0)
             {
-                return $"Id=S{offer.NetSegment}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
+                var homeBuilding = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen].m_homeBuilding;
+                return $"Id=C{offer.Citizen}, Home=B{homeBuilding}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
+            }
+
+            if (offer.Building != 0)
+            {
+                return $"Id=B{offer.Building}, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";
             }
 
             return $"Id=0, (Amt,Mat,Pri,Exc)=({offer.Amount},{material},{offer.Priority},{offer.Exclude})";

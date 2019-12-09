@@ -21,6 +21,7 @@ namespace EnhancedDistrictServices
 
             name = "EnhancedDistrictServicesTool";
 
+            UITitlePanel.Create();
             EnhancedDistrictServicesUIPanel.Create();
 
             BuildingManager.instance.EventBuildingCreated += Constraints.CreateBuilding;
@@ -39,6 +40,7 @@ namespace EnhancedDistrictServices
         protected override void OnEnable()
         {
             base.OnEnable();
+            UITitlePanel.Instance?.OnEnable();
             EnhancedDistrictServicesUIPanel.Instance?.OnEnable();
             EnhancedDistrictServicesUIPanel.Instance?.UpdatePanelToBuilding(0);
         }
@@ -46,6 +48,7 @@ namespace EnhancedDistrictServices
         protected override void OnDisable()
         {
             base.OnDisable();
+            UITitlePanel.Instance?.Hide();
             EnhancedDistrictServicesUIPanel.Instance?.UIDistrictsDropDown?.ClosePopup();
             EnhancedDistrictServicesUIPanel.Instance?.Hide();
         }
@@ -171,6 +174,11 @@ namespace EnhancedDistrictServices
             }
 
             txtItems.Add(TransferManagerInfo.GetServicesText(building));
+
+            if (TransferManagerInfo.IsSupplyChainBuilding(building))
+            {
+                txtItems.Add($"Supply Reserve: {Constraints.InternalSupplyBuffer(building)}");
+            }
 
             if (Constraints.SupplySources(building)?.Count > 0)
             {
