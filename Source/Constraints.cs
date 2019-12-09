@@ -46,6 +46,11 @@ namespace EnhancedDistrictServices
         private static readonly List<int>[] m_supplySources = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
+        /// Betweeen 0 and 100 inclusive, this controls how much incoming/outgoing traffic comes into the game.
+        /// </summary>
+        private static int m_globalOutsideConnectionIntensity = 5;
+
+        /// <summary>
         /// Static constructor.
         /// </summary>
         static Constraints()
@@ -111,6 +116,8 @@ namespace EnhancedDistrictServices
                     }
                 }
 
+                m_globalOutsideConnectionIntensity = data.GlobalOutsideConnectionIntensity;
+
                 Logger.Log("");
             }
         }
@@ -129,7 +136,8 @@ namespace EnhancedDistrictServices
                 BuildingToBuildingServiced = m_supplyDestinations.ToArray(),
                 BuildingToDistrictServiced = m_buildingToDistrictParkServiced
                     .Select(list => list?.Select(districtPark => districtPark.ToSerializedInt()).ToList())
-                    .ToArray()
+                    .ToArray(),
+                GlobalOutsideConnectionIntensity = m_globalOutsideConnectionIntensity
             };
         }
 
@@ -267,6 +275,16 @@ namespace EnhancedDistrictServices
             return m_supplySources[buildingId];
         }
 
+        /// <summary>
+        /// Between 0 and 100 inclusive, controls the intensity of traffic gonig to outside connections.
+        /// </summary>
+        /// <returns></returns>
+        public static int GlobalOutsideConnectionIntensity()
+        {
+            return m_globalOutsideConnectionIntensity;
+        }
+
+
         #endregion
 
         #region Local Areas and Outside Connections methods
@@ -326,6 +344,16 @@ namespace EnhancedDistrictServices
         public static void SetInternalSupplyReserve(int buildingId, int amount)
         {
             m_buildingToInternalSupplyBuffer[buildingId] = COMath.Clamp(amount, 0, 100);
+        }
+
+        /// <summary>
+        /// Set the global outside connection intensity.
+        /// </summary>
+        /// <param name="amount"></param>
+        public static void SetGlobalOutsideConnectionIntensity(int amount)
+        {
+            Logger.Log($"Constraints::SetGlobalOutsideConnectionIntensity: {amount}");
+            m_globalOutsideConnectionIntensity = COMath.Clamp(amount, 0, 100);
         }
 
         #endregion

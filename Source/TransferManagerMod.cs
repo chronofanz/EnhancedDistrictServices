@@ -172,7 +172,7 @@ namespace EnhancedDistrictServices
                         preFilterRequest: PreFilterLowPriorityOffer);
 
                     // Now finally try and match to outside offers, as well as match using extra supply.
-                    if (m_randomizer.Int32(0, 100) <= 6)
+                    if (m_randomizer.Int32(0, 100) <= Constraints.GlobalOutsideConnectionIntensity())
                     {
                         MatchOffersClosest(
                             material,
