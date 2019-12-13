@@ -74,6 +74,7 @@
     <Compile Include="Source\Logger.cs" />
     <Compile Include="Source\EnhancedDistrictServicesUIPanelBase.cs" />
     <Compile Include="Source\DistrictPark\DistrictManagerReleasePatch.cs" />
+    <Compile Include="Source\Taxi\TaxiMod.cs" />
     <Compile Include="Source\TransferManagerAddOfferPatch.cs" />
     <Compile Include="Source\UI\UITitlePanel.cs" />
     <Compile Include="Source\Utils.cs" />

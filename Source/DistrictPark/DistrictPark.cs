@@ -156,16 +156,16 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="districtParks"></param>
         /// <returns></returns>
-        public bool IsServedBy(IEnumerable<DistrictPark> districtParks)
+        public bool IsServedBy(List<DistrictPark> districtParks)
         {
             if (districtParks == null)
             {
                 return false;
             }
 
-            foreach (var districtPark in districtParks)
+            for (int index = 0; index < districtParks.Count; index++)
             {
-                if (IsServedBy(districtPark))
+                if (IsServedBy(districtParks[index]))
                 {
                     return true;
                 }
