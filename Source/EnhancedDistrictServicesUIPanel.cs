@@ -169,7 +169,7 @@ namespace EnhancedDistrictServices
                         return;
                     }
 
-                    if (string.IsNullOrEmpty(UISupplyChainIn.text.Trim()))
+                    if (string.IsNullOrEmpty(UISupplyReserve.text.Trim()))
                     {
                         UpdateUISupplyReserve();
                         return;

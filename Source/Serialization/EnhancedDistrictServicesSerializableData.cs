@@ -32,6 +32,14 @@ namespace EnhancedDistrictServices.Serialization
                 {
                     Constraints.LoadData(data);
                 }
+
+                // Update Taxi buildings cache ...
+                // TODO, FIXME: Make this less hacky ...
+                var buildings = Utils.GetSupportedServiceBuildings();
+                foreach (var building in buildings)
+                {
+                    TaxiMod.AddTaxiBuilding(building);
+                }
             }
         }
 

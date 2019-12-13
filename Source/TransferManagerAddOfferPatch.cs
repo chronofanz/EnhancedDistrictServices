@@ -15,6 +15,17 @@ namespace EnhancedDistrictServices
                 return true;
             }
 
+            if (material == TransferManager.TransferReason.Taxi && !TaxiMod.CanUseTaxis(offer.Position))
+            {
+                Logger.LogMaterial($"TransferManager::AddIncomingOffer: Filtering out {Utils.ToString(ref offer, material)}!", material);
+                var instanceId = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen].m_instance;
+                CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags &= ~CitizenInstance.Flags.WaitingTaxi;
+                CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags |= CitizenInstance.Flags.BoredOfWaiting;
+                CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags |= CitizenInstance.Flags.CannotUseTaxi;
+                CitizenManager.instance.m_instances.m_buffer[instanceId].m_waitCounter = byte.MaxValue;
+                return false;
+            }
+
             Logger.LogMaterial($"TransferManager::AddIncomingOffer: {Utils.ToString(ref offer, material)}!", material);
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
             return true;

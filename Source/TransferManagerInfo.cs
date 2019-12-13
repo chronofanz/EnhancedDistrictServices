@@ -48,7 +48,7 @@ namespace EnhancedDistrictServices
                 var position = NetManager.instance.m_segments.m_buffer[offer.NetSegment].m_middlePosition;
                 return DistrictPark.FromPosition(position);
             }
-            else if (material == TransferManager.TransferReason.Sick && offer.Citizen != 0)
+            else if ((material == TransferManager.TransferReason.Sick || material == TransferManager.TransferReason.Taxi) && offer.Citizen != 0)
             {
                 return DistrictPark.FromPosition(offer.Position);
             }
@@ -344,6 +344,7 @@ namespace EnhancedDistrictServices
                     case ItemClass.Service.PublicTransport:
                         return (
                             info.GetAI() is OutsideConnectionAI ||
+                            info.GetSubService() == ItemClass.SubService.PublicTransportTaxi ||
                             info.GetSubService() == ItemClass.SubService.PublicTransportPost);
 
                     case ItemClass.Service.Road:
@@ -457,6 +458,7 @@ namespace EnhancedDistrictServices
 
                 material == TransferManager.TransferReason.Student1 ||
                 material == TransferManager.TransferReason.Student2 ||
+                material == TransferManager.TransferReason.Taxi ||
 
                 material == TransferManager.TransferReason.UnsortedMail;
         }
