@@ -48,7 +48,7 @@ namespace EnhancedDistrictServices
         /// <summary>
         /// Betweeen 0 and 100 inclusive, this controls how much incoming/outgoing traffic comes into the game.
         /// </summary>
-        private static int m_globalOutsideConnectionIntensity = 5;
+        private static int m_globalOutsideConnectionIntensity = 15;
 
         /// <summary>
         /// Static constructor.

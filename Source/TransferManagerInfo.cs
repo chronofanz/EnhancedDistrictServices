@@ -346,9 +346,9 @@ namespace EnhancedDistrictServices
 
                     case ItemClass.Service.PublicTransport:
                         return (
-                            info.GetAI() is OutsideConnectionAI ||
-                            info.GetSubService() == ItemClass.SubService.PublicTransportTaxi ||
-                            info.GetSubService() == ItemClass.SubService.PublicTransportPost);
+                            (Settings.enableSelectOutsideConnection && info.GetAI() is OutsideConnectionAI) ||
+                            info.GetSubService() == ItemClass.SubService.PublicTransportPost ||
+                            info.GetSubService() == ItemClass.SubService.PublicTransportTaxi);
 
                     case ItemClass.Service.Road:
                         return (
@@ -410,7 +410,7 @@ namespace EnhancedDistrictServices
 
                     case ItemClass.Service.PublicTransport:
                         return (
-                            info.GetAI() is OutsideConnectionAI ||
+                            (Settings.enableSelectOutsideConnection && info.GetAI() is OutsideConnectionAI) ||
                             info.GetSubService() == ItemClass.SubService.PublicTransportPost);
 
                     case ItemClass.Service.Road:
