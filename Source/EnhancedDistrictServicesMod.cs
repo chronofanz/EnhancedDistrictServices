@@ -64,9 +64,15 @@ namespace EnhancedDistrictServices
                     .tooltip = "By default, the base game will generate a little dummy cargo traffic.  Disable this option if you have massive traffic problems emanating from outside connections.";
 
                 ((UIComponent)uiHelper.AddCheckbox(
+                    "Enable legacy ability to select individual outside connections using the tool",
+                    Settings.enableSelectOutsideConnection,
+                    b => Settings.enableSelectOutsideConnection.value = b))
+                    .tooltip = "Strongly recommend against enabling this legacy feature.  This was originally put in to deal with massive traffic originating from outside connections.  Not needed anymore.";
+
+                ((UIComponent)uiHelper.AddCheckbox(
                     "Show campus/industrial/park districts in district dropdown menu", 
-                    Settings.enableParkDistricts, 
-                    b => Settings.enableParkDistricts.value = b))
+                    Settings.showParkDistricts, 
+                    b => Settings.showParkDistricts.value = b))
                     .tooltip = "Disable this option if you do not wish to be able to see campus/industrial/park districts in the dropdown menu.";
 
                 uiHelper.AddSpace(10);

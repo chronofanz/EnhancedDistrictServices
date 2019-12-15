@@ -94,23 +94,26 @@ namespace EnhancedDistrictServices
                 });
             };
 
-            UIServices.tooltip = "(Experimental) Click to select outside connection.";
-            UIServices.eventClicked += (c, p) =>
+            if (Settings.enableSelectOutsideConnection.value)
             {
-                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIServices Clicked");
-
-                var nextBuildingId = FindSimilarBuilding(m_currBuildingId, ItemClass.Service.None, ItemClass.SubService.None, typeof(OutsideConnectionAI));
-                if (!TransferManagerInfo.IsDistrictServicesBuilding(nextBuildingId))
+                UIServices.tooltip = "(Experimental) Click to select outside connection.";
+                UIServices.eventClicked += (c, p) =>
                 {
-                    return;
-                }
+                    Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIServices Clicked");
 
-                Singleton<SimulationManager>.instance.AddAction(() =>
-                {
-                    SetBuilding((ushort)nextBuildingId);
-                    UpdatePositionToBuilding((ushort)nextBuildingId);
-                });
-            };
+                    var nextBuildingId = FindSimilarBuilding(m_currBuildingId, ItemClass.Service.None, ItemClass.SubService.None, typeof(OutsideConnectionAI));
+                    if (!TransferManagerInfo.IsDistrictServicesBuilding(nextBuildingId))
+                    {
+                        return;
+                    }
+
+                    Singleton<SimulationManager>.instance.AddAction(() =>
+                    {
+                        SetBuilding((ushort)nextBuildingId);
+                        UpdatePositionToBuilding((ushort)nextBuildingId);
+                    });
+                };
+            }
 
             UIAllLocalAreasCheckBox.eventCheckChanged += (c, t) =>
             {
@@ -637,7 +640,7 @@ namespace EnhancedDistrictServices
 
             foreach (var districtPark in districtParks)
             {
-                if (!Settings.enableParkDistricts.value && districtPark.IsPark)
+                if (!Settings.showParkDistricts.value && districtPark.IsPark)
                 {
                     continue;
                 }
