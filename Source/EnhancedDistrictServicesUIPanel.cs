@@ -637,6 +637,11 @@ namespace EnhancedDistrictServices
 
             foreach (var districtPark in districtParks)
             {
+                if (!Settings.enableParkDistricts.value && districtPark.IsPark)
+                {
+                    continue;
+                }
+
                 UIDistrictsDropDown.AddItem(districtPark.Name, isChecked: false);
                 m_districtParkMapping.Add(districtPark);
             }

@@ -12,7 +12,8 @@ namespace EnhancedDistrictServices
         /// <param name="simulationTimeDelta"></param>
         public override void OnUpdate(float realTimeDelta, float simulationTimeDelta)
         {
-            if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.D))
+            var current = UnityEngine.Event.current;
+            if (Settings.toggleMainTool.IsPressed(current))
             {
                 var tool = ToolsModifierControl.toolController.gameObject.GetComponent<EnhancedDistrictServicesTool>();
                 if (ToolsModifierControl.toolController.CurrentTool == tool)

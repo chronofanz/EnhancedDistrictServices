@@ -125,8 +125,10 @@ namespace EnhancedDistrictServices
                     return true;
                 }
 
-                // Road maintenance is switched around ...
-                if (material == TransferManager.TransferReason.RoadMaintenance || material == TransferManager.TransferReason.Taxi)
+                // Park/Road maintenance and taxis are switched around ...
+                if (material == TransferManager.TransferReason.ParkMaintenance ||
+                    material == TransferManager.TransferReason.RoadMaintenance || 
+                    material == TransferManager.TransferReason.Taxi)
                 {
                     MatchOffersClosest(
                         material, 
@@ -266,6 +268,12 @@ namespace EnhancedDistrictServices
                         for (int responsePriority = responsePriorityMax; responsePriority >= responsePriorityMin; --responsePriority)
                         {
                             if (matchesOutside >= maxMatchesOutside && (requestPriority == 0 || responsePriority == 0))
+                            {
+                                break;
+                            }
+
+                            // Do not match lowest priority to lowest priority.
+                            if (requestPriority == 1 && responsePriority == 1)
                             {
                                 break;
                             }
@@ -623,7 +631,7 @@ namespace EnhancedDistrictServices
             {
                 if (TransferManagerInfo.IsOutsideOffer(ref responseOffer))
                 {
-                    if (m_randomizer.Int32(1000) <= randomMax)
+                    if (Settings.enableDummyCargoTraffic.value && m_randomizer.Int32(1000) <= randomMax)
                     {
                         Logger.LogMaterial(
                             $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, matching outside to outside",
