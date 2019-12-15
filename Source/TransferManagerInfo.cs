@@ -314,6 +314,9 @@ namespace EnhancedDistrictServices
                 var info = instance.m_buildings.m_buffer[building].Info;
                 switch (info?.GetService())
                 {
+                    case ItemClass.Service.Beautification:
+                        return info.GetAI() is MaintenanceDepotAI;
+
                     case ItemClass.Service.Disaster:
                     case ItemClass.Service.Education:
                     case ItemClass.Service.FireDepartment:
@@ -438,6 +441,7 @@ namespace EnhancedDistrictServices
                 material == TransferManager.TransferReason.Fire ||
                 material == TransferManager.TransferReason.Mail ||
 
+                material == TransferManager.TransferReason.ParkMaintenance ||
                 material == TransferManager.TransferReason.RoadMaintenance ||
                 material == TransferManager.TransferReason.Snow ||
 

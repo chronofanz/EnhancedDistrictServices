@@ -76,6 +76,8 @@
     <Compile Include="Source\DistrictPark\DistrictManagerReleasePatch.cs" />
     <Compile Include="Source\Taxi\TaxiMod.cs" />
     <Compile Include="Source\TransferManagerAddOfferPatch.cs" />
+    <Compile Include="Source\UI\Settings.cs" />
+    <Compile Include="Source\UI\UIOptionsKeymapping.cs" />
     <Compile Include="Source\UI\UITitlePanel.cs" />
     <Compile Include="Source\Utils.cs" />
     <Compile Include="Source\TransferManagerInfo.cs" />

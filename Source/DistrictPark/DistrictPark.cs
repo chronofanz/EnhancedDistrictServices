@@ -94,6 +94,17 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
+        /// Returns true if this specification includes a reference to a district.
+        /// </summary>
+        public bool IsDistrict
+        {
+            get
+            {
+                return District != 0;
+            }
+        }
+
+        /// <summary>
         /// Returns true if this struct does not refer to a valid district or park.
         /// </summary>
         public bool IsEmpty
@@ -101,6 +112,17 @@ namespace EnhancedDistrictServices
             get
             {
                 return District == 0 && Park == 0;
+            }
+        }
+
+        /// <summary>
+        /// Returns true if this specification includes a reference to a park.
+        /// </summary>
+        public bool IsPark
+        {
+            get
+            {
+                return Park != 0;
             }
         }
 

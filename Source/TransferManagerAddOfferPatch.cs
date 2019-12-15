@@ -1,6 +1,5 @@
-﻿using ColossalFramework;
-using Harmony;
-using System;
+﻿using Harmony;
+using UnityEngine;
 
 namespace EnhancedDistrictServices
 {
@@ -12,6 +11,16 @@ namespace EnhancedDistrictServices
         {
             if (!(TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material)))
             {
+                // Fix for certain assets that have sub buildings that should not be making offers ...
+                if (offer.Building != 0 && BuildingManager.instance.m_buildings.m_buffer[offer.Building].m_parentBuilding != 0)
+                {
+                    if (material == TransferManager.TransferReason.ParkMaintenance)
+                    {
+                        Logger.LogMaterial($"TransferManager::AddIncomingOffer: Filtering out subBuilding {Utils.ToString(ref offer, material)}!", material);
+                        return false;
+                    }
+                }
+
                 return true;
             }
 
@@ -40,6 +49,16 @@ namespace EnhancedDistrictServices
         {
             if (!(TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material)))
             {
+                // Fix for certain assets that have sub buildings that should not be making offers ...
+                if (offer.Building != 0 && BuildingManager.instance.m_buildings.m_buffer[offer.Building].m_parentBuilding != 0)
+                {
+                    if (material == TransferManager.TransferReason.ParkMaintenance)
+                    {
+                        Logger.LogMaterial($"TransferManager::AddOutgoingOffer: Filtering out subBuilding {Utils.ToString(ref offer, material)}!", material);
+                        return false;
+                    }
+                }
+
                 return true;
             }
 
@@ -73,7 +92,7 @@ namespace EnhancedDistrictServices
             }
             else
             {
-                offer.Priority = Math.Max(offer.Priority, 1);
+                offer.Priority = Mathf.Clamp(offer.Priority + 1, 1, 7);
             }
 
             if (offer.Vehicle != 0)
