@@ -21,10 +21,14 @@ namespace EnhancedDistrictServices.Serialization
 
             if (managers.loading.currentMode == AppMode.Game)
             {
-                Datav2 data;
+                Datav3 data;
 
                 // Always to try the latest version if possible.
-                if (Datav2.TryLoadData(this, out data))
+                if (Datav3.TryLoadData(this, out data))
+                {
+                    Constraints.LoadData(data);
+                }
+                else if (Datav2.TryLoadData(this, out data))
                 {
                     Constraints.LoadData(data);
                 }

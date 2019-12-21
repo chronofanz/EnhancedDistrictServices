@@ -179,10 +179,15 @@ namespace EnhancedDistrictServices
 
             txtItems.Add(TransferManagerInfo.GetServicesText(building));
 
-            if (TransferManagerInfo.IsSupplyChainBuilding(building))
+            if (!TransferManagerInfo.IsSupplyChainBuilding(building))
             {
-                txtItems.Add($"Supply Reserve: {Constraints.InternalSupplyBuffer(building)}");
+                txtItems.Add("");
+                txtItems.Add(TransferManagerInfo.GetOutputDistrictsServedText(building));
+
+                return string.Join("\n", txtItems.ToArray());
             }
+
+            txtItems.Add($"Supply Reserve: {Constraints.InternalSupplyBuffer(building)}");
 
             if (Constraints.SupplySources(building)?.Count > 0)
             {
@@ -190,14 +195,17 @@ namespace EnhancedDistrictServices
                 txtItems.Add(TransferManagerInfo.GetSupplySourcesText(building));
             }
 
-            if (!Constraints.AllLocalAreas(building) && Constraints.SupplyDestinations(building)?.Count > 0)
+            if (!Constraints.OutputAllLocalAreas(building))
             {
                 txtItems.Add("");
-                txtItems.Add(TransferManagerInfo.GetSupplyDestinationsText(building));
-            }
+                txtItems.Add(TransferManagerInfo.GetOutputDistrictsServedText(building));
 
-            txtItems.Add("");
-            txtItems.Add(TransferManagerInfo.GetDistrictsServedText(building));
+                if (Constraints.SupplyDestinations(building)?.Count > 0)
+                {
+                    txtItems.Add("");
+                    txtItems.Add(TransferManagerInfo.GetSupplyDestinationsText(building));
+                }
+            }
 
             return string.Join("\n", txtItems.ToArray());
         }

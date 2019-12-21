@@ -114,7 +114,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="building"></param>
         /// <returns></returns>
-        public static string GetDistrictsServedText(ushort building)
+        public static string GetOutputDistrictsServedText(ushort building)
         {
             if (building == 0)
             {
@@ -122,34 +122,31 @@ namespace EnhancedDistrictServices
             }
 
             var txtItems = new List<string>();
-            txtItems.Add($"<<DistrictsServed>>");
+            txtItems.Add($"<<Districts Served (Outgoing)>>");
 
-            bool addedText = false;
-            if (Constraints.AllLocalAreas(building))
+            if (Constraints.OutputAllLocalAreas(building))
             {
                 txtItems.Add($"All local areas served");
-                addedText = true;
+
+                if (IsSupplyChainBuilding(building) && Constraints.OutputOutsideConnections(building))
+                {
+                    txtItems.Add($"All outside connections served");
+                }
+
+                return string.Join("\n", txtItems.ToArray());
             }
 
-            if (IsSupplyChainBuilding(building) && Constraints.OutsideConnections(building))
+            var addedText = false;
+
+            if (IsSupplyChainBuilding(building) && Constraints.OutputOutsideConnections(building))
             {
                 txtItems.Add($"All outside connections served");
                 addedText = true;
             }
 
-            if (Constraints.AllLocalAreas(building))
+            if (Constraints.OutputDistrictParkServiced(building)?.Count > 0)
             {
-                return string.Join("\n", txtItems.ToArray());
-            }
-
-            if (Constraints.SupplyDestinations(building)?.Count > 0)
-            {
-                txtItems.Add($"Supply chain restricted, only serves specified Supply Chain Out buildings!");
-                return string.Join("\n", txtItems.ToArray());
-            }
-            else if (Constraints.DistrictParkServiced(building)?.Count > 0)
-            {
-                var districtParkNames = Constraints.DistrictParkServiced(building)
+                var districtParkNames = Constraints.OutputDistrictParkServiced(building)
                     .Select(dp => dp.Name)
                     .OrderBy(s => s);
 
@@ -163,7 +160,7 @@ namespace EnhancedDistrictServices
 
             if (!addedText)
             {
-                txtItems.Add($"No districts served!");
+                txtItems.Add($"None");
             }
 
             return string.Join("\n", txtItems.ToArray());
@@ -234,7 +231,7 @@ namespace EnhancedDistrictServices
             }
 
             var txtItems = new List<string>();
-            txtItems.Add($"<<Supply Chain Shipments Only To>>");
+            txtItems.Add($"<<Supply Chain Shipments To>>");
 
             var buildingNames = Constraints.SupplyDestinations(building)
                 .Select(b => $"{GetBuildingName(b)} ({b})")
@@ -262,7 +259,7 @@ namespace EnhancedDistrictServices
             }
 
             var txtItems = new List<string>();
-            txtItems.Add($"<<Supply Chain Shipments Only From>>");
+            txtItems.Add($"<<Supply Chain Shipments From>>");
 
             var buildingNames = Constraints.SupplySources(building)
                 .Select(b => $"{GetBuildingName(b)} ({b})")

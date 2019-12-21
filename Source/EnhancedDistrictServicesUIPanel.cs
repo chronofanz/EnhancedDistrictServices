@@ -117,7 +117,7 @@ namespace EnhancedDistrictServices
 
             UIAllLocalAreasCheckBox.eventCheckChanged += (c, t) =>
             {
-                if (m_currBuildingId == 0 || t == Constraints.AllLocalAreas(m_currBuildingId))
+                if (m_currBuildingId == 0 || t == Constraints.OutputAllLocalAreas(m_currBuildingId))
                 {
                     return;
                 }
@@ -125,7 +125,7 @@ namespace EnhancedDistrictServices
                 Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIAllLocalAreasCheckBox CheckChanged {t}");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    Constraints.SetAllLocalAreas(m_currBuildingId, t);
+                    Constraints.SetAllOutputLocalAreas(m_currBuildingId, t);
                     UpdateUISupplyChainOut();
                     UpdateUIDistrictsDropdown(updateChecked: false);
                     UpdateUIDistrictsSummary();
@@ -134,7 +134,7 @@ namespace EnhancedDistrictServices
 
             UIAllOutsideConnectionsCheckBox.eventCheckChanged += (c, t) =>
             {
-                if (m_currBuildingId == 0 || t == Constraints.OutsideConnections(m_currBuildingId))
+                if (m_currBuildingId == 0 || t == Constraints.OutputOutsideConnections(m_currBuildingId))
                 {
                     return;
                 }
@@ -142,7 +142,7 @@ namespace EnhancedDistrictServices
                 Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIAllOutsideConnectionsCheckBox CheckChanged {t}");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    Constraints.SetAllOutsideConnections(m_currBuildingId, t);
+                    Constraints.SetAllOutputOutsideConnections(m_currBuildingId, t);
                     UpdateUIDistrictsSummary();
                 });
             };
@@ -332,7 +332,7 @@ namespace EnhancedDistrictServices
                     return;
                 }
 
-                if (UIDistrictsDropDown.GetChecked(t) == Constraints.DistrictParkServiced(m_currBuildingId)?.Contains(m_districtParkMapping[t]))
+                if (UIDistrictsDropDown.GetChecked(t) == Constraints.OutputDistrictParkServiced(m_currBuildingId)?.Contains(m_districtParkMapping[t]))
                 {
                     return;
                 }
@@ -342,11 +342,11 @@ namespace EnhancedDistrictServices
                 {
                     if (UIDistrictsDropDown.GetChecked(t))
                     {
-                        Constraints.AddDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
+                        Constraints.AddOutputDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
                     }
                     else
                     {
-                        Constraints.RemoveDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
+                        Constraints.RemoveOutputDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
                     }
                 });
             };
@@ -469,7 +469,7 @@ namespace EnhancedDistrictServices
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIAllLocalAreasCheckBox Update");
             if (m_currBuildingId != 0)
             {
-                UIAllLocalAreasCheckBox.isChecked = Constraints.AllLocalAreas(m_currBuildingId);
+                UIAllLocalAreasCheckBox.isChecked = Constraints.OutputAllLocalAreas(m_currBuildingId);
                 UIAllLocalAreasCheckBox.readOnly = false;
             }
             else
@@ -488,7 +488,7 @@ namespace EnhancedDistrictServices
             if (m_currBuildingId != 0 && TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
             {
                 UIAllOutsideConnectionsCheckBox.Show();
-                UIAllOutsideConnectionsCheckBox.isChecked = Constraints.OutsideConnections(m_currBuildingId);
+                UIAllOutsideConnectionsCheckBox.isChecked = Constraints.OutputOutsideConnections(m_currBuildingId);
                 UIAllOutsideConnectionsCheckBox.readOnly = false;
             }
             else
@@ -545,7 +545,7 @@ namespace EnhancedDistrictServices
                 UISupplyChainInLabel.Show();
                 UISupplyChainIn.readOnly = false;
 
-                var tooltipText = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict incoming shipments to those buildings.";
+                var tooltipText = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to incoming shipments from those buildings.";
                 if (Constraints.SupplySources(m_currBuildingId)?.Count > 0)
                 {
                     UISupplyChainIn.text = string.Join(",", Constraints.SupplySources(m_currBuildingId).Select(b => b.ToString()).ToArray());
@@ -573,7 +573,7 @@ namespace EnhancedDistrictServices
                 UISupplyChainOut.text = "(Disabled)";
                 UISupplyChainOut.tooltip = "This policy is not applicable for non-supply chain buildings.";
             }
-            else if (Constraints.AllLocalAreas(m_currBuildingId))
+            else if (Constraints.OutputAllLocalAreas(m_currBuildingId))
             {
                 UISupplyChainOut.Hide();
                 UISupplyChainOutLabel.Hide();
@@ -617,7 +617,7 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            if (m_currBuildingId == 0 || Constraints.AllLocalAreas(m_currBuildingId) || Constraints.SupplyDestinations(m_currBuildingId)?.Count > 0)
+            if (m_currBuildingId == 0 || Constraints.OutputAllLocalAreas(m_currBuildingId) || Constraints.SupplyDestinations(m_currBuildingId)?.Count > 0)
             {
                 UIDistrictsDropDown.Hide();
                 UIDistrictsSummary.Hide();
@@ -651,7 +651,7 @@ namespace EnhancedDistrictServices
 
                 if (updateChecked)
                 {
-                    var districtParkServed = Constraints.DistrictParkServiced(m_currBuildingId);
+                    var districtParkServed = Constraints.OutputDistrictParkServiced(m_currBuildingId);
                     if (districtParkServed != null)
                     {
                         // Do not used UICheckboxDropDown::SetChecked(bool[] isChecked) because it replaces the underlying array.
@@ -705,23 +705,18 @@ namespace EnhancedDistrictServices
 
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIDistrictsSummary Update");
             var homeDistrictPark = TransferManagerInfo.GetDistrictPark(m_currBuildingId);
-            var districtParkServed = Constraints.DistrictParkServiced(m_currBuildingId);
+            var districtParkServed = Constraints.OutputDistrictParkServiced(m_currBuildingId);
 
-            if (Constraints.AllLocalAreas(m_currBuildingId))
+            if (Constraints.OutputAllLocalAreas(m_currBuildingId))
             {
                 UIDistrictsSummary.text = "Districts served: (Disabled)";
                 UIDistrictsDropDown.triggerButton.tooltip = "All Local Areas enabled.  This policy will not be applied if all local areas are enabled.";
 
             }
-            else if (Constraints.SupplyDestinations(m_currBuildingId)?.Count > 0)
-            {
-                UIDistrictsSummary.text = "Districts served: (Disabled)";
-                UIDistrictsDropDown.triggerButton.tooltip = "Supply Chain Out enabled.  This policy will not be applied if supply chain out specified.";
-            }
             else if (districtParkServed == null || districtParkServed.Count == 0)
             {
                 UIDistrictsSummary.text = "Districts served: None";
-                UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetDistrictsServedText(m_currBuildingId);
+                UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetOutputDistrictsServedText(m_currBuildingId);
             }
             // Note that using List::Contains is the wrong thing to do, since the districtParkServed array is 
             // guaranteed to contain elements that refer to either 1 district or 1 park, but not both, while a building
@@ -737,12 +732,12 @@ namespace EnhancedDistrictServices
                     UIDistrictsSummary.text = $"Districts served: Home + {districtParkServed.Count - 1} others";
                 }
 
-                UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetDistrictsServedText(m_currBuildingId);
+                UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetOutputDistrictsServedText(m_currBuildingId);
             }
             else
             {
                 UIDistrictsSummary.text = $"Districts served: {districtParkServed.Count} others";
-                UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetDistrictsServedText(m_currBuildingId);
+                UIDistrictsDropDown.triggerButton.tooltip = TransferManagerInfo.GetOutputDistrictsServedText(m_currBuildingId);
             }
         }
 

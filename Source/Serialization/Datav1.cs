@@ -32,11 +32,11 @@ namespace EnhancedDistrictServices.Serialization
             }
         }
 
-        public static bool TryLoadData(EnhancedDistrictServicesSerializableData loader, out Datav2 data)
+        public static bool TryLoadData(EnhancedDistrictServicesSerializableData loader, out Datav3 data)
         {
             if (loader.TryLoadData(m_id, new Datav1Binder(), out Datav1 target))
             {
-                data = target.Upgrade();
+                data = target.Upgrade().Upgrade();
                 return true;
             }
             else
@@ -48,6 +48,8 @@ namespace EnhancedDistrictServices.Serialization
 
         public Datav2 Upgrade()
         {
+            Logger.Log("Datav1::Upgrade");
+
             var defaultBuildingToInteralSupplyBuffer = new int[BuildingManager.MAX_BUILDING_COUNT];
             for (int b = 0; b < defaultBuildingToInteralSupplyBuffer.Length; b++)
             {
