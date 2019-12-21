@@ -290,13 +290,7 @@ namespace EnhancedDistrictServices
                             for (int responseSubIndex = 0; responseSubIndex < responseSubCount; ++responseSubIndex)
                             {
                                 var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
-
-                                if (requestOffer.m_object == responseOffer.m_object)
-                                {
-                                    continue;
-                                }
-
-                                if (TransferManagerInfo.GetHomeBuilding(ref requestOffer) == TransferManagerInfo.GetHomeBuilding(ref responseOffer))
+                                if (IsSameLocation(ref requestOffer,ref responseOffer))
                                 {
                                     continue;
                                 }
@@ -586,6 +580,48 @@ namespace EnhancedDistrictServices
             {
                 return false;
             }
+        }
+
+        private static bool IsSameLocation(
+            ref TransferManager.TransferOffer requestOffer,
+            ref TransferManager.TransferOffer responseOffer)
+        {
+            if (requestOffer.m_object == responseOffer.m_object)
+            {
+                return true;
+            }
+
+            var requestHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
+            var responseHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
+            if (requestHomeBuilding == responseHomeBuilding)
+            {
+                return true;
+            }
+
+            // Don't match a guest vehicle to its host building.  For instance, Taxi stands.
+            if (responseOffer.Vehicle != 0 && BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_guestVehicles != 0)
+            {
+                var vehicleID = BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_guestVehicles;
+                int num = 0;
+                while (vehicleID != 0)
+                {
+                    if (responseOffer.Vehicle == vehicleID)
+                    {
+                        return true;
+                    }
+
+                    vehicleID = VehicleManager.instance.m_vehicles.m_buffer[vehicleID].m_nextGuestVehicle;
+                    ++num;
+
+                    if (++num > 16384)
+                    {
+                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                        break;
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

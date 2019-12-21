@@ -479,19 +479,21 @@ namespace EnhancedDistrictServices
             }
 
             UIAllLocalAreasCheckBox.label.text = "All Local Areas: ";
-            UIAllLocalAreasCheckBox.tooltip = "If enabled, serves all local areas.  Overrides Supply Chain Out and Districts Served restrictions.";
+            UIAllLocalAreasCheckBox.tooltip = "If enabled, serves all local areas.  Disable to specify Supply Chain Out or Districts Served restrictions.";
         }
 
         private void UpdateUIAllOutsideConnectionsCheckBox()
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIAllOutsideConnectionsCheckBox Update");
-            if (m_currBuildingId != 0)
+            if (m_currBuildingId != 0 && TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
             {
+                UIAllOutsideConnectionsCheckBox.Show();
                 UIAllOutsideConnectionsCheckBox.isChecked = Constraints.OutsideConnections(m_currBuildingId);
                 UIAllOutsideConnectionsCheckBox.readOnly = false;
             }
             else
             {
+                UIAllOutsideConnectionsCheckBox.Hide();
                 UIAllOutsideConnectionsCheckBox.isChecked = false;
                 UIAllOutsideConnectionsCheckBox.readOnly = true;
             }
@@ -505,15 +507,23 @@ namespace EnhancedDistrictServices
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyReserve Update");
             if (m_currBuildingId == 0 || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
             {
+                UISupplyReserve.Hide();
+                UISupplyReserveLabel.Hide();
                 UISupplyReserve.readOnly = true;
                 UISupplyReserve.text = "(Disabled)";
                 UISupplyReserve.tooltip = "This policy is not applicable for non-supply chain buildings.";
             }
             else
             {
+                UISupplyReserve.Show();
+                UISupplyReserveLabel.Show();
                 UISupplyReserve.readOnly = false;
+
+                var tooltipText = "(Supply Chain Buildings Only):\nThe percentage of goods to reserve for allowed districts and supply out buildings.\nEnter a value between 0 and 100 inclusive.";
+
                 UISupplyReserve.text = Constraints.InternalSupplyBuffer(m_currBuildingId).ToString();
-                UISupplyReserve.tooltip = "(Supply Chain Buildings Only):\nThe percentage of goods to reserve for allowed districts and supply out buildings.\nEnter a value between 0 and 100 inclusive.";
+                UISupplyReserve.tooltip = tooltipText;
+                UISupplyReserveLabel.tooltip = tooltipText;
             }
         }
 
@@ -522,6 +532,8 @@ namespace EnhancedDistrictServices
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChainIn Update");
             if (m_currBuildingId == 0 || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
             {
+                UISupplyChainIn.Hide();
+                UISupplyChainInLabel.Hide();
                 UISupplyChainIn.readOnly = true;
 
                 UISupplyChainIn.text = "(Disabled)";
@@ -529,17 +541,22 @@ namespace EnhancedDistrictServices
             }
             else
             {
+                UISupplyChainIn.Show();
+                UISupplyChainInLabel.Show();
                 UISupplyChainIn.readOnly = false;
 
+                var tooltipText = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict incoming shipments to those buildings.";
                 if (Constraints.SupplySources(m_currBuildingId)?.Count > 0)
                 {
                     UISupplyChainIn.text = string.Join(",", Constraints.SupplySources(m_currBuildingId).Select(b => b.ToString()).ToArray());
                     UISupplyChainIn.tooltip = TransferManagerInfo.GetSupplySourcesText(m_currBuildingId);
+                    UISupplyChainInLabel.tooltip = tooltipText;
                 }
                 else
                 {
                     UISupplyChainIn.text = "";
-                    UISupplyChainIn.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict incoming shipments to those buildings.";
+                    UISupplyChainIn.tooltip = tooltipText;
+                    UISupplyChainInLabel.tooltip = tooltipText;
                 }
             }
         }
@@ -549,6 +566,8 @@ namespace EnhancedDistrictServices
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChainOut Update");
             if (m_currBuildingId == 0 || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
             {
+                UISupplyChainOut.Hide();
+                UISupplyChainOutLabel.Hide();
                 UISupplyChainOut.readOnly = true;
 
                 UISupplyChainOut.text = "(Disabled)";
@@ -556,6 +575,8 @@ namespace EnhancedDistrictServices
             }
             else if (Constraints.AllLocalAreas(m_currBuildingId))
             {
+                UISupplyChainOut.Hide();
+                UISupplyChainOutLabel.Hide();
                 UISupplyChainOut.readOnly = true;
 
                 UISupplyChainOut.text = "(Disabled)";
@@ -563,17 +584,23 @@ namespace EnhancedDistrictServices
             }
             else
             {
+                UISupplyChainOut.Show();
+                UISupplyChainOutLabel.Show();
                 UISupplyChainOut.readOnly = false;
+
+                var tooltipText = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict outgoing shipments to those buildings.\nClear to enable districts served restrictions.";
 
                 if (Constraints.SupplyDestinations(m_currBuildingId)?.Count > 0)
                 {
                     UISupplyChainOut.text = string.Join(",", Constraints.SupplyDestinations(m_currBuildingId).Select(b => b.ToString()).ToArray());
                     UISupplyChainOut.tooltip = TransferManagerInfo.GetSupplyDestinationsText(m_currBuildingId);
+                    UISupplyChainOutLabel.tooltip = tooltipText;
                 }
                 else
                 {
                     UISupplyChainOut.text = "";
-                    UISupplyChainOut.tooltip = "(Supply Chain Buildings Only):\nEnter a comma delimited list of building ids to restrict outgoing shipments to those buildings.\nOverrides Districts Served restrictions.";
+                    UISupplyChainOut.tooltip = tooltipText;
+                    UISupplyChainOutLabel.tooltip = tooltipText;
                 }
             }
         }
@@ -592,6 +619,8 @@ namespace EnhancedDistrictServices
 
             if (m_currBuildingId == 0 || Constraints.AllLocalAreas(m_currBuildingId) || Constraints.SupplyDestinations(m_currBuildingId)?.Count > 0)
             {
+                UIDistrictsDropDown.Hide();
+                UIDistrictsSummary.Hide();
                 UIDistrictsDropDown.triggerButton.Disable();
 
                 if (updateChecked)
@@ -605,6 +634,19 @@ namespace EnhancedDistrictServices
             }
             else
             {
+                if (m_currBuildingId != 0 && TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
+                {
+                    UIDistrictsDropDown.relativePosition = new Vector3(3, 168 + 3);
+                    UIDistrictsSummary.relativePosition = new Vector3(3, 168);
+                }
+                else
+                {
+                    UIDistrictsDropDown.relativePosition = new Vector3(3, 108 + 3);
+                    UIDistrictsSummary.relativePosition = new Vector3(3, 108);
+                }
+
+                UIDistrictsDropDown.Show();
+                UIDistrictsSummary.Show();
                 UIDistrictsDropDown.triggerButton.Enable();
 
                 if (updateChecked)

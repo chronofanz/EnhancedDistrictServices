@@ -26,9 +26,6 @@ namespace EnhancedDistrictServices
             m_taxiBuildings.Remove(building);
         }
 
-        // public static int LastCitizenId { get; set; }
-        // public static Vector3 LastCitizenPosition { get; set; }
-
         public static bool CanUseTaxis(Vector3 position)
         {
             var districtPark = DistrictPark.FromPosition(position);
