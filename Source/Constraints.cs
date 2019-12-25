@@ -126,16 +126,22 @@ namespace EnhancedDistrictServices
                         AddOutputDistrictParkServiced(building, DistrictPark.FromSerializedInt(districtPark));
                     }
                 }
-
-                var restrictions7 = data.BuildingToInternalSupplyBuffer[building];
-                SetInternalSupplyReserve(building, restrictions7);
-
-                var restrictions8 = data.BuildingToBuildingServiced[building];
-                if (restrictions8 != null)
+                
+                if (data.BuildingToInternalSupplyBuffer != null)
                 {
-                    foreach (var destination in restrictions8)
+                    var restrictions7 = data.BuildingToInternalSupplyBuffer[building];
+                    SetInternalSupplyReserve(building, restrictions7);
+                }
+
+                if (data.BuildingToBuildingServiced != null)
+                {
+                    var restrictions8 = data.BuildingToBuildingServiced[building];
+                    if (restrictions8 != null)
                     {
-                        AddSupplyChainConnection(building, (ushort)destination);
+                        foreach (var destination in restrictions8)
+                        {
+                            AddSupplyChainConnection(building, (ushort)destination);
+                        }
                     }
                 }
 

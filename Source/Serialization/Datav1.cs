@@ -34,8 +34,16 @@ namespace EnhancedDistrictServices.Serialization
         {
             if (loader.TryLoadData(m_id, new Datav1Binder(), out Datav1 target))
             {
-                data = target.Upgrade().Upgrade();
-                return true;
+                if (target != null)
+                {
+                    data = target.Upgrade().Upgrade();
+                    return true;
+                }
+                else
+                {
+                    data = null;
+                    return false;
+                }
             }
             else
             {
