@@ -55,6 +55,8 @@ namespace EnhancedDistrictServices
             UITitlePanel.Instance?.Hide();
             EnhancedDistrictServicesUIPanel.Instance?.UIDistrictsDropDown?.ClosePopup();
             EnhancedDistrictServicesUIPanel.Instance?.Hide();
+
+            CopyPaste.BuildingTemplate = 0;
         }
 
         #endregion
@@ -109,51 +111,121 @@ namespace EnhancedDistrictServices
                 return;
             }
 
-            var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
-            var txt = GetBuildingInfoText(building);
-            ShowToolInfo(true, txt, position);
+            if (TransferManagerInfo.IsDistrictServicesBuilding(building))
+            {
+                var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
+                var txt = GetBuildingInfoText(building);
+                ShowToolInfo(true, txt, position);
+            }
         }
 
         protected override void OnToolGUI(Event e)
         {
             try
             {
+                var hoverInstance = this.m_hoverInstance;
+                var building = hoverInstance.Building;
+
                 WorldInfoPanel.HideAllWorldInfoPanels();
 
-                var hoverInstance = this.m_hoverInstance;
+                if (Settings.keyCopy.IsPressed(e))
+                {
+                    if (building == 0 || 
+                        BuildingManager.instance.m_buildings.m_buffer[building].Info.GetAI() is DummyBuildingAI ||
+                        !TransferManagerInfo.IsDistrictServicesBuilding(building))
+                    {
+                        Utils.DisplayMessage(
+                            str1: "Enhanced District Services",
+                            str2: $"Cannot copy policy from this building!",
+                            str3: "IconMessage");
+                        return;
+                    }
+
+                    CopyPaste.BuildingTemplate = building;
+                }
+
+                if (Settings.keyPaste.IsPressed(e))
+                {
+                    if (CopyPaste.BuildingTemplate == 0)
+                    {
+                        Utils.DisplayMessage(
+                            str1: "Enhanced District Services",
+                            str2: $"Please hover over a valid building and press Ctrl-C to copy its policy first!",
+                            str3: "IconMessage");
+                        return;
+                    }
+
+                    if (building == 0 ||
+                        BuildingManager.instance.m_buildings.m_buffer[building].Info.GetAI() is DummyBuildingAI ||
+                        !TransferManagerInfo.IsDistrictServicesBuilding(building))
+                    {
+                        Utils.DisplayMessage(
+                            str1: "Enhanced District Services",
+                            str2: $"Cannot copy policy to this unsupported building!",
+                            str3: "IconMessage");
+                        return;
+                    }
+
+                    var inputType1 = TransferManagerInfo.GetBuildingInputType(CopyPaste.BuildingTemplate);
+                    var inputType2 = TransferManagerInfo.GetBuildingInputType(building);
+
+                    if (inputType1 != inputType2)
+                    {
+                        Utils.DisplayMessage(
+                            str1: "Enhanced District Services",
+                            str2: $"Can only copy-paste policy between buildings of the same policy type!",
+                            str3: "IconMessage");
+                        return;
+                    }
+
+                    var success = CopyPaste.CopyPolicyTo(building);
+                    if (!success)
+                    {
+                        Utils.DisplayMessage(
+                            str1: "Enhanced District Services",
+                            str2: $"Could not copy certain supply chain restrictions.  Please check results of copy operation!",
+                            str3: "IconMessage");
+                        return;
+                    }
+
+                    var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
+                    var txt = GetBuildingInfoText(building);
+                    ShowToolInfo(true, txt, position);
+                }
 
                 if (!m_toolController.IsInsideUI && e.type == UnityEngine.EventType.MouseDown && e.button == 0)
                 {
+                    if (!TransferManagerInfo.IsDistrictServicesBuilding(building))
+                    {
+                        return;
+                    }
+
                     if (this.m_selectErrors == ToolBase.ToolErrors.None || this.m_selectErrors == ToolBase.ToolErrors.RaycastFailed)
                     {
                         Vector3 mousePosition = this.m_mousePosition;
                         UIInput.MouseUsed();
 
-                        if (TransferManagerInfo.IsDistrictServicesBuilding(hoverInstance.Building))
+                        if (!Singleton<InstanceManager>.instance.SelectInstance(hoverInstance))
                         {
-                            if (!Singleton<InstanceManager>.instance.SelectInstance(hoverInstance))
-                            {
-                                return;
-                            }
-
-                            Singleton<SimulationManager>.instance.AddAction(() =>
-                            {
-                                var panel = EnhancedDistrictServicesUIPanel.Instance;
-                                panel.SetBuilding(hoverInstance.Building);
-                                panel.UpdatePositionToBuilding(hoverInstance.Building);
-                                panel.UpdatePanelToBuilding(hoverInstance.Building);
-                                panel.opacity = 1f;
-
-                                Singleton<GuideManager>.instance.m_worldInfoNotUsed.Disable();
-                            });
-
+                            return;
                         }
+
+                        SimulationManager.instance.AddAction(() =>
+                        {
+                            var panel = EnhancedDistrictServicesUIPanel.Instance;
+                            panel.SetBuilding(hoverInstance.Building);
+                            panel.UpdatePositionToBuilding(hoverInstance.Building);
+                            panel.UpdatePanelToBuilding(hoverInstance.Building);
+                            panel.opacity = 1f;
+
+                            Singleton<GuideManager>.instance.m_worldInfoNotUsed.Disable();
+                        });
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogWarning($"EnhancedDistrictServicesTool::OnToolGUI: Could not open district services world info panel!");
+                Logger.LogWarning($"EnhancedDistrictServicesTool::OnToolGUI: ...");
                 Logger.LogException(ex);
             }
         }
@@ -177,6 +249,7 @@ namespace EnhancedDistrictServices
                 return string.Join("\n", txtItems.ToArray());
             }
 
+            txtItems.Add(TransferManagerInfo.GetBuildingInputTypeText(building));
             txtItems.Add(TransferManagerInfo.GetServicesText(building));
 
             if (!TransferManagerInfo.IsSupplyChainBuilding(building))
@@ -187,24 +260,29 @@ namespace EnhancedDistrictServices
                 return string.Join("\n", txtItems.ToArray());
             }
 
+            // From this point forth, we know this is a supply chain building ...
+            var inputType = TransferManagerInfo.GetBuildingInputType(building);
+
             txtItems.Add($"Supply Reserve: {Constraints.InternalSupplyBuffer(building)}");
 
-            if (Constraints.SupplySources(building)?.Count > 0)
+            if ((inputType & InputType.INCOMING) != InputType.NONE)
             {
                 txtItems.Add("");
-                txtItems.Add(TransferManagerInfo.GetSupplySourcesText(building));
+                txtItems.Add(TransferManagerInfo.GetSupplyBuildingSourcesText(building));
             }
 
-            if (!Constraints.OutputAllLocalAreas(building))
+            if ((inputType & InputType.OUTGOING) != InputType.NONE)
             {
                 txtItems.Add("");
-                txtItems.Add(TransferManagerInfo.GetOutputDistrictsServedText(building));
+                txtItems.Add(TransferManagerInfo.GetSupplyBuildingDestinationsText(building));
+            }
 
-                if (Constraints.SupplyDestinations(building)?.Count > 0)
-                {
-                    txtItems.Add("");
-                    txtItems.Add(TransferManagerInfo.GetSupplyDestinationsText(building));
-                }
+            var problemText = TransferManagerInfo.GetSupplyBuildingProblemsText(building);
+            if (problemText != string.Empty)
+            {
+                txtItems.Add("");
+                txtItems.Add($"<<WARNING: Cannot find the following materials to procure!>>");
+                txtItems.Add(problemText);
             }
 
             return string.Join("\n", txtItems.ToArray());

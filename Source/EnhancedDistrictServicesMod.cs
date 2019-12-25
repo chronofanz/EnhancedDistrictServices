@@ -75,6 +75,12 @@ namespace EnhancedDistrictServices
                     b => Settings.showParkDistricts.value = b))
                     .tooltip = "Disable this option if you do not wish to be able to see campus/industrial/park districts in the dropdown menu.";
 
+                ((UIComponent)uiHelper.AddCheckbox(
+                    "Show welcome message",
+                    Settings.showWelcomeMessage,
+                    b => Settings.showWelcomeMessage.value = b))
+                    .tooltip = "Automatically disabled upon first viewing the welcome message.";
+
                 uiHelper.AddSpace(10);
 
                 self.gameObject.AddComponent<UIOptionsKeymapping>();

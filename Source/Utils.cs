@@ -1,7 +1,9 @@
-﻿using ColossalFramework;
+﻿using ColossalFramework.DataBinding;
+using ColossalFramework.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace EnhancedDistrictServices
 {
@@ -10,6 +12,27 @@ namespace EnhancedDistrictServices
     /// </summary>
     public static class Utils
     {
+        public static void DisplayMessage(string str1, string str2, string str3)
+        {
+            try
+            {
+                var uiComponent = UIView.library.ShowModal("ExceptionPanel");
+                if ((UnityEngine.Object)uiComponent != (UnityEngine.Object)null)
+                {
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                    var component = uiComponent.GetComponent<BindPropertyByKey>();
+                    if ((UnityEngine.Object)component != (UnityEngine.Object)null)
+                    {
+                        component.SetProperties(TooltipHelper.Format("title", str1, "message", str2, "img", str3));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex);
+            }
+        }
 
         /// <summary>
         /// Helper struct for sorting buildings by their names, to make debugging nicer.

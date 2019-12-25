@@ -75,6 +75,8 @@
     <Compile Include="Source\Logger.cs" />
     <Compile Include="Source\EnhancedDistrictServicesUIPanelBase.cs" />
     <Compile Include="Source\DistrictPark\DistrictManagerReleasePatch.cs" />
+    <Compile Include="Source\UI\InputType.cs" />
+    <Compile Include="Source\UI\CopyPaste.cs" />
     <Compile Include="Source\Vehicles\TaxiMod.cs" />
     <Compile Include="Source\TransferManagerAddOfferPatch.cs" />
     <Compile Include="Source\UI\Settings.cs" />

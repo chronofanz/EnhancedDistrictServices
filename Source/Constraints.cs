@@ -135,7 +135,7 @@ namespace EnhancedDistrictServices
                 {
                     foreach (var destination in restrictions8)
                     {
-                        AddSupplyChainConnection(building, destination);
+                        AddSupplyChainConnection(building, (ushort)destination);
                     }
                 }
 
@@ -506,10 +506,16 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="source"></param>
         /// <param name="destination"></param>
-        public static void AddSupplyChainConnection(int source, int destination)
+        public static void AddSupplyChainConnection(ushort source, ushort destination)
         {
             if (!TransferManagerInfo.IsSupplyChainBuilding(source) || !TransferManagerInfo.IsSupplyChainBuilding(destination))
             {
+                return;
+            }
+
+            if (!TransferManagerInfo.IsValidSupplyChainLink(source, destination))
+            {
+                Logger.Log($"Constraints::AddSupplyChainConnection: Could not add invalid supply chain link: source={source}, destination={destination}");
                 return;
             }
 

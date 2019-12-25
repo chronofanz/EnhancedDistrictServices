@@ -66,6 +66,41 @@ namespace EnhancedDistrictServices
 
         #endregion
 
+        #region Dynamic GUI arranging
+
+        private int m_shownElements = 0;
+
+        public void AddTabContainerRow()
+        {
+            m_shownElements++;
+        }
+
+        public void AddElementToTabContainerRow(UIComponent component)
+        {
+            int y = 92 + 20 * m_shownElements;
+            component.relativePosition = new Vector3(component.relativePosition.x, y);
+            component.Show();
+        }
+
+        public void ClearTabContainerElements()
+        {
+            m_shownElements = 0;
+        }
+
+        public void ShowComponent(UIComponent component, bool show)
+        {
+            if (show)
+            {
+                component.Show();
+            }
+            else
+            {
+                component.Hide();
+            }
+        }
+
+        #endregion
+
         #region GUI layout
 
         private const int m_componentPadding = 3;
@@ -82,27 +117,23 @@ namespace EnhancedDistrictServices
         public UITextField UIBuildingId;
         public UILabel UIHomeDistrict;
         public UILabel UIServices;
+
+        public UITabstrip UIInputMode;
+        public UIButton UIIncomingTab;
+        public UIButton UIOutgoingTab;
+        public UIButton UIGlobalTab;
+
         public UICheckBox UIAllLocalAreasCheckBox;
         public UICheckBox UIAllOutsideConnectionsCheckBox;
         public UILabel UISupplyReserveLabel;
         public UITextField UISupplyReserve;
-        public UILabel UISupplyChainInLabel;
-        public UITextField UISupplyChainIn;
-        public UILabel UISupplyChainOutLabel;
-        public UITextField UISupplyChainOut;
+        public UILabel UISupplyChainLabel;
+        public UITextField UISupplyChain;
         public UILabel UIDistrictsSummary;
         public UICheckboxDropDown UIDistrictsDropDown;
 
-        private UIComponent m_component;
-        public UIComponent component
-        {
-            get
-            {
-                if (m_component == null)
-                    m_component = GetComponent<UIComponent>();
-                return m_component;
-            }
-        }
+        public UILabel GlobalIntensityLabel;
+        public UITextField GlobalIntensity;
 
         /// <summary>
         /// Layout the GUI.
@@ -125,23 +156,31 @@ namespace EnhancedDistrictServices
             UIBuildingId = AttachUITextFieldTo(this, 3, 28, 78);
             UIHomeDistrict = AttachUILabelTo(this, 3, 48);
             UIServices = AttachUILabelTo(this, 3, 68);
+
+            var buttonTemplate = GetUITabstripButtonTemplate(this);
+            UIInputMode = AttachUITabstripTo(this, 3, 88);
+            UIOutgoingTab = UIInputMode.AddTab("Outgoing", buttonTemplate, true);
+            UIIncomingTab = UIInputMode.AddTab("Incoming", buttonTemplate, true);
+            UIGlobalTab = UIInputMode.AddTab("Global", buttonTemplate, true);
+
             UIAllLocalAreasCheckBox = AttachUICheckBoxTo(this, 113, 88);
             UIAllLocalAreasCheckBox.label = AttachUILabelTo(UIAllLocalAreasCheckBox, -110, 0);
             UIAllOutsideConnectionsCheckBox = AttachUICheckBoxTo(this, 336, 88);
             UIAllOutsideConnectionsCheckBox.label = AttachUILabelTo(UIAllOutsideConnectionsCheckBox, -173, 0);
             UISupplyReserveLabel = AttachUILabelTo(this, 3, 108, text: $"Supply Reserve: ");
             UISupplyReserve = AttachUITextFieldTo(this, 3, 108, 112);
-            UISupplyChainInLabel = AttachUILabelTo(this, 3, 128, text: $"Supply Chain In: ");
-            UISupplyChainIn = AttachUITextFieldTo(this, 3, 128, 111);
-            UISupplyChainOutLabel = AttachUILabelTo(this, 3, 148, text: $"Supply Chain Out: ");
-            UISupplyChainOut = AttachUITextFieldTo(this, 3, 148, 124);
+            UISupplyChainLabel = AttachUILabelTo(this, 3, 128, text: $"Supply Chain: ");
+            UISupplyChain = AttachUITextFieldTo(this, 3, 128, 111);
 
-            UIDistrictsSummary = AttachUILabelTo(this, 3, 168);
+            UIDistrictsSummary = AttachUILabelTo(this, 3, 148);
             UIDistrictsSummary.zOrder = 0;
 
-            UIDistrictsDropDown = AttachUICheckboxDropDownTo(this, 3, 168 + 3);
+            UIDistrictsDropDown = AttachUICheckboxDropDownTo(this, 3, 148 + 3);
             UIDistrictsDropDown.eventDropdownOpen += UIDistrictsDropDown_eventDropdownOpen;
             UIDistrictsDropDown.eventDropdownClose += UIDistrictsDropDown_eventDropdownClose;
+
+            GlobalIntensityLabel = AttachUILabelTo(this, 3, 88, text: "Outside Connection Intensity:");
+            GlobalIntensity = AttachUITextFieldTo(this, 3, 29, 213);
 
             m_FullscreenContainer = UIView.Find("FullScreenContainer");
             m_FullscreenContainer.AttachUIComponent(gameObject);
@@ -175,6 +214,8 @@ namespace EnhancedDistrictServices
             {
                 return;
             }
+
+            var component = GetComponent<UIComponent>();
 
             if (InstanceManager.GetPosition(new InstanceID { Building = building }, out Vector3 position, out Quaternion _, out Vector3 size))
             {
@@ -375,6 +416,14 @@ namespace EnhancedDistrictServices
             return label;
         }
 
+        private static UITabstrip AttachUITabstripTo(UIComponent parent, int x, int y)
+        {
+            var tabstrip = parent.AddUIComponent<UITabstrip>();
+            tabstrip.relativePosition = new Vector3(x, y);
+            tabstrip.size = new Vector2(m_componentWidth, 20);
+            return tabstrip;
+        }
+
         private static UITextField AttachUITextFieldTo(UIComponent parent, int x, int y, int xOffset)
         {
             x = x + xOffset;
@@ -404,6 +453,26 @@ namespace EnhancedDistrictServices
             textField.verticalAlignment = UIVerticalAlignment.Middle;
 
             return textField;
+        }
+
+        private static UIButton GetUITabstripButtonTemplate(UIComponent parent)
+        {
+            var buttonTemplate = parent.AddUIComponent<UIButton>();
+            buttonTemplate.Hide();
+
+            buttonTemplate.text = "";
+            buttonTemplate.size = new Vector2((m_componentWidth - m_listScrollbarWidth) / 4, 20f);
+            buttonTemplate.normalFgSprite = "GenericTab";
+            buttonTemplate.hoveredFgSprite = "GenericTabHovered";
+            buttonTemplate.pressedFgSprite = "GenericTabPressed";
+            buttonTemplate.focusedFgSprite = "GenericTabFocused";
+            buttonTemplate.textVerticalAlignment = UIVerticalAlignment.Top;
+            buttonTemplate.textHorizontalAlignment = UIHorizontalAlignment.Left;
+            buttonTemplate.foregroundSpriteMode = UIForegroundSpriteMode.Scale;
+            buttonTemplate.zOrder = 1;
+            buttonTemplate.textScale = 0.8f;
+
+            return buttonTemplate;
         }
 
         #endregion
