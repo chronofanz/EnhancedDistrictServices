@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace EnhancedDistrictServices.Serialization
 {
@@ -15,6 +16,14 @@ namespace EnhancedDistrictServices.Serialization
 
         private static readonly string m_id = "EnhancedDistrictServices_v2";
 
+        private class Datav2Binder : SerializationBinder
+        {
+            public override Type BindToType(string assemblyName, string typeName)
+            {
+                return typeof(Datav2);
+            }
+        }
+
         public string Id
         {
             get
@@ -25,10 +34,18 @@ namespace EnhancedDistrictServices.Serialization
 
         public static bool TryLoadData(EnhancedDistrictServicesSerializableData loader, out Datav3 data)
         {
-            if (loader.TryLoadData(m_id, null, out Datav2 target))
+            if (loader.TryLoadData(m_id, new Datav2Binder(), out Datav2 target))
             {
-                data = target.Upgrade();
-                return true;
+                if (target != null)
+                {
+                    data = target.Upgrade();
+                    return true;
+                }
+                else
+                {
+                    data = null;
+                    return false;
+                }
             }
             else
             {

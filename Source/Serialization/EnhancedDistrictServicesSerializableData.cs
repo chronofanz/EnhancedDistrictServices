@@ -19,28 +19,35 @@ namespace EnhancedDistrictServices.Serialization
 
             if (managers.loading.currentMode == AppMode.Game)
             {
-                Datav3 data;
+                try
+                {
+                    Datav3 data;
 
-                // Always to try the latest version if possible.
-                if (Datav3.TryLoadData(this, out data))
-                {
-                    Constraints.LoadData(data);
-                }
-                else if (Datav2.TryLoadData(this, out data))
-                {
-                    Constraints.LoadData(data);
-                }
-                else if (Datav1.TryLoadData(this, out data))
-                {
-                    Constraints.LoadData(data);
-                }
+                    // Always to try the latest version if possible.
+                    if (Datav3.TryLoadData(this, out data))
+                    {
+                        Constraints.LoadData(data);
+                    }
+                    else if (Datav2.TryLoadData(this, out data))
+                    {
+                        Constraints.LoadData(data);
+                    }
+                    else if (Datav1.TryLoadData(this, out data))
+                    {
+                        Constraints.LoadData(data);
+                    }
 
-                // Update Taxi buildings cache ...
-                // TODO, FIXME: Make this less hacky ...
-                var buildings = Utils.GetSupportedServiceBuildings();
-                foreach (var building in buildings)
+                    // Update Taxi buildings cache ...
+                    // TODO, FIXME: Make this less hacky ...
+                    var buildings = Utils.GetSupportedServiceBuildings();
+                    foreach (var building in buildings)
+                    {
+                        TaxiMod.AddTaxiBuilding(building);
+                    }
+                }
+                catch (Exception ex)
                 {
-                    TaxiMod.AddTaxiBuilding(building);
+                    Logger.LogException(ex);
                 }
             }
         }

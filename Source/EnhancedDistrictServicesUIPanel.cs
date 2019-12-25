@@ -483,7 +483,7 @@ namespace EnhancedDistrictServices
 
         public void SetBuilding(ushort building)
         {
-            Logger.Log($"EnhancedDistrictServicedUIPanel::SetBuilding: buildingId={building}");
+            Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::SetBuilding: buildingId={building}");
             if (TransferManagerInfo.IsDistrictServicesBuilding(building))
             {
                 m_currBuildingId = building;
