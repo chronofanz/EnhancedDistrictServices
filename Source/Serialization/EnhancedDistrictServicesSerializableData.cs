@@ -1,7 +1,5 @@
-﻿using EnhancedDistrictServices;
-using ICities;
+﻿using ICities;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -21,10 +19,14 @@ namespace EnhancedDistrictServices.Serialization
 
             if (managers.loading.currentMode == AppMode.Game)
             {
-                Datav2 data;
+                Datav3 data;
 
                 // Always to try the latest version if possible.
-                if (Datav2.TryLoadData(this, out data))
+                if (Datav3.TryLoadData(this, out data))
+                {
+                    Constraints.LoadData(data);
+                }
+                else if (Datav2.TryLoadData(this, out data))
                 {
                     Constraints.LoadData(data);
                 }

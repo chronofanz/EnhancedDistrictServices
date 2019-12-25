@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace EnhancedDistrictServices
@@ -26,9 +23,6 @@ namespace EnhancedDistrictServices
             m_taxiBuildings.Remove(building);
         }
 
-        // public static int LastCitizenId { get; set; }
-        // public static Vector3 LastCitizenPosition { get; set; }
-
         public static bool CanUseTaxis(Vector3 position)
         {
             var districtPark = DistrictPark.FromPosition(position);
@@ -39,7 +33,7 @@ namespace EnhancedDistrictServices
                 var buildingId = m_taxiBuildings[i];
                 if (BuildingManager.instance.m_buildings.m_buffer[buildingId].Info?.GetSubService() == ItemClass.SubService.PublicTransportTaxi)
                 {
-                    var districtParkServed = Constraints.DistrictParkServiced((ushort)buildingId);
+                    var districtParkServed = Constraints.OutputDistrictParkServiced((ushort)buildingId);
                     if (districtPark.IsServedBy(districtParkServed))
                     {
                         return true;

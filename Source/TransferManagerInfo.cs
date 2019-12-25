@@ -37,6 +37,77 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
+        /// Returns the name of the building.
+        /// </summary>
+        /// <param name="building"></param>
+        /// <returns></returns>
+        public static string GetBuildingName(int building)
+        {
+            return Singleton<BuildingManager>.instance.GetBuildingName((ushort)building, InstanceID.Empty);
+        }
+
+        /// <summary>
+        /// Returns the input type of the building, used to determine which GUI elements are shown in the main panel.
+        /// </summary>
+        /// <param name="building"></param>
+        /// <returns></returns>
+        public static InputType GetBuildingInputType(int building)
+        {
+            if (building == 0)
+            {
+                return InputType.NONE;
+            }
+
+            var result = InputType.NONE;
+
+            // The only building type for which we will not show an outgoing tab is coal power plants.
+            var info = BuildingManager.instance.m_buildings.m_buffer[building].Info;
+            if (!(info?.GetService() == ItemClass.Service.Electricity && info?.GetAI() is PowerPlantAI))
+            {
+                result |= InputType.OUTGOING;
+            }
+
+            if (TransferManagerInfo.IsSupplyChainBuilding(building))
+            {
+                result |= InputType.SUPPLY_CHAIN;
+
+                if (!(info?.GetAI() is ExtractingFacilityAI))
+                {
+                    result |= InputType.INCOMING;
+                }
+            }
+
+            return result;
+        }
+
+        public static string GetBuildingInputTypeText(int building)
+        {
+            var inputType = GetBuildingInputType(building);
+
+            var txtItems = new List<string>();
+            if ((inputType & InputType.SUPPLY_CHAIN) == InputType.NONE)
+            {
+                txtItems.Add($"Services");
+            }
+            else
+            {
+                txtItems.Add($"Supply Chain");
+
+                if ((inputType & InputType.INCOMING) != InputType.NONE)
+                {
+                    txtItems.Add($"Incoming");
+                }
+
+                if ((inputType & InputType.OUTGOING) != InputType.NONE)
+                {
+                    txtItems.Add($"Outgoing");
+                }
+            }
+
+            return $"Building Type: {string.Join(", ", txtItems.ToArray())}";
+        }
+
+        /// <summary>
         /// Returns the district of the offer's home building or segment.
         /// Should return 0 if the offer does not originate from a district.
         /// </summary>
@@ -56,16 +127,6 @@ namespace EnhancedDistrictServices
             {
                 return GetDistrictPark(GetHomeBuilding(ref offer));
             }
-        }
-
-        /// <summary>
-        /// Returns the name of the building.
-        /// </summary>
-        /// <param name="building"></param>
-        /// <returns></returns>
-        public static string GetBuildingName(int building)
-        {
-            return Singleton<BuildingManager>.instance.GetBuildingName((ushort)building, InstanceID.Empty);
         }
 
         /// <summary>
@@ -114,42 +175,28 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="building"></param>
         /// <returns></returns>
-        public static string GetDistrictsServedText(ushort building)
+        public static string GetOutputDistrictsServedText(ushort building)
         {
             if (building == 0)
             {
                 return string.Empty;
             }
 
+
             var txtItems = new List<string>();
-            txtItems.Add($"<<DistrictsServed>>");
+            txtItems.Add($"<<Districts served>>");
 
-            bool addedText = false;
-            if (Constraints.AllLocalAreas(building))
+            if (Constraints.OutputAllLocalAreas(building))
             {
-                txtItems.Add($"All local areas served");
-                addedText = true;
+                txtItems.Add($"All local areas");
             }
-
-            if (IsSupplyChainBuilding(building) && Constraints.OutsideConnections(building))
+            else if (Constraints.OutputDistrictParkServiced(building) == null || Constraints.OutputDistrictParkServiced(building).Count == 0)
             {
-                txtItems.Add($"All outside connections served");
-                addedText = true;
+                return $"<<No districts served!>>";
             }
-
-            if (Constraints.AllLocalAreas(building))
+            else
             {
-                return string.Join("\n", txtItems.ToArray());
-            }
-
-            if (Constraints.SupplyDestinations(building)?.Count > 0)
-            {
-                txtItems.Add($"Supply chain restricted, only serves specified Supply Chain Out buildings!");
-                return string.Join("\n", txtItems.ToArray());
-            }
-            else if (Constraints.DistrictParkServiced(building)?.Count > 0)
-            {
-                var districtParkNames = Constraints.DistrictParkServiced(building)
+                var districtParkNames = Constraints.OutputDistrictParkServiced(building)
                     .Select(dp => dp.Name)
                     .OrderBy(s => s);
 
@@ -157,13 +204,6 @@ namespace EnhancedDistrictServices
                 {
                     txtItems.Add(districtParkName);
                 }
-
-                addedText = true;
-            }
-
-            if (!addedText)
-            {
-                txtItems.Add($"No districts served!");
             }
 
             return string.Join("\n", txtItems.ToArray());
@@ -197,17 +237,10 @@ namespace EnhancedDistrictServices
             }
             else if (service == ItemClass.Service.PlayerIndustry)
             {
-                if (buildingInfo.GetAI() is ExtractingFacilityAI extractingFacilityAI)
+                var resource = GetSupplyBuildingOutputMaterial(building);
+                if (resource != TransferManager.TransferReason.None)
                 {
-                    return $"Service: {service} ({extractingFacilityAI.m_outputResource})";
-                }
-                else if (buildingInfo.GetAI() is ProcessingFacilityAI processingFacilityAI)
-                {
-                    return $"Service: {service} ({processingFacilityAI.m_outputResource})";
-                }
-                else if (buildingInfo.GetAI() is WarehouseAI warehouseAI)
-                {
-                    return $"Service: {service} ({warehouseAI.m_storageType})";
+                    return $"Service: {service} ({resource})";
                 }
                 else
                 {
@@ -226,7 +259,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="building"></param>
         /// <returns></returns>
-        public static string GetSupplyDestinationsText(ushort building)
+        public static string GetSupplyBuildingDestinationsText(ushort building)
         {
             if (building == 0)
             {
@@ -234,18 +267,59 @@ namespace EnhancedDistrictServices
             }
 
             var txtItems = new List<string>();
-            txtItems.Add($"<<Supply Chain Shipments Only To>>");
+            txtItems.Add($"<<Supply Chain Shipments To>>");
 
-            var buildingNames = Constraints.SupplyDestinations(building)
-                .Select(b => $"{GetBuildingName(b)} ({b})")
-                .OrderBy(s => s);
-
-            foreach (var buildingName in buildingNames)
+            if (Constraints.OutputAllLocalAreas(building))
             {
-                txtItems.Add(buildingName);
+                txtItems.Add($"All local areas");
             }
 
-            return string.Join("\n", txtItems.ToArray());
+            if (Constraints.OutputOutsideConnections(building))
+            {
+                txtItems.Add($"All outside connections");
+            }
+
+            if (Constraints.OutputAllLocalAreas(building))
+            {
+                return string.Join("\n", txtItems.ToArray());
+            }
+
+            // Next, list output building names
+            var supply = Constraints.SupplyDestinations(building);
+            if (supply?.Count > 0)
+            {
+                var buildingNames = supply
+                    .Select(b => $"{GetBuildingName(b)} ({b})")
+                    .OrderBy(s => s);
+
+                foreach (var buildingName in buildingNames)
+                {
+                    txtItems.Add(buildingName);
+                }
+            }
+
+            var districts = Constraints.OutputDistrictParkServiced(building);
+            if (districts?.Count > 0)
+            {
+                // Then add district names
+                var districtParkNames = districts
+                    .Select(dp => dp.Name)
+                    .OrderBy(s => s);
+
+                foreach (var districtParkName in districtParkNames)
+                {
+                    txtItems.Add($"{districtParkName} (DISTRICT)");
+                }
+            }
+
+            if (txtItems.Count == 1)
+            {
+                return $"<<WARNING: No supply chain shipments output!>>";
+            }
+            else
+            {
+                return string.Join("\n", txtItems.ToArray());
+            }
         }
 
         /// <summary>
@@ -254,7 +328,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="building"></param>
         /// <returns></returns>
-        public static string GetSupplySourcesText(ushort building)
+        public static string GetSupplyBuildingSourcesText(ushort building)
         {
             if (building == 0)
             {
@@ -262,23 +336,177 @@ namespace EnhancedDistrictServices
             }
 
             var txtItems = new List<string>();
-            txtItems.Add($"<<Supply Chain Shipments Only From>>");
+            txtItems.Add($"<<Supply Chain Shipments From>>");
 
-            var buildingNames = Constraints.SupplySources(building)
-                .Select(b => $"{GetBuildingName(b)} ({b})")
-                .OrderBy(s => s);
-
-            foreach (var buildingName in buildingNames)
+            if (Constraints.InputAllLocalAreas(building))
             {
-                txtItems.Add(buildingName);
+                txtItems.Add($"All local areas");
             }
 
-            return string.Join("\n", txtItems.ToArray());
+            if (Constraints.InputOutsideConnections(building))
+            {
+                txtItems.Add($"All outside connections");
+            }
+
+            if (Constraints.InputAllLocalAreas(building))
+            {
+                return string.Join("\n", txtItems.ToArray());
+            }
+
+            // Next, list input building names
+            var supply = Constraints.SupplySources(building);
+            if (supply?.Count > 0)
+            {
+                var buildingNames = supply
+                    .Select(b => $"{GetBuildingName(b)} ({b})")
+                    .OrderBy(s => s);
+
+                foreach (var buildingName in buildingNames)
+                {
+                    txtItems.Add(buildingName);
+                }
+            }
+
+            // Then add district names
+            var districts = Constraints.InputDistrictParkServiced(building);
+            if (districts?.Count > 0)
+            {
+                var districtParkNames = districts
+                    .Select(dp => dp.Name)
+                    .OrderBy(s => s);
+
+                foreach (var districtParkName in districtParkNames)
+                {
+                    txtItems.Add($"{districtParkName} (DISTRICT)");
+                }
+            }
+
+            if (txtItems.Count == 1)
+            {
+                return $"<<WARNING: No supply chain shipments accepted!>>";
+            }
+            else
+            {
+                return string.Join("\n", txtItems.ToArray());
+            }
+        }
+
+        /// <summary>
+        /// Returns a descriptive text describing problems with this supply chain building ...
+        /// </summary>
+        /// <param name="building"></param>
+        /// <returns></returns>
+        public static string GetSupplyBuildingProblemsText(ushort building)
+        {
+            if (building == 0 || !TransferManagerInfo.IsSupplyChainBuilding(building))
+            {
+                return string.Empty;
+            }
+
+            bool FindSourceBuilding(TransferManager.TransferReason material)
+            {
+                if (material == TransferManager.TransferReason.None)
+                {
+                    return true;
+                }
+
+                // Assume for now that the outside connection can supply the building with the materials it needs.
+                if (Constraints.InputOutsideConnections(building))
+                {
+                    return true;
+                }
+
+                for (ushort buildingIn = 1; buildingIn < BuildingManager.MAX_BUILDING_COUNT; buildingIn++)
+                {
+                    if (!TransferManagerInfo.IsSupplyChainBuilding(building))
+                    {
+                        continue;
+                    }
+
+                    if (GetSupplyBuildingOutputMaterial(buildingIn) == material)
+                    {
+                        // Check if a supply link exists ...
+                        if (Constraints.SupplyDestinations(buildingIn)?.Count > 0 && Constraints.SupplyDestinations(buildingIn).Contains(building))
+                        {
+                            return true;
+                        }
+
+                        var requestDistrictPark = TransferManagerInfo.GetDistrictPark(building);
+                        var responseDistrictPark = TransferManagerInfo.GetDistrictPark(buildingIn);
+
+                        if (!Constraints.InputAllLocalAreas(building))
+                        {
+                            var requestDistrictParksServed = Constraints.InputDistrictParkServiced(building);
+                            if (!responseDistrictPark.IsServedBy(requestDistrictParksServed))
+                            {
+                                continue;
+                            }
+                        }
+
+                        if (Constraints.OutputAllLocalAreas(buildingIn))
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            // The call to TransferManagerInfo.GetDistrict applies to offers that are come from buildings, service 
+                            // vehicles, citizens, AND segments.  The latter needs to be considered for road maintenance.
+                            var responseDistrictParksServed = Constraints.OutputDistrictParkServiced(buildingIn);
+                            if (requestDistrictPark.IsServedBy(responseDistrictParksServed))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            // Detect if we do have an other building that can supply materials to this building.
+            List<TransferManager.TransferReason> notFound = new List<TransferManager.TransferReason>();
+            switch (BuildingManager.instance.m_buildings.m_buffer[building].Info?.GetAI())
+            {
+                case ProcessingFacilityAI processingFacilityAI:
+                    if (!FindSourceBuilding(processingFacilityAI.m_inputResource1))
+                    {
+                        notFound.Add(processingFacilityAI.m_inputResource1);
+                    }
+
+                    if (!FindSourceBuilding(processingFacilityAI.m_inputResource2))
+                    {
+                        notFound.Add(processingFacilityAI.m_inputResource2);
+                    }
+
+                    if (!FindSourceBuilding(processingFacilityAI.m_inputResource3))
+                    {
+                        notFound.Add(processingFacilityAI.m_inputResource3);
+                    }
+
+                    if (!FindSourceBuilding(processingFacilityAI.m_inputResource4))
+                    {
+                        notFound.Add(processingFacilityAI.m_inputResource4);
+                    }
+
+                    break;
+
+                default:
+                    break;
+            }
+
+            if (notFound.Count > 0)
+            {
+                return string.Join(",", notFound.Select(x => x.ToString()).ToArray());
+            }
+            else
+            {
+                return string.Empty;
+            }
         }
 
         public static int GetSupplyBuildingAmount(int buildingId)
         {
-            switch (Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingId].Info.GetAI())
+            switch (BuildingManager.instance.m_buildings.m_buffer[buildingId].Info?.GetAI())
             {
                 case ExtractingFacilityAI extractingFacilityAI:
                     int outputBufferSize1 = extractingFacilityAI.GetOutputBufferSize((ushort)buildingId, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingId]);
@@ -293,6 +521,25 @@ namespace EnhancedDistrictServices
             }
 
             return 0;
+        }
+
+        public static TransferManager.TransferReason GetSupplyBuildingOutputMaterial(ushort buildingId)
+        {
+            var ai = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info?.GetAI();
+            switch (ai)
+            {
+                case ExtractingFacilityAI extractingFacilityAI:
+                    return extractingFacilityAI.m_outputResource;
+
+                case ProcessingFacilityAI processingFacilityAI:
+                    return processingFacilityAI.m_outputResource;
+
+                case WarehouseAI warehouseAI:
+                    return warehouseAI.GetTransferReason(buildingId, ref BuildingManager.instance.m_buildings.m_buffer[buildingId]);
+
+                default:
+                    return TransferManager.TransferReason.None;
+            }
         }
 
         /// <summary>
@@ -420,6 +667,38 @@ namespace EnhancedDistrictServices
                     default:
                         return false;
                 }
+            }
+
+            return false;
+        }
+
+        public static bool IsValidSupplyChainLink(ushort source, ushort destination)
+        {
+            var sourceMaterial = GetSupplyBuildingOutputMaterial(source);
+            if (sourceMaterial == TransferManager.TransferReason.None)
+            {
+                return false;
+            }
+
+            var info = BuildingManager.instance.m_buildings.m_buffer[destination].Info;
+            if (info?.GetService() == ItemClass.Service.Electricity && info?.GetAI() is PowerPlantAI)
+            {
+                return sourceMaterial == TransferManager.TransferReason.Coal;
+            }
+
+            if (info?.GetService() == ItemClass.Service.PlayerIndustry && info?.GetAI() is ProcessingFacilityAI processingFacilityAI)
+            {
+                return
+                    processingFacilityAI.m_inputResource1 == sourceMaterial ||
+                    processingFacilityAI.m_inputResource2 == sourceMaterial ||
+                    processingFacilityAI.m_inputResource3 == sourceMaterial ||
+                    processingFacilityAI.m_inputResource4 == sourceMaterial;
+            }
+
+            if (info?.GetService() == ItemClass.Service.PlayerIndustry && info?.GetAI() is WarehouseAI warehouseAI)
+            {
+                return
+                    GetSupplyBuildingOutputMaterial(destination) == sourceMaterial;
             }
 
             return false;

@@ -13,6 +13,8 @@ namespace EnhancedDistrictServices
         private void Awake()
         {
             this.AddKeymapping("Toggle Main Tool", Settings.toggleMainTool);
+            this.AddKeymapping("Copy building policy hotkey", Settings.keyCopy);
+            this.AddKeymapping("Paste building policy hotkey", Settings.keyPaste);
         }
 
         private void AddKeymapping(string label, SavedInputKey savedInputKey)

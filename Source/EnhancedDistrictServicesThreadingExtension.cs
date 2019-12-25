@@ -1,5 +1,4 @@
 ﻿using ICities;
-using UnityEngine;
 
 namespace EnhancedDistrictServices
 {
@@ -18,11 +17,21 @@ namespace EnhancedDistrictServices
                 var tool = ToolsModifierControl.toolController.gameObject.GetComponent<EnhancedDistrictServicesTool>();
                 if (ToolsModifierControl.toolController.CurrentTool == tool)
                 {
-                    ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
+                    ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();                    
                 }
                 else
                 {
                     ToolsModifierControl.toolController.CurrentTool = tool;
+                }
+
+                if (Settings.showWelcomeMessage)
+                {
+                    Settings.showWelcomeMessage.value = false;
+
+                    Utils.DisplayMessage(
+                        str1: "Enhanced District Services",
+                        str2: $"Please check the EDS mod page for latest updates, including copy-paste policy functionality and new incoming supply chain restrictions!",
+                        str3: "IconMessage");
                 }
             }
         }

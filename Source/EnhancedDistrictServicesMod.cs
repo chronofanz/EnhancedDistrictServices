@@ -12,7 +12,7 @@ namespace EnhancedDistrictServices
     /// </summary>
     public class EnhancedDistrictServicesMod : IUserMod, ILoadingExtension
     {
-        public const string version = "1.0.13";
+        public const string version = "1.0.14";
         public string Name => $"Enhanced District Services {version}";
         public string Description => "Enhanced District Services mod for Cities Skylines, which allows more granular control of services and supply chains.";
 
@@ -74,6 +74,12 @@ namespace EnhancedDistrictServices
                     Settings.showParkDistricts, 
                     b => Settings.showParkDistricts.value = b))
                     .tooltip = "Disable this option if you do not wish to be able to see campus/industrial/park districts in the dropdown menu.";
+
+                ((UIComponent)uiHelper.AddCheckbox(
+                    "Show welcome message",
+                    Settings.showWelcomeMessage,
+                    b => Settings.showWelcomeMessage.value = b))
+                    .tooltip = "Automatically disabled upon first viewing the welcome message.";
 
                 uiHelper.AddSpace(10);
 
