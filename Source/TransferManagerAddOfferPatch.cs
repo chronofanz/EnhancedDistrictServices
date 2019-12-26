@@ -24,15 +24,22 @@ namespace EnhancedDistrictServices
                 return true;
             }
 
-            if (material == TransferManager.TransferReason.Taxi && !TaxiMod.CanUseTaxis(offer.Position))
+            if (material == TransferManager.TransferReason.Taxi)
             {
-                Logger.LogMaterial($"TransferManager::AddIncomingOffer: Filtering out {Utils.ToString(ref offer, material)}!", material);
-                var instanceId = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen].m_instance;
-                CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags &= ~CitizenInstance.Flags.WaitingTaxi;
-                CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags |= CitizenInstance.Flags.BoredOfWaiting;
-                CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags |= CitizenInstance.Flags.CannotUseTaxi;
-                CitizenManager.instance.m_instances.m_buffer[instanceId].m_waitCounter = byte.MaxValue;
-                return false;
+                var instance = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen].m_instance;
+                var targetBuilding = CitizenManager.instance.m_instances.m_buffer[instance].m_targetBuilding;
+                var targetPosition = BuildingManager.instance.m_buildings.m_buffer[targetBuilding].m_position;
+
+                if (!TaxiMod.CanUseTaxis(offer.Position, targetPosition))
+                {
+                    Logger.LogMaterial($"TransferManager::AddIncomingOffer: Filtering out {Utils.ToString(ref offer, material)}!", material);
+                    var instanceId = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen].m_instance;
+                    CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags &= ~CitizenInstance.Flags.WaitingTaxi;
+                    CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags |= CitizenInstance.Flags.BoredOfWaiting;
+                    CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags |= CitizenInstance.Flags.CannotUseTaxi;
+                    CitizenManager.instance.m_instances.m_buffer[instanceId].m_waitCounter = byte.MaxValue;
+                    return false;
+                }
             }
 
             Logger.LogMaterial($"TransferManager::AddIncomingOffer: {Utils.ToString(ref offer, material)}!", material);

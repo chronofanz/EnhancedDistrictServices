@@ -249,6 +249,8 @@ namespace EnhancedDistrictServices
         /// <param name="districtPark"></param>
         public static void ReleaseDistrictPark(DistrictPark districtPark)
         {
+            Logger.Log($"Constraints::ReleaseDistrictPark: {districtPark.Name}");
+
             for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
             {
                 RemoveInputDistrictParkServiced(buildingId, districtPark);
@@ -433,7 +435,11 @@ namespace EnhancedDistrictServices
         /// <param name="districtPark"></param>
         public static void AddInputDistrictParkServiced(int buildingId, DistrictPark districtPark)
         {
-            AddDistrictParkServiced(m_inputBuildingToDistrictParkServiced, buildingId, districtPark);
+            if (AddDistrictParkServiced(m_inputBuildingToDistrictParkServiced, buildingId, districtPark))
+            {
+                var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+                Logger.Log($"Constraints::AddInputDistrictParkServiced: {districtPark.Name} => {buildingName} ({buildingId}) ...");
+            }
         }
 
         /// <summary>
@@ -443,14 +449,26 @@ namespace EnhancedDistrictServices
         /// <param name="districtPark"></param>
         public static void AddOutputDistrictParkServiced(int buildingId, DistrictPark districtPark)
         {
-            AddDistrictParkServiced(m_outputBuildingToDistrictParkServiced, buildingId, districtPark);
+            if (AddDistrictParkServiced(m_outputBuildingToDistrictParkServiced, buildingId, districtPark))
+            {
+                var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+                Logger.Log($"Constraints::AddOutputDistrictParkServiced: {buildingName} ({buildingId}) => {districtPark.Name} ...");
+            }
         }
 
-        private static void AddDistrictParkServiced(List<DistrictPark>[] array, int buildingId, DistrictPark districtPark)
+        private static bool AddDistrictParkServiced(List<DistrictPark>[] array, int buildingId, DistrictPark districtPark)
         {
             if (!TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
             {
-                return;
+                var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+                Logger.LogWarning($"Constraints::AddDistrictParkServiced: Ignoring {districtPark.Name} restriction because {buildingName} ({buildingId}) is not a district services building.");
+                return false;
+            }
+
+            if (!districtPark.Exists)
+            {
+                Logger.LogWarning($"Constraints::AddDistrictParkServiced: Ignoring {districtPark.Name} restriction because this district/park does not exist.");
+                return false;
             }
 
             if (array[buildingId] == null)
@@ -462,6 +480,8 @@ namespace EnhancedDistrictServices
             {
                 array[buildingId].Add(districtPark);
             }
+
+            return true;
         }
 
         /// <summary>
@@ -491,9 +511,16 @@ namespace EnhancedDistrictServices
                 return;
             }
 
-            if (array[buildingId].Contains(districtPark))
+            for (int i = 0; i < array[buildingId].Count;)
             {
-                array[buildingId].Remove(districtPark);
+                if (array[buildingId][i].IsServedBy(districtPark))
+                {
+                    array[buildingId].RemoveAt(i);
+                }
+                else
+                {
+                    i++;
+                }
             }
 
             if (array[buildingId].Count == 0)
