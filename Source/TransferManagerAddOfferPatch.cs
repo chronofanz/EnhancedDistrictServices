@@ -24,7 +24,7 @@ namespace EnhancedDistrictServices
                 return true;
             }
 
-            if (material == TransferManager.TransferReason.Taxi)
+            if (material == TransferManager.TransferReason.Taxi && offer.Citizen != 0)
             {
                 var instance = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen].m_instance;
                 var targetBuilding = CitizenManager.instance.m_instances.m_buffer[instance].m_targetBuilding;
