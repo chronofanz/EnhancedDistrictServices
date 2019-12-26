@@ -11,6 +11,8 @@ namespace EnhancedDistrictServices
 
         public static readonly SavedBool enableDummyCargoTraffic = new SavedBool(nameof(enableDummyCargoTraffic), "EnhancedDistrictServices", true, true);
         public static readonly SavedBool enableSelectOutsideConnection = new SavedBool(nameof(enableSelectOutsideConnection), "EnhancedDistrictServices", false, true);
+        public static readonly SavedBool showCampusDistricts = new SavedBool(nameof(showCampusDistricts), "EnhancedDistrictServices", true, true);
+        public static readonly SavedBool showIndustryDistricts = new SavedBool(nameof(showIndustryDistricts), "EnhancedDistrictServices", true, true);
         public static readonly SavedBool showParkDistricts = new SavedBool(nameof(showParkDistricts), "EnhancedDistrictServices", true, true);
         public static readonly SavedBool showWelcomeMessage = new SavedBool(nameof(showWelcomeMessage), "EnhancedDistrictServices", true, true);
     }

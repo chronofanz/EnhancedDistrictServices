@@ -25,9 +25,9 @@ namespace EnhancedDistrictServices
             EnhancedDistrictServicesUIPanel.Create();
 
             BuildingManager.instance.EventBuildingCreated += Constraints.CreateBuilding;
-            BuildingManager.instance.EventBuildingCreated += TaxiMod.AddTaxiBuilding;
+            BuildingManager.instance.EventBuildingCreated += TaxiMod.RegisterTaxiBuilding;
             BuildingManager.instance.EventBuildingReleased += Constraints.ReleaseBuilding;
-            BuildingManager.instance.EventBuildingReleased += TaxiMod.RemoveTaxiBuilding;
+            BuildingManager.instance.EventBuildingReleased += TaxiMod.DeregisterTaxiBuilding;
         }
 
         protected override void OnDestroy()
@@ -36,9 +36,9 @@ namespace EnhancedDistrictServices
             EnhancedDistrictServicesUIPanel.Destroy();
 
             BuildingManager.instance.EventBuildingCreated -= Constraints.CreateBuilding;
-            BuildingManager.instance.EventBuildingCreated -= TaxiMod.AddTaxiBuilding;
+            BuildingManager.instance.EventBuildingCreated -= TaxiMod.RegisterTaxiBuilding;
             BuildingManager.instance.EventBuildingReleased -= Constraints.ReleaseBuilding;
-            BuildingManager.instance.EventBuildingReleased -= TaxiMod.RemoveTaxiBuilding;
+            BuildingManager.instance.EventBuildingReleased -= TaxiMod.DeregisterTaxiBuilding;
         }
 
         protected override void OnEnable()

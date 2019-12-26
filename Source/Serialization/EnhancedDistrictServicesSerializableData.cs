@@ -42,7 +42,7 @@ namespace EnhancedDistrictServices.Serialization
                     var buildings = Utils.GetSupportedServiceBuildings();
                     foreach (var building in buildings)
                     {
-                        TaxiMod.AddTaxiBuilding(building);
+                        TaxiMod.RegisterTaxiBuilding(building);
                     }
                 }
                 catch (Exception ex)

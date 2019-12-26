@@ -840,6 +840,16 @@ namespace EnhancedDistrictServices
 
             foreach (var districtPark in districtParks)
             {
+                if (!Settings.showCampusDistricts.value && districtPark.IsCampus)
+                {
+                    continue;
+                }
+
+                if (!Settings.showIndustryDistricts.value && districtPark.IsIndustry)
+                {
+                    continue;
+                }
+
                 if (!Settings.showParkDistricts.value && districtPark.IsPark)
                 {
                     continue;

@@ -12,7 +12,7 @@ namespace EnhancedDistrictServices
     /// </summary>
     public class EnhancedDistrictServicesMod : IUserMod, ILoadingExtension
     {
-        public const string version = "1.0.14";
+        public const string version = "1.0.15";
         public string Name => $"Enhanced District Services {version}";
         public string Description => "Enhanced District Services mod for Cities Skylines, which allows more granular control of services and supply chains.";
 
@@ -70,10 +70,22 @@ namespace EnhancedDistrictServices
                     .tooltip = "Strongly recommend against enabling this legacy feature.  This was originally put in to deal with massive traffic originating from outside connections.  Not needed anymore.";
 
                 ((UIComponent)uiHelper.AddCheckbox(
-                    "Show campus/industrial/park districts in district dropdown menu", 
+                    "Show campus districts in district dropdown menu",
+                    Settings.showCampusDistricts,
+                    b => Settings.showCampusDistricts.value = b))
+                    .tooltip = "Disable this option if you do not wish to be able to see campus districts in the dropdown menu.";
+
+                ((UIComponent)uiHelper.AddCheckbox(
+                    "Show industry districts in district dropdown menu",
+                    Settings.showIndustryDistricts,
+                    b => Settings.showIndustryDistricts.value = b))
+                    .tooltip = "Disable this option if you do not wish to be able to see industry districts in the dropdown menu.";
+
+                ((UIComponent)uiHelper.AddCheckbox(
+                    "Show park districts in district dropdown menu", 
                     Settings.showParkDistricts, 
                     b => Settings.showParkDistricts.value = b))
-                    .tooltip = "Disable this option if you do not wish to be able to see campus/industrial/park districts in the dropdown menu.";
+                    .tooltip = "Disable this option if you do not wish to be able to see park districts in the dropdown menu.";
 
                 ((UIComponent)uiHelper.AddCheckbox(
                     "Show welcome message",

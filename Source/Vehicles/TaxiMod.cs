@@ -7,7 +7,7 @@ namespace EnhancedDistrictServices
     {
         private static List<ushort> m_taxiBuildings = new List<ushort>();
 
-        public static void AddTaxiBuilding(ushort building)
+        public static void RegisterTaxiBuilding(ushort building)
         {
             if (BuildingManager.instance.m_buildings.m_buffer[building].Info?.GetSubService() == ItemClass.SubService.PublicTransportTaxi)
             {
@@ -18,14 +18,15 @@ namespace EnhancedDistrictServices
             }
         }
 
-        public static void RemoveTaxiBuilding(ushort building)
+        public static void DeregisterTaxiBuilding(ushort building)
         {
             m_taxiBuildings.Remove(building);
         }
 
-        public static bool CanUseTaxis(Vector3 position)
+        public static bool CanUseTaxis(Vector3 startPosition, Vector3 endPosition)
         {
-            var districtPark = DistrictPark.FromPosition(position);
+            var startDistrictPark = DistrictPark.FromPosition(startPosition);
+            var endDistrictPark = DistrictPark.FromPosition(endPosition);
 
             // Now see whether any taxi buildings serve this position.
             for (int i = 0; i < m_taxiBuildings.Count; i++)
@@ -34,7 +35,7 @@ namespace EnhancedDistrictServices
                 if (BuildingManager.instance.m_buildings.m_buffer[buildingId].Info?.GetSubService() == ItemClass.SubService.PublicTransportTaxi)
                 {
                     var districtParkServed = Constraints.OutputDistrictParkServiced((ushort)buildingId);
-                    if (districtPark.IsServedBy(districtParkServed))
+                    if (startDistrictPark.IsServedBy(districtParkServed) && endDistrictPark.IsServedBy(districtParkServed))
                     {
                         return true;
                     }

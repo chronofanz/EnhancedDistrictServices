@@ -3,23 +3,33 @@
 namespace EnhancedDistrictServices
 {
     [HarmonyPatch(typeof(DistrictManager))]
-    [HarmonyPatch("ReleaseDistrict")]
+    [HarmonyPatch("ReleaseDistrictImplementation")]
     public class DistrictManagerReleaseDistrictPatch
     {
-        public static bool Prefix(byte district)
+        public static bool Prefix(byte district, ref District data)
         {
-            Constraints.ReleaseDistrictPark(DistrictPark.FromDistrict(district));
+            var districtPark = DistrictPark.FromDistrict(district);
+            if (districtPark.Name != string.Empty)
+            {
+                Constraints.ReleaseDistrictPark(districtPark);
+            }
+
             return true;
         }
     }
 
     [HarmonyPatch(typeof(DistrictManager))]
-    [HarmonyPatch("ReleasePark")]
+    [HarmonyPatch("ReleaseParkImplementation")]
     public class DistrictManagerReleaseParkPatch
     {
-        public static bool Prefix(byte park)
+        public static bool Prefix(byte park, ref DistrictPark data)
         {
-            Constraints.ReleaseDistrictPark(DistrictPark.FromPark(park));
+            var districtPark = DistrictPark.FromPark(park);
+            if (districtPark.Name != string.Empty)
+            {
+                Constraints.ReleaseDistrictPark(districtPark);
+            }
+
             return true;
         }
     }

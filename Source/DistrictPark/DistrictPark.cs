@@ -103,6 +103,27 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
+        /// Returns false if the district or park no longer exist.
+        /// </summary>
+        public bool Exists
+        {
+            get
+            {
+                if (District != 0 && (DistrictManager.instance.m_districts.m_buffer[District].m_flags & global::District.Flags.Created) == global::District.Flags.None)
+                {
+                    return false;
+                }
+
+                if (Park != 0 && (DistrictManager.instance.m_parks.m_buffer[Park].m_flags & global::DistrictPark.Flags.Created) == global::DistrictPark.Flags.None)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
         /// Returns true if this struct does not refer to a valid district or park.
         /// </summary>
         public bool IsEmpty
@@ -114,13 +135,72 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
+        /// Returns true if this specification includes a reference to a campus.
+        /// </summary>
+        public bool IsCampus
+        {
+            get
+            {
+                if (Park != 0)
+                {
+                    var type = DistrictManager.instance.m_parks.m_buffer[Park].m_parkType;
+                    return
+                        type == global::DistrictPark.ParkType.GenericCampus ||
+                        type == global::DistrictPark.ParkType.TradeSchool ||
+                        type == global::DistrictPark.ParkType.LiberalArts ||
+                        type == global::DistrictPark.ParkType.University;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns true if this specification includes a reference to a campus.
+        /// </summary>
+        public bool IsIndustry
+        {
+            get
+            {
+                if (Park != 0)
+                {
+                    var type = DistrictManager.instance.m_parks.m_buffer[Park].m_parkType;
+                    return
+                        type == global::DistrictPark.ParkType.Industry ||
+                        type == global::DistrictPark.ParkType.Farming ||
+                        type == global::DistrictPark.ParkType.Forestry ||
+                        type == global::DistrictPark.ParkType.Ore ||
+                        type == global::DistrictPark.ParkType.Oil;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
         /// Returns true if this specification includes a reference to a park.
         /// </summary>
         public bool IsPark
         {
             get
             {
-                return Park != 0;
+                if (Park != 0)
+                {
+                    var type = DistrictManager.instance.m_parks.m_buffer[Park].m_parkType;
+                    return
+                        type == global::DistrictPark.ParkType.Generic ||
+                        type == global::DistrictPark.ParkType.AmusementPark ||
+                        type == global::DistrictPark.ParkType.Zoo ||
+                        type == global::DistrictPark.ParkType.NatureReserve;
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
 
