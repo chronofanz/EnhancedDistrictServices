@@ -4,7 +4,7 @@ namespace EnhancedDistrictServices
 {
     [HarmonyPatch(typeof(TransferManager))]
     [HarmonyPatch("MatchOffers")]
-    public class TransferManagerPatchMatchOffers
+    public class TransferManagerMatchOffersPatch
     {
         public static bool Prefix(TransferManager.TransferReason material)
         {
