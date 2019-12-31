@@ -5,7 +5,7 @@ namespace EnhancedDistrictServices
 {
     [HarmonyPatch(typeof(TransferManager))]
     [HarmonyPatch("AddIncomingOffer")]
-    public class TransferManagerPatchAddIncomingOffer
+    public class TransferManagerAddIncomingOfferPatch
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
@@ -50,7 +50,7 @@ namespace EnhancedDistrictServices
 
     [HarmonyPatch(typeof(TransferManager))]
     [HarmonyPatch("AddOutgoingOffer")]
-    public class TransferManagerPatchAddOutgoingOffer
+    public class TransferManagerAddOutgoingOfferPatch
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)        
         {

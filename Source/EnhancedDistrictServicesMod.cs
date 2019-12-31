@@ -1,4 +1,5 @@
 ﻿using ColossalFramework;
+using ColossalFramework.Plugins;
 using ColossalFramework.UI;
 using Harmony;
 using ICities;
@@ -12,7 +13,7 @@ namespace EnhancedDistrictServices
     /// </summary>
     public class EnhancedDistrictServicesMod : IUserMod, ILoadingExtension
     {
-        public const string version = "1.0.15";
+        public const string version = "1.0.16";
         public string Name => $"Enhanced District Services {version}";
         public string Description => "Enhanced District Services mod for Cities Skylines, which allows more granular control of services and supply chains.";
 
@@ -40,6 +41,25 @@ namespace EnhancedDistrictServices
 
         public void OnLevelLoaded(LoadMode mode)
         {
+            if (mode == LoadMode.LoadGame || mode == LoadMode.NewGame)
+            {
+                Logger.Log("EnhancedDistrictServicesMod::OnLevelLoaded: Listing other enabled mods ...");
+
+                try
+                {
+                    foreach (var pluginInfo in PluginManager.instance.GetPluginsInfo())
+                    {
+                        if (pluginInfo.isEnabled)
+                        {
+                            Logger.Log($"  {pluginInfo.name}: {pluginInfo.assembliesString}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                { 
+                    Logger.LogException(ex);
+                }
+            }
         }
 
         public void OnLevelUnloading()

@@ -60,12 +60,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Source\DistrictPark\DistrictPark.cs" />
+    <Compile Include="Source\DistrictPark.cs" />
     <Compile Include="Source\EnhancedDistrictServicesThreadingExtension.cs" />
     <Compile Include="Source\EnhancedDistrictServicesMod.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Source\Constraints.cs" />
     <Compile Include="Source\EnhancedDistrictServicesLoadingExtension.cs" />
+    <Compile Include="Source\Patches\DistrictManagerReleaseDistrictPatch.cs" />
     <Compile Include="Source\Serialization\Datav3.cs" />
     <Compile Include="Source\Serialization\Datav2.cs" />
     <Compile Include="Source\Serialization\Datav1.cs" />
@@ -74,27 +75,27 @@
     <Compile Include="Source\EnhancedDistrictServicesUIPanel.cs" />
     <Compile Include="Source\Logger.cs" />
     <Compile Include="Source\EnhancedDistrictServicesUIPanelBase.cs" />
-    <Compile Include="Source\DistrictPark\DistrictManagerReleasePatch.cs" />
+    <Compile Include="Source\Patches\DistrictManagerReleaseParkPatch.cs" />
     <Compile Include="Source\UI\InputType.cs" />
     <Compile Include="Source\UI\CopyPaste.cs" />
     <Compile Include="Source\Vehicles\TaxiMod.cs" />
-    <Compile Include="Source\TransferManagerAddOfferPatch.cs" />
+    <Compile Include="Source\Patches\TransferManagerAddOfferPatch.cs" />
     <Compile Include="Source\UI\Settings.cs" />
     <Compile Include="Source\UI\UIOptionsKeymapping.cs" />
     <Compile Include="Source\UI\UITitlePanel.cs" />
     <Compile Include="Source\Utils.cs" />
     <Compile Include="Source\TransferManagerInfo.cs" />
     <Compile Include="Source\TransferManagerMod.cs" />
-    <Compile Include="Source\TransferManagerMatchOffersPatch.cs" />
+    <Compile Include="Source\Patches\TransferManagerMatchOffersPatch.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
     <None Include="packages.config" />
+    <None Include="Source\Patches\readme.md" />
     <None Include="Source\readme.md" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Images\" />
-    <Folder Include="Source\Patches\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
