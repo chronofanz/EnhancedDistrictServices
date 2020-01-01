@@ -20,5 +20,7 @@ namespace EnhancedDistrictServices
 
         public static readonly SavedInt savedEDSButtonX = new SavedInt(nameof(savedEDSButtonX), FileName, -1000, true);
         public static readonly SavedInt savedEDSButtonY = new SavedInt(nameof(savedEDSButtonY), FileName, -1000, true);
+
+        public static readonly SavedString modVersion = new SavedString(nameof(modVersion), FileName, "1.0.0.0", true);
     }
 }

@@ -68,13 +68,19 @@ namespace EnhancedDistrictServices
             var tool = ToolsModifierControl.toolController.gameObject.GetComponent<EnhancedDistrictServicesTool>();
             if (p.buttons.IsFlagSet(UIMouseButton.Left) && tool != null)
             {
+                if (Settings.modVersion.value != EnhancedDistrictServicesMod.version)
+                {
+                    Settings.modVersion.value = EnhancedDistrictServicesMod.version;
+                    Settings.showWelcomeMessage.value = true;
+                }
+
                 if (Settings.showWelcomeMessage)
                 {
                     Settings.showWelcomeMessage.value = false;
 
                     Utils.DisplayMessage(
                         str1: "Enhanced District Services",
-                        str2: $"Please check the EDS mod page for latest updates, including copy-paste policy functionality and new incoming supply chain restrictions!",
+                        str2: $"Please check the EDS mod page for latest updates.  Right-click and drag the EDS button to a more convenient location.",
                         str3: "IconMessage");
                 }
 
