@@ -22,7 +22,7 @@ namespace EnhancedDistrictServices
                     Cursor.lockState = CursorLockMode.None;
                     Cursor.visible = true;
                     var component = uiComponent.GetComponent<BindPropertyByKey>();
-                    if ((UnityEngine.Object)component != (UnityEngine.Object)null)
+                    if (component != null)
                     {
                         component.SetProperties(TooltipHelper.Format("title", str1, "message", str2, "img", str3));
                     }
@@ -32,6 +32,20 @@ namespace EnhancedDistrictServices
             {
                 Logger.LogException(ex);
             }
+        }
+
+        public static T FindObject<T>(string name) where T : UnityEngine.Object
+        {
+            var objects = Resources.FindObjectsOfTypeAll<T>();
+            foreach (var o in objects)
+            {
+                if (o.name == name)
+                {
+                    return (T)o;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

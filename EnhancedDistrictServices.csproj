@@ -61,7 +61,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Source\DistrictPark.cs" />
-    <Compile Include="Source\EnhancedDistrictServicesThreadingExtension.cs" />
     <Compile Include="Source\EnhancedDistrictServicesMod.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Source\Constraints.cs" />
@@ -78,11 +77,12 @@
     <Compile Include="Source\Patches\DistrictManagerReleaseParkPatch.cs" />
     <Compile Include="Source\UI\InputType.cs" />
     <Compile Include="Source\UI\CopyPaste.cs" />
+    <Compile Include="Source\UI\ResourceLoader.cs" />
+    <Compile Include="Source\UI\UIEDSButton.cs" />
     <Compile Include="Source\Vehicles\TaxiMod.cs" />
     <Compile Include="Source\Patches\TransferManagerAddOfferPatch.cs" />
     <Compile Include="Source\UI\Settings.cs" />
     <Compile Include="Source\UI\UIOptionsKeymapping.cs" />
-    <Compile Include="Source\UI\UITitlePanel.cs" />
     <Compile Include="Source\Utils.cs" />
     <Compile Include="Source\TransferManagerInfo.cs" />
     <Compile Include="Source\TransferManagerMod.cs" />
@@ -96,6 +96,15 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Images\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Source\Icons\EDS.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Source\Icons\EDSDisabled.png" />
+    <EmbeddedResource Include="Source\Icons\EDSFocused.png" />
+    <EmbeddedResource Include="Source\Icons\EDSHovered.png" />
+    <EmbeddedResource Include="Source\Icons\EDSPressed.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

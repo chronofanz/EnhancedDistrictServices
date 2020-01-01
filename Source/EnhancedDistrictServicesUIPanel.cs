@@ -103,23 +103,26 @@ namespace EnhancedDistrictServices
             UIBuildingId.eventTextSubmitted += (c, p) =>
             {
                 Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIBuildingId TextSubmitted {p}");
-                Singleton<SimulationManager>.instance.AddAction(() =>
+                if (ushort.TryParse(p, out ushort buildingId) && TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
                 {
-                    if (ushort.TryParse(p, out ushort buildingId) && TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
+                    Singleton<SimulationManager>.instance.AddAction(() =>
                     {
                         SetBuilding(buildingId);
                         UpdatePositionToBuilding(buildingId);
-                    }
-                    else
+                    });
+                }
+                else
+                {
+                    Utils.DisplayMessage(
+                        str1: "Enhanced District Services",
+                        str2: $"Invalid building {p}!",
+                        str3: "IconMessage");
+
+                    Singleton<SimulationManager>.instance.AddAction(() =>
                     {
                         UpdateUIBuildingId();
-
-                        Utils.DisplayMessage(
-                            str1: "Enhanced District Services",
-                            str2: $"Invalid building {p}!",
-                            str3: "IconMessage");
-                    }
-                });
+                    });
+                }
             };
 
             if (Settings.enableSelectOutsideConnection.value)
@@ -187,34 +190,32 @@ namespace EnhancedDistrictServices
             UISupplyReserve.eventTextSubmitted += (c, p) =>
             {
                 Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyReserve TextSubmitted");
-                Singleton<SimulationManager>.instance.AddAction(() =>
+                try
                 {
                     if (!TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
                     {
-                        UpdateUISupplyReserve();
                         return;
                     }
 
                     if (string.IsNullOrEmpty(UISupplyReserve.text.Trim()))
                     {
-                        UpdateUISupplyReserve();
                         return;
                     }
-                    else
+                    
+                    var amount = ushort.Parse(UISupplyReserve.text);
+                    Constraints.SetInternalSupplyReserve(m_currBuildingId, amount);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogException(ex);
+                }
+                finally
+                {
+                    Singleton<SimulationManager>.instance.AddAction(() =>
                     {
-                        try
-                        {
-                            var amount = ushort.Parse(UISupplyReserve.text);
-                            Constraints.SetInternalSupplyReserve(m_currBuildingId, amount);
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogException(ex);
-                        }
-                    }
-
-                    UpdateUISupplyReserve();
-                });
+                        UpdateUISupplyReserve();
+                    });
+                }
             };
 
             UIAllLocalAreasCheckBox.eventCheckChanged += (c, t) =>
@@ -290,12 +291,10 @@ namespace EnhancedDistrictServices
             UISupplyChain.eventTextSubmitted += (c, p) =>
             {
                 Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChain TextSubmitted");
-                Singleton<SimulationManager>.instance.AddAction(() =>
+                try
                 {
                     if (!TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
                     {
-                        UpdateUISupplyChain();
-                        UpdateUIDistrictsSummary();
                         return;
                     }
 
@@ -313,70 +312,68 @@ namespace EnhancedDistrictServices
                     }
                     else
                     {
-                        try
+                        // TODO, FIXME: Do this in a single transaction and clean up hacky implementation below.
+                        var buildings = UISupplyChain.text.Split(',').Select(s => ushort.Parse(s));
+
+                        if (m_inputMode == InputMode.INCOMING)
                         {
-                            // TODO, FIXME: Do this in a single transaction and clean up hacky implementation below.
-                            var buildings = UISupplyChain.text.Split(',').Select(s => ushort.Parse(s));
-
-                            if (m_inputMode == InputMode.INCOMING)
+                            foreach (var building in buildings)
                             {
-                                foreach (var building in buildings)
+                                if (!TransferManagerInfo.IsValidSupplyChainLink(building, m_currBuildingId))
                                 {
-                                    if (!TransferManagerInfo.IsValidSupplyChainLink(building, m_currBuildingId))
-                                    {
-                                        Utils.DisplayMessage(
-                                            str1: "Enhanced District Services",
-                                            str2: $"Could not specify building {building} as supply chain in restriction!",
-                                            str3: "IconMessage");
+                                    Utils.DisplayMessage(
+                                        str1: "Enhanced District Services",
+                                        str2: $"Could not specify building {building} as supply chain in restriction!",
+                                        str3: "IconMessage");
 
-                                        UpdateUISupplyChain();
-                                        UpdateUIDistrictsSummary();
-                                        return;
-                                    }
-                                }
-
-                                Constraints.RemoveAllSupplyChainConnectionsToDestination(m_currBuildingId);
-
-                                foreach (var building in buildings)
-                                {
-                                    Constraints.AddSupplyChainConnection(building, m_currBuildingId);
+                                    return;
                                 }
                             }
 
-                            if (m_inputMode == InputMode.OUTGOING)
+                            Constraints.RemoveAllSupplyChainConnectionsToDestination(m_currBuildingId);
+
+                            foreach (var building in buildings)
                             {
-                                foreach (var building in buildings)
-                                {
-                                    if (!TransferManagerInfo.IsValidSupplyChainLink(m_currBuildingId, building))
-                                    {
-                                        Utils.DisplayMessage(
-                                            str1: "Enhanced District Services",
-                                            str2: $"Could not specify building {building} as supply chain out restriction!",
-                                            str3: "IconMessage");
-
-                                        UpdateUISupplyChain();
-                                        UpdateUIDistrictsSummary();
-                                        return;
-                                    }
-                                }
-
-                                Constraints.RemoveAllSupplyChainConnectionsFromSource(m_currBuildingId);
-
-                                foreach (var building in buildings)
-                                {
-                                    Constraints.AddSupplyChainConnection(m_currBuildingId, building);
-                                }
+                                Constraints.AddSupplyChainConnection(building, m_currBuildingId);
                             }
                         }
-                        catch (Exception ex)
+
+                        if (m_inputMode == InputMode.OUTGOING)
                         {
-                            Logger.LogException(ex);
+                            foreach (var building in buildings)
+                            {
+                                if (!TransferManagerInfo.IsValidSupplyChainLink(m_currBuildingId, building))
+                                {
+                                    Utils.DisplayMessage(
+                                        str1: "Enhanced District Services",
+                                        str2: $"Could not specify building {building} as supply chain out restriction!",
+                                        str3: "IconMessage");
+
+                                    return;
+                                }
+                            }
+
+                            Constraints.RemoveAllSupplyChainConnectionsFromSource(m_currBuildingId);
+
+                            foreach (var building in buildings)
+                            {
+                                Constraints.AddSupplyChainConnection(m_currBuildingId, building);
+                            }
                         }
                     }
-
-                    UpdateUISupplyChain();
-                    UpdateUIDistrictsSummary();
-                });
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogException(ex);
+                }
+                finally
+                {
+                    Singleton<SimulationManager>.instance.AddAction(() =>
+                    {
+                        UpdateUISupplyChain();
+                        UpdateUIDistrictsSummary();
+                    });
+                }
             };
 
             UIDistrictsDropDown.eventCheckedChanged += (c, t) =>
