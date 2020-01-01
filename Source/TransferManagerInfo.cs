@@ -62,7 +62,11 @@ namespace EnhancedDistrictServices
 
             // The only building type for which we will not show an outgoing tab is coal power plants.
             var info = BuildingManager.instance.m_buildings.m_buffer[building].Info;
-            if (!(info?.GetService() == ItemClass.Service.Electricity && info?.GetAI() is PowerPlantAI))
+            if ((info?.GetService() == ItemClass.Service.Electricity && info?.GetAI() is PowerPlantAI) ||
+                (info?.GetService() == ItemClass.Service.Monument && info?.gameObject?.name == "ChirpX Launch Control Center"))
+            {
+            }
+            else
             {
                 result |= InputType.OUTGOING;
             }
@@ -579,6 +583,9 @@ namespace EnhancedDistrictServices
                         return (
                             info.GetAI() is PowerPlantAI);
 
+                    case ItemClass.Service.Monument:
+                        return (info?.gameObject?.name == "ChirpX Launch Control Center");
+
                     case ItemClass.Service.PlayerEducation:
                         return !(
                             info.GetSubService() == ItemClass.SubService.PlayerEducationLiberalArts ||
@@ -649,6 +656,9 @@ namespace EnhancedDistrictServices
                         return (
                             info.GetAI() is PowerPlantAI);
 
+                    case ItemClass.Service.Monument:
+                        return (info?.gameObject?.name == "ChirpX Launch Control Center");
+
                     case ItemClass.Service.PlayerIndustry:
                         return !(
                             info.GetAI() is AuxiliaryBuildingAI ||
@@ -684,6 +694,13 @@ namespace EnhancedDistrictServices
             if (info?.GetService() == ItemClass.Service.Electricity && info?.GetAI() is PowerPlantAI)
             {
                 return sourceMaterial == TransferManager.TransferReason.Coal;
+            }
+
+            if (info?.GetService() == ItemClass.Service.Monument && info?.gameObject?.name == "ChirpX Launch Control Center")
+            {
+                return
+                    sourceMaterial == TransferManager.TransferReason.Coal ||
+                    sourceMaterial == TransferManager.TransferReason.Petrol;
             }
 
             if (info?.GetService() == ItemClass.Service.PlayerIndustry && info?.GetAI() is ProcessingFacilityAI processingFacilityAI)

@@ -14,6 +14,10 @@ namespace EnhancedDistrictServices
     {
         #region MonoBehavior
 
+        public static UITextureAtlas m_atlas;
+        private UIEDSButton m_button;
+        private CursorInfo m_edsCursor;
+
         [UsedImplicitly]
         protected override void Awake()
         {
@@ -21,7 +25,21 @@ namespace EnhancedDistrictServices
 
             name = "EnhancedDistrictServicesTool";
 
-            UITitlePanel.Create();
+            if (m_atlas == null)
+            {
+                LoadResources();
+            }
+
+            if (m_button == null)
+            {
+                m_button = UIView.GetAView().AddUIComponent(typeof(UIEDSButton)) as UIEDSButton;
+            }
+
+            if (m_edsCursor == null)
+            {
+                m_edsCursor = Utils.FindObject<CursorInfo>("SelfSufficient Placement");
+            }
+
             EnhancedDistrictServicesUIPanel.Create();
 
             BuildingManager.instance.EventBuildingCreated += Constraints.CreateBuilding;
@@ -33,6 +51,13 @@ namespace EnhancedDistrictServices
         protected override void OnDestroy()
         {
             base.OnDestroy();
+
+            UnityEngine.Object.Destroy(m_button);
+            m_button = null;
+            
+            UnityEngine.Object.Destroy(m_edsCursor);
+            m_edsCursor = null;
+
             EnhancedDistrictServicesUIPanel.Destroy();
 
             BuildingManager.instance.EventBuildingCreated -= Constraints.CreateBuilding;
@@ -44,7 +69,6 @@ namespace EnhancedDistrictServices
         protected override void OnEnable()
         {
             base.OnEnable();
-            UITitlePanel.Instance?.OnEnable();
             EnhancedDistrictServicesUIPanel.Instance?.OnEnable();
             EnhancedDistrictServicesUIPanel.Instance?.UpdatePanelToBuilding(0);
         }
@@ -52,11 +76,24 @@ namespace EnhancedDistrictServices
         protected override void OnDisable()
         {
             base.OnDisable();
-            UITitlePanel.Instance?.Hide();
             EnhancedDistrictServicesUIPanel.Instance?.UIDistrictsDropDown?.ClosePopup();
             EnhancedDistrictServicesUIPanel.Instance?.Hide();
 
+            ToolCursor = null;
+            Cursor.SetCursor((Texture2D)null, Vector2.zero, CursorMode.Auto);
+
             CopyPaste.BuildingTemplate = 0;
+        }
+
+        protected override void OnToolLateUpdate()
+        {
+            base.OnToolLateUpdate();
+
+            if (enabled == true && ToolCursor == null)
+            {
+                ToolCursor = m_edsCursor;
+                Cursor.SetCursor(m_edsCursor.m_texture, m_edsCursor.m_hotspot, CursorMode.Auto);
+            }
         }
 
         #endregion
@@ -349,5 +386,19 @@ namespace EnhancedDistrictServices
         }
 
         #endregion
+
+        private void LoadResources()
+        {
+            var spriteNames = new string[]
+            {
+                "EDS",
+                "EDSDisabled",
+                "EDSFocused",
+                "EDSHovered",
+                "EDSPressed"
+            };
+
+            m_atlas = ResourceLoader.CreateTextureAtlas("EDS", spriteNames, "EnhancedDistrictServices.Source.Icons.");
+        }
     }
 }
