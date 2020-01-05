@@ -1,6 +1,7 @@
 ﻿using ColossalFramework;
 using ColossalFramework.Math;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
@@ -16,6 +17,8 @@ namespace EnhancedDistrictServices
         private static readonly ushort[] m_incomingCount;
         private static readonly int[] m_outgoingAmount;
         private static readonly int[] m_incomingAmount;
+
+        private static readonly HashSet<int> m_buildingToBuildingExclusions = new HashSet<int>();
 
         /// <summary>
         /// Constructor.  Gets references to the array of incoming and outgoing offers from the TransferManager, so 
@@ -42,6 +45,30 @@ namespace EnhancedDistrictServices
 
             var fi6 = typeof(TransferManager).GetField("m_incomingAmount", BindingFlags.NonPublic | BindingFlags.Instance);
             m_incomingAmount = (int[])fi6.GetValue(instance);
+        }
+
+        public static void AddBuildingToBuildingExclusion(ushort source, ushort target)
+        {
+            int exclusion = (source << 16) | target;
+            if (!m_buildingToBuildingExclusions.Contains(exclusion))
+            {
+                m_buildingToBuildingExclusions.Add(exclusion);
+            }
+        }
+
+        public static bool ContainsBuildingToBuildingExclusion(ushort source, ushort target)
+        {
+            int exclusion = (source << 16) | target;
+            return m_buildingToBuildingExclusions.Contains(exclusion);
+        }
+
+        public static void RemoveBuildingToBuildingExclusion(ushort source, ushort target)
+        {
+            int exclusion = (source << 16) | target;
+            if (m_buildingToBuildingExclusions.Contains(exclusion))
+            {
+                m_buildingToBuildingExclusions.Remove(exclusion);
+            }
         }
 
         /// <summary>
@@ -293,6 +320,39 @@ namespace EnhancedDistrictServices
                                     continue;
                                 }
 
+                                // A rather hacky way to take into account routing errors between two buildings.  The 
+                                // m_buildingToBuildingExclusions list contains a list of ints (upper 16 bits contains 
+                                // source building id and the lower 16 bits contains the target building id) that 
+                                // indicate that a pathfinding error occurred between the source and target buildings.
+                                // If so, go ahead and exclude the possibility of a match between these buildings for 
+                                // this current MatchOffers call, but allow for such a possibility in the next round.
+                                if (requestOffer.Building != 0 && responseOffer.Building != 0)
+                                {
+                                    if (ContainsBuildingToBuildingExclusion(requestOffer.Building, responseOffer.Building))
+                                    {
+                                        Logger.Log($"TransferManagerMod::MatchOffersClosest: Detected path find failure between {requestOffer.Building} and {responseOffer.Building}, excluding match!");
+                                        // Give it a chance to remove the exclusion, in case the user or game fixed the path finding problem.
+                                        if (m_randomizer.Int32(10) < 2)
+                                        {
+                                            RemoveBuildingToBuildingExclusion(requestOffer.Building, responseOffer.Building);
+                                        }
+
+                                        continue;
+                                    }
+
+                                    if (ContainsBuildingToBuildingExclusion(responseOffer.Building, requestOffer.Building))
+                                    {
+                                        Logger.Log($"TransferManagerMod::MatchOffersClosest: Detected path find failure between {requestOffer.Building} and {responseOffer.Building}, excluding match!");
+                                        // Give it a chance to remove the exclusion, in case the user or game fixed the path finding problem.
+                                        if (m_randomizer.Int32(10) < 2)
+                                        {
+                                            RemoveBuildingToBuildingExclusion(responseOffer.Building, requestOffer.Building);
+                                        }
+
+                                        continue;
+                                    }
+                                }
+
                                 var distanceSquared = Vector3.SqrMagnitude(responseOffer.Position - requestPosition);
                                 var foundBetterMatch = false;
 
@@ -345,7 +405,11 @@ namespace EnhancedDistrictServices
                                     matchesInside++;
                                 }
 
-                                StartTransfer(material, requestOffer, responseOffer, delta);
+                                var success = StartTransfer(material, requestOffer, responseOffer, delta);
+                                if (!success)
+                                {
+                                    continue;
+                                }
                             }
 
                             requestAmount -= delta;
@@ -702,7 +766,7 @@ namespace EnhancedDistrictServices
         /// <summary>
         /// Stock code that transfers people/materials between the buildings/vehicles referenced in the given offers.
         /// </summary>
-        private static void StartTransfer(TransferManager.TransferReason material, TransferManager.TransferOffer offerOut, TransferManager.TransferOffer offerIn, int delta)
+        private static bool StartTransfer(TransferManager.TransferReason material, TransferManager.TransferOffer offerOut, TransferManager.TransferOffer offerIn, int delta)
         {
             bool active1 = offerIn.Active;
             bool active2 = offerOut.Active;
@@ -728,7 +792,7 @@ namespace EnhancedDistrictServices
                 uint citizen = offerIn.Citizen;
                 CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
                 if (citizenInfo == null)
-                    return;
+                    return false;
                 offerOut.Amount = delta;
                 citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerOut);
             }
@@ -738,7 +802,7 @@ namespace EnhancedDistrictServices
                 uint citizen = offerOut.Citizen;
                 CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
                 if (citizenInfo == null)
-                    return;
+                    return false;
                 offerIn.Amount = delta;
                 citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerIn);
             }
@@ -753,13 +817,15 @@ namespace EnhancedDistrictServices
             else
             {
                 if (!active1 || offerIn.Building == 0)
-                    return;
+                    return false;
                 Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
                 ushort building = offerIn.Building;
                 BuildingInfo info = buildings.m_buffer[building].Info;
                 offerOut.Amount = delta;
                 info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerOut);
             }
+
+            return true;
         }
 
         #endregion
