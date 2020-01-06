@@ -121,6 +121,7 @@ namespace EnhancedDistrictServices
         public UITabstrip UIInputMode;
         public UIButton UIIncomingTab;
         public UIButton UIOutgoingTab;
+        public UIButton UIVehiclesTab;
         public UIButton UIGlobalTab;
 
         public UICheckBox UIAllLocalAreasCheckBox;
@@ -131,6 +132,10 @@ namespace EnhancedDistrictServices
         public UITextField UISupplyChain;
         public UILabel UIDistrictsSummary;
         public UICheckboxDropDown UIDistrictsDropDown;
+
+        public UICheckBox UIVehicleDefaultsCheckBox;
+        public UILabel UIVehiclesSummary;
+        public UICheckboxDropDown UIVehiclesDropDown;
 
         public UILabel GlobalIntensityLabel;
         public UITextField GlobalIntensity;
@@ -161,6 +166,7 @@ namespace EnhancedDistrictServices
             UIInputMode = AttachUITabstripTo(this, 3, 88);
             UIOutgoingTab = UIInputMode.AddTab("Outgoing", buttonTemplate, true);
             UIIncomingTab = UIInputMode.AddTab("Incoming", buttonTemplate, true);
+            UIVehiclesTab = UIInputMode.AddTab("Vehicles", buttonTemplate, true);
             UIGlobalTab = UIInputMode.AddTab("Global", buttonTemplate, true);
 
             UIAllLocalAreasCheckBox = AttachUICheckBoxTo(this, 113, 88);
@@ -174,10 +180,17 @@ namespace EnhancedDistrictServices
 
             UIDistrictsSummary = AttachUILabelTo(this, 3, 148);
             UIDistrictsSummary.zOrder = 0;
-
             UIDistrictsDropDown = AttachUICheckboxDropDownTo(this, 3, 148 + 3);
-            UIDistrictsDropDown.eventDropdownOpen += UIDistrictsDropDown_eventDropdownOpen;
-            UIDistrictsDropDown.eventDropdownClose += UIDistrictsDropDown_eventDropdownClose;
+            UIDistrictsDropDown.eventDropdownOpen += UIEventDropdownOpen;
+            UIDistrictsDropDown.eventDropdownClose += UIEventDropdownClose;
+
+            UIVehicleDefaultsCheckBox = AttachUICheckBoxTo(this, 141, 88);
+            UIVehicleDefaultsCheckBox.label = AttachUILabelTo(UIVehicleDefaultsCheckBox, -138, 0);
+            UIVehiclesSummary = AttachUILabelTo(this, 3, 148);
+            UIVehiclesSummary.zOrder = 0;
+            UIVehiclesDropDown = AttachUICheckboxDropDownTo(this, 3, 148 + 3);
+            UIVehiclesDropDown.eventDropdownOpen += UIEventDropdownOpen;
+            UIVehiclesDropDown.eventDropdownClose += UIEventDropdownClose;
 
             GlobalIntensityLabel = AttachUILabelTo(this, 3, 88, text: "Outside Connection Intensity:");
             GlobalIntensity = AttachUITextFieldTo(this, 3, 29, 213);
@@ -259,7 +272,7 @@ namespace EnhancedDistrictServices
             }
         }
 
-        private void UIDistrictsDropDown_eventDropdownOpen(UICheckboxDropDown checkboxdropdown, UIScrollablePanel popup, ref bool overridden)
+        private void UIEventDropdownOpen(UICheckboxDropDown checkboxdropdown, UIScrollablePanel popup, ref bool overridden)
         {
             checkboxdropdown?.triggerButton?.Hide();
 
@@ -269,7 +282,7 @@ namespace EnhancedDistrictServices
             }
         }
 
-        private void UIDistrictsDropDown_eventDropdownClose(UICheckboxDropDown checkboxdropdown, UIScrollablePanel popup, ref bool overridden)
+        private void UIEventDropdownClose(UICheckboxDropDown checkboxdropdown, UIScrollablePanel popup, ref bool overridden)
         {
             checkboxdropdown?.triggerButton?.Show();
 
@@ -461,7 +474,7 @@ namespace EnhancedDistrictServices
             buttonTemplate.Hide();
 
             buttonTemplate.text = "";
-            buttonTemplate.size = new Vector2((m_componentWidth - m_listScrollbarWidth) / 4, 20f);
+            buttonTemplate.size = new Vector2(23 * (m_componentWidth - m_listScrollbarWidth) / 100, 20f);
             buttonTemplate.normalFgSprite = "GenericTab";
             buttonTemplate.hoveredFgSprite = "GenericTabHovered";
             buttonTemplate.pressedFgSprite = "GenericTabPressed";

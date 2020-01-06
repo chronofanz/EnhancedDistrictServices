@@ -43,8 +43,10 @@ namespace EnhancedDistrictServices
             EnhancedDistrictServicesUIPanel.Create();
 
             BuildingManager.instance.EventBuildingCreated += Constraints.CreateBuilding;
+            BuildingManager.instance.EventBuildingCreated += VehicleManagerMod.CreateBuilding;
             BuildingManager.instance.EventBuildingCreated += TaxiMod.RegisterTaxiBuilding;
             BuildingManager.instance.EventBuildingReleased += Constraints.ReleaseBuilding;
+            BuildingManager.instance.EventBuildingReleased += VehicleManagerMod.ReleaseBuilding;
             BuildingManager.instance.EventBuildingReleased += TaxiMod.DeregisterTaxiBuilding;
         }
 
@@ -61,8 +63,10 @@ namespace EnhancedDistrictServices
             EnhancedDistrictServicesUIPanel.Destroy();
 
             BuildingManager.instance.EventBuildingCreated -= Constraints.CreateBuilding;
+            BuildingManager.instance.EventBuildingCreated -= VehicleManagerMod.CreateBuilding;
             BuildingManager.instance.EventBuildingCreated -= TaxiMod.RegisterTaxiBuilding;
             BuildingManager.instance.EventBuildingReleased -= Constraints.ReleaseBuilding;
+            BuildingManager.instance.EventBuildingReleased -= VehicleManagerMod.ReleaseBuilding;
             BuildingManager.instance.EventBuildingReleased -= TaxiMod.DeregisterTaxiBuilding;
         }
 
@@ -275,8 +279,9 @@ namespace EnhancedDistrictServices
         /// <returns></returns>
         private static string GetBuildingInfoText(ushort building)
         {
-            var txtItems = new List<string>();
+            var inputType = TransferManagerInfo.GetBuildingInputType(building);
 
+            var txtItems = new List<string>();
             txtItems.Add($"{TransferManagerInfo.GetBuildingName(building)} ({building})");
             txtItems.Add(TransferManagerInfo.GetDistrictParkText(building));
 
@@ -294,12 +299,16 @@ namespace EnhancedDistrictServices
                 txtItems.Add("");
                 txtItems.Add(TransferManagerInfo.GetOutputDistrictsServedText(building));
 
+                if (Settings.enableCustomVehicles && !VehicleManagerMod.BuildingUseDefaultVehicles[building] && (inputType & InputType.VEHICLES) != InputType.NONE)
+                {
+                    txtItems.Add("");
+                    txtItems.Add(TransferManagerInfo.GetCustomVehiclesText(building));
+                }
+
                 return string.Join("\n", txtItems.ToArray());
             }
 
             // From this point forth, we know this is a supply chain building ...
-            var inputType = TransferManagerInfo.GetBuildingInputType(building);
-
             txtItems.Add($"Supply Reserve: {Constraints.InternalSupplyBuffer(building)}");
 
             if ((inputType & InputType.INCOMING) != InputType.NONE)
@@ -312,6 +321,12 @@ namespace EnhancedDistrictServices
             {
                 txtItems.Add("");
                 txtItems.Add(TransferManagerInfo.GetSupplyBuildingDestinationsText(building));
+            }
+
+            if (Settings.enableCustomVehicles && !VehicleManagerMod.BuildingUseDefaultVehicles[building] && (inputType & InputType.VEHICLES) != InputType.NONE)
+            {
+                txtItems.Add("");
+                txtItems.Add(TransferManagerInfo.GetCustomVehiclesText(building));
             }
 
             var problemText = TransferManagerInfo.GetSupplyBuildingProblemsText(building);

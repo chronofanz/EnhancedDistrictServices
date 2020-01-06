@@ -377,21 +377,33 @@ namespace EnhancedDistrictServices
 
         public static void SetAllInputLocalAreas(int buildingId, bool status)
         {
+            var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+            Logger.LogVerbose($"Constraints::SetAllInputLocalAreas: {buildingName} ({buildingId}) => {status} ...");
+
             SetArrayStatus(m_inputBuildingToAllLocalAreas, buildingId, status);
         }
 
         public static void SetAllInputOutsideConnections(int buildingId, bool status)
         {
+            var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+            Logger.LogVerbose($"Constraints::SetAllInputOutsideConnections: {buildingName} ({buildingId}) => {status} ...");
+
             SetArrayStatus(m_inputBuildingToOutsideConnections, buildingId, status);
         }
 
         public static void SetAllOutputLocalAreas(int buildingId, bool status)
         {
+            var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+            Logger.LogVerbose($"Constraints::SetAllOutputLocalAreas: {buildingName} ({buildingId}) => {status} ...");
+
             SetArrayStatus(m_outputBuildingToAllLocalAreas, buildingId, status);
         }
 
         public static void SetAllOutputOutsideConnections(int buildingId, bool status)
         {
+            var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+            Logger.LogVerbose($"Constraints::SetAllOutputOutsideConnections: {buildingName} ({buildingId}) => {status} ...");
+
             SetArrayStatus(m_outputBuildingToOutsideConnections, buildingId, status);
         }
 
@@ -412,6 +424,9 @@ namespace EnhancedDistrictServices
         /// <param name="amount">Must bet between 0 and 100.</param>
         public static void SetInternalSupplyReserve(int buildingId, int amount)
         {
+            var buildingName = TransferManagerInfo.GetBuildingName(buildingId);
+            Logger.LogVerbose($"Constraints::SetInternalSupplyReserve: {buildingName} ({buildingId}) => {amount} ...");
+
             m_buildingToInternalSupplyBuffer[buildingId] = COMath.Clamp(amount, 0, 100);
         }
 
@@ -421,6 +436,7 @@ namespace EnhancedDistrictServices
         /// <param name="amount"></param>
         public static void SetGlobalOutsideConnectionIntensity(int amount)
         {
+            Logger.LogVerbose($"Constraints::SetGlobalOutsideConnectionIntensity: {amount} ...");
             m_globalOutsideConnectionIntensity = COMath.Clamp(amount, 0, 100);
         }
 

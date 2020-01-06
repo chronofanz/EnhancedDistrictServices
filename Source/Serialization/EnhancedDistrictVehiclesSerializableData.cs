@@ -11,7 +11,7 @@ namespace EnhancedDistrictServices.Serialization
     /// The game code automatically calls OnLoadData and OnSaveData on classes that extend 
     /// SerializableDataExtensionBase.
     /// </summary>
-    public class EnhancedDistrictServicesSerializableData : SerializableDataExtensionBase
+    public class EnhancedDistrictVehiclesSerializableData : SerializableDataExtensionBase
     {
         public override void OnLoadData()
         {
@@ -20,33 +20,15 @@ namespace EnhancedDistrictServices.Serialization
             if (managers.loading.currentMode == AppMode.Game)
             {
                 try
-                {                    
-                    Datav3 data;
-
+                {
                     // Always try to load the latest version if possible.
-                    if (Datav3.TryLoadData(this, out data))
+                    if (Vehiclesv1.TryLoadData(this, out Vehiclesv1 data))
                     {
-                        Constraints.LoadData(data);
-                    }
-                    else if (Datav2.TryLoadData(this, out data))
-                    {
-                        Constraints.LoadData(data);
-                    }
-                    else if (Datav1.TryLoadData(this, out data))
-                    {
-                        Constraints.LoadData(data);
+                        VehicleManagerMod.LoadData(data);
                     }
                     else
                     {
-                        Constraints.Clear();
-                    }
-
-                    // Update Taxi buildings cache ...
-                    // TODO, FIXME: Make this less hacky ...
-                    var buildings = Utils.GetSupportedServiceBuildings();
-                    foreach (var building in buildings)
-                    {
-                        TaxiMod.RegisterTaxiBuilding(building);
+                        VehicleManagerMod.Clear();
                     }
                 }
                 catch (Exception ex)
@@ -62,7 +44,7 @@ namespace EnhancedDistrictServices.Serialization
 
             if (managers.loading.currentMode == AppMode.Game)
             {
-                var data = Constraints.SaveData();
+                var data = VehicleManagerMod.SaveData();
                 this.SaveData(data.Id, data);
             }
         }
@@ -83,7 +65,7 @@ namespace EnhancedDistrictServices.Serialization
                 return false;
             }
 
-            Logger.Log($"EnhancedDistrictServicesSerializableData::LoadData: version {id}");
+            Logger.Log($"EnhancedDistrictVehiclesSerializableData::LoadData: version {id}");
             var data = serializableDataManager.LoadData(id);
 
             var memStream = new MemoryStream();
@@ -101,7 +83,7 @@ namespace EnhancedDistrictServices.Serialization
                 target = (T)binaryFormatter.Deserialize(memStream);
                 if (target == null)
                 {
-                    Logger.LogWarning($"EnhancedDistrictServicesSerializableData::LoadData: Data failed to load version {id}");
+                    Logger.LogWarning($"EnhancedDistrictVehiclesSerializableData::LoadData: Data failed to load version {id}");
                 }
 
                 return true;
@@ -126,7 +108,7 @@ namespace EnhancedDistrictServices.Serialization
         /// <param name="target"></param>
         public void SaveData<T>(string id, T target)
         {
-            Logger.Log($"EnhancedDistrictServicesSerializableData::SaveData: version {id}");
+            Logger.Log($"EnhancedDistrictVehiclesSerializableData::SaveData: version {id}");
 
             var binaryFormatter = new BinaryFormatter();
             var memStream = new MemoryStream();

@@ -62,6 +62,16 @@
                 }
             }
 
+            VehicleManagerMod.ReleaseBuilding(building);
+            VehicleManagerMod.SetBuildingUseDefaultVehicles(building, VehicleManagerMod.BuildingUseDefaultVehicles[BuildingTemplate]);
+            if (VehicleManagerMod.BuildingToVehicles[BuildingTemplate] != null && VehicleManagerMod.BuildingToVehicles[BuildingTemplate].Count > 0)
+            {
+                foreach (var prefabIndex in VehicleManagerMod.BuildingToVehicles[BuildingTemplate])
+                {
+                    VehicleManagerMod.AddCustomVehicle(building, prefabIndex);
+                }                    
+            }
+
             return copySucceeded;
         }
     }

@@ -768,64 +768,77 @@ namespace EnhancedDistrictServices
         /// </summary>
         private static bool StartTransfer(TransferManager.TransferReason material, TransferManager.TransferOffer offerOut, TransferManager.TransferOffer offerIn, int delta)
         {
-            bool active1 = offerIn.Active;
-            bool active2 = offerOut.Active;
-            if (active1 && offerIn.Vehicle != 0)
+            try
             {
-                Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
-                ushort vehicle = offerIn.Vehicle;
-                VehicleInfo info = vehicles.m_buffer[vehicle].Info;
-                offerOut.Amount = delta;
-                info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerOut);
-            }
-            else if (active2 && offerOut.Vehicle != 0)
-            {
-                Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
-                ushort vehicle = offerOut.Vehicle;
-                VehicleInfo info = vehicles.m_buffer[vehicle].Info;
-                offerIn.Amount = delta;
-                info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerIn);
-            }
-            else if (active1 && (int)offerIn.Citizen != 0)
-            {
-                Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
-                uint citizen = offerIn.Citizen;
-                CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
-                if (citizenInfo == null)
-                    return false;
-                offerOut.Amount = delta;
-                citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerOut);
-            }
-            else if (active2 && (int)offerOut.Citizen != 0)
-            {
-                Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
-                uint citizen = offerOut.Citizen;
-                CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
-                if (citizenInfo == null)
-                    return false;
-                offerIn.Amount = delta;
-                citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerIn);
-            }
-            else if (active2 && offerOut.Building != 0)
-            {
-                Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
-                ushort building = offerOut.Building;
-                BuildingInfo info = buildings.m_buffer[building].Info;
-                offerIn.Amount = delta;
-                info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerIn);
-            }
-            else
-            {
-                if (!active1 || offerIn.Building == 0)
-                    return false;
-                Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
-                ushort building = offerIn.Building;
-                BuildingInfo info = buildings.m_buffer[building].Info;
-                offerOut.Amount = delta;
-                info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerOut);
-            }
+                if (offerIn.Building != 0 && TransferManagerInfo.IsCustomVehiclesBuilding(offerIn.Building))
+                {
+                    VehicleManagerMod.CurrentSourceBuilding = offerIn.Building;
+                    Logger.LogVerbose($"TransferManager::StartTransfer: {Utils.ToString(ref offerIn, material)}");
+                }
 
-            return true;
+                bool active1 = offerIn.Active;
+                bool active2 = offerOut.Active;
+                if (active1 && offerIn.Vehicle != 0)
+                {
+                    Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
+                    ushort vehicle = offerIn.Vehicle;
+                    VehicleInfo info = vehicles.m_buffer[vehicle].Info;
+                    offerOut.Amount = delta;
+                    info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerOut);
+                }
+                else if (active2 && offerOut.Vehicle != 0)
+                {
+                    Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
+                    ushort vehicle = offerOut.Vehicle;
+                    VehicleInfo info = vehicles.m_buffer[vehicle].Info;
+                    offerIn.Amount = delta;
+                    info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerIn);
+                }
+                else if (active1 && (int)offerIn.Citizen != 0)
+                {
+                    Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
+                    uint citizen = offerIn.Citizen;
+                    CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
+                    if (citizenInfo == null)
+                        return false;
+                    offerOut.Amount = delta;
+                    citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerOut);
+                }
+                else if (active2 && (int)offerOut.Citizen != 0)
+                {
+                    Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
+                    uint citizen = offerOut.Citizen;
+                    CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
+                    if (citizenInfo == null)
+                        return false;
+                    offerIn.Amount = delta;
+                    citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerIn);
+                }
+                else if (active2 && offerOut.Building != 0)
+                {
+                    Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
+                    ushort building = offerOut.Building;
+                    BuildingInfo info = buildings.m_buffer[building].Info;
+                    offerIn.Amount = delta;
+                    info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerIn);
+                }
+                else
+                {
+                    if (!active1 || offerIn.Building == 0)
+                        return false;
+                    Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
+                    ushort building = offerIn.Building;
+                    BuildingInfo info = buildings.m_buffer[building].Info;
+                    offerOut.Amount = delta;
+                    info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerOut);
+                }
+
+                return true;
+            }
+            finally
+            {
+                VehicleManagerMod.CurrentSourceBuilding = 0;
+            }
         }
 
         #endregion

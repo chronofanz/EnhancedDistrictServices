@@ -78,6 +78,12 @@ namespace EnhancedDistrictServices
                 UIPanel self = uiHelper.self as UIPanel;
 
                 ((UIComponent)uiHelper.AddCheckbox(
+                    "Enable custom vehicles",
+                    Settings.enableCustomVehicles,
+                    b => Settings.enableCustomVehicles.value = b))
+                    .tooltip = "Enable ability to set vehicle types used by service buildings.  Disable to use default game logic or other mods.";
+
+                ((UIComponent)uiHelper.AddCheckbox(
                     "Enable dummy cargo traffic",
                     Settings.enableDummyCargoTraffic,
                     b => Settings.enableDummyCargoTraffic.value = b))

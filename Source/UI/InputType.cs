@@ -8,6 +8,7 @@ namespace EnhancedDistrictServices
         NONE = 0,
         INCOMING = 1,
         OUTGOING = 2,
-        SUPPLY_CHAIN = 4
+        SUPPLY_CHAIN = 4,
+        VEHICLES = 8
     }
 }
