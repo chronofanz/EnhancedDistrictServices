@@ -15,13 +15,19 @@ namespace EnhancedDistrictServices
         {
             OUTGOING = 0,
             INCOMING = 1,
-            GLOBAL = 2
+            VEHICLES = 2,
+            GLOBAL = 3
         }
 
         /// <summary>
         /// Mapping of dropdown index to DistrictPark. 
         /// </summary>
         private readonly List<DistrictPark> m_districtParkMapping = new List<DistrictPark>(capacity: DistrictPark.MAX_DISTRICT_PARK_COUNT);
+
+        /// <summary>
+        /// Mapping of dropdown index to prefab index to vehicle info.
+        /// </summary>
+        private readonly List<int> m_vehicleMapping = new List<int>();
 
         /// <summary>
         /// Current input mode
@@ -161,6 +167,15 @@ namespace EnhancedDistrictServices
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
                     UpdateUIInputMode(InputMode.INCOMING);
+                });
+            };
+
+            UIVehiclesTab.eventClicked += (c, p) =>
+            {
+                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIVehiclesTab Clicked");
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    UpdateUIInputMode(InputMode.VEHICLES);
                 });
             };
 
@@ -396,32 +411,91 @@ namespace EnhancedDistrictServices
                 Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIDistrictsDropDown CheckChanged: {t}");
                 Singleton<SimulationManager>.instance.AddAction(() =>
                 {
-                    if (m_inputMode == InputMode.INCOMING)
+                    try
                     {
-                        if (UIDistrictsDropDown.GetChecked(t))
+                        if (m_inputMode == InputMode.INCOMING)
                         {
-                            Constraints.AddInputDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
+                            if (UIDistrictsDropDown.GetChecked(t))
+                            {
+                                Constraints.AddInputDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
+                            }
+                            else
+                            {
+                                Constraints.RemoveInputDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
+                            }
+                        }
+
+                        if (m_inputMode == InputMode.OUTGOING)
+                        {
+                            if (UIDistrictsDropDown.GetChecked(t))
+                            {
+                                Constraints.AddOutputDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
+                            }
+                            else
+                            {
+                                Constraints.RemoveOutputDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogException(ex);
+                    }
+                    finally
+                    {
+                        UpdateUISupplyChain();
+                        UpdateUIDistrictsSummary();
+                    }
+                });
+            };
+
+            UIVehicleDefaultsCheckBox.eventCheckChanged += (c, t) =>
+            {
+                if (m_currBuildingId == 0 || m_inputMode != InputMode.VEHICLES)
+                {
+                    return;
+                }
+
+                Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIVehicleDefaultsCheckBox CheckChanged {t}");
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    VehicleManagerMod.SetBuildingUseDefaultVehicles(m_currBuildingId, t);
+
+                    UpdateUIVehicleDefaultsCheckBox();
+                    UpdateUIVehiclesDropdown();
+                    UpdateUIVehiclesSummary();
+                });
+            };
+
+            UIVehiclesDropDown.eventCheckedChanged += (c, t) =>
+            {
+                if (m_currBuildingId == 0 || m_vehicleMapping == null || m_inputMode != InputMode.VEHICLES)
+                {
+                    return;
+                }
+
+                Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIVehiclesDropDown CheckChanged: {t}");
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    try
+                    {
+                        if (UIVehiclesDropDown.GetChecked(t))
+                        {
+                            VehicleManagerMod.AddCustomVehicle(m_currBuildingId, m_vehicleMapping[t]);
                         }
                         else
                         {
-                            Constraints.RemoveInputDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
+                            VehicleManagerMod.RemoveCustomVehicle(m_currBuildingId, m_vehicleMapping[t]);
                         }
                     }
-
-                    if (m_inputMode == InputMode.OUTGOING)
+                    catch (Exception ex)
                     {
-                        if (UIDistrictsDropDown.GetChecked(t))
-                        {
-                            Constraints.AddOutputDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
-                        }
-                        else
-                        {
-                            Constraints.RemoveOutputDistrictParkServiced(m_currBuildingId, m_districtParkMapping[t]);
-                        }
+                        Logger.LogException(ex);
                     }
-
-                    UpdateUISupplyChain();
-                    UpdateUIDistrictsSummary();
+                    finally
+                    {
+                        UpdateUIVehiclesSummary();
+                    }
                 });
             };
 
@@ -500,6 +574,7 @@ namespace EnhancedDistrictServices
             UpdateUIBuildingId();
             UpdateUIHomeDistrict();
             UpdateUIServices();
+            UpdateUIVehiclesDropdownItems();
 
             UpdateUIInputModeTabs();
           
@@ -583,6 +658,8 @@ namespace EnhancedDistrictServices
             var inputType = TransferManagerInfo.GetBuildingInputType(m_currBuildingId);
             ShowTab("Outgoing", (inputType & InputType.OUTGOING) != InputType.NONE);
             ShowTab("Incoming", (inputType & InputType.INCOMING) != InputType.NONE);
+            if (Settings.enableCustomVehicles)
+                ShowTab("Vehicles", (inputType & InputType.VEHICLES) != InputType.NONE);
             ShowTab("Global", m_currBuildingId != 0);
 
             if ((inputType & InputType.OUTGOING) != InputType.NONE)
@@ -637,6 +714,9 @@ namespace EnhancedDistrictServices
                     AddElementToTabContainerRow(UIDistrictsSummary);
                     AddElementToTabContainerRow(UIDistrictsDropDown);
 
+                    ShowComponent(UIVehicleDefaultsCheckBox, false);
+                    ShowComponent(UIVehiclesSummary, false);
+                    ShowComponent(UIVehiclesDropDown, false);
                     ShowComponent(GlobalIntensity, false);
                     ShowComponent(GlobalIntensityLabel, false);
                     break;
@@ -657,6 +737,30 @@ namespace EnhancedDistrictServices
                     AddElementToTabContainerRow(UIDistrictsSummary);
                     AddElementToTabContainerRow(UIDistrictsDropDown);
 
+                    ShowComponent(UIVehicleDefaultsCheckBox, false);
+                    ShowComponent(UIVehiclesSummary, false);
+                    ShowComponent(UIVehiclesDropDown, false);
+                    ShowComponent(GlobalIntensity, false);
+                    ShowComponent(GlobalIntensityLabel, false);
+                    break;
+
+                case InputMode.VEHICLES:
+                    ShowComponent(UIAllLocalAreasCheckBox, false);
+                    ShowComponent(UIAllOutsideConnectionsCheckBox, false);
+                    ShowComponent(UISupplyReserve, false);
+                    ShowComponent(UISupplyReserveLabel, false);
+                    ShowComponent(UISupplyChain, false);
+                    ShowComponent(UISupplyChainLabel, false);
+                    ShowComponent(UIDistrictsSummary, false);
+                    ShowComponent(UIDistrictsDropDown, false);
+
+                    AddTabContainerRow();
+                    AddElementToTabContainerRow(UIVehicleDefaultsCheckBox);
+
+                    AddTabContainerRow();
+                    AddElementToTabContainerRow(UIVehiclesSummary);
+                    AddElementToTabContainerRow(UIVehiclesDropDown);
+
                     ShowComponent(GlobalIntensity, false);
                     ShowComponent(GlobalIntensityLabel, false);
                     break;
@@ -670,6 +774,9 @@ namespace EnhancedDistrictServices
                     ShowComponent(UISupplyChainLabel, false);
                     ShowComponent(UIDistrictsSummary, false);
                     ShowComponent(UIDistrictsDropDown, false);
+                    ShowComponent(UIVehicleDefaultsCheckBox, false);
+                    ShowComponent(UIVehiclesSummary, false);
+                    ShowComponent(UIVehiclesDropDown, false);
 
                     AddTabContainerRow();
                     AddElementToTabContainerRow(GlobalIntensity);
@@ -686,6 +793,9 @@ namespace EnhancedDistrictServices
             UpdateUISupplyChain();
             UpdateUIDistrictsDropdown();
             UpdateUIDistrictsSummary();
+            UpdateUIVehicleDefaultsCheckBox();
+            UpdateUIVehiclesDropdown();
+            UpdateUIVehiclesSummary();
             UpdateGlobalIntensity();
         }
 
@@ -693,7 +803,7 @@ namespace EnhancedDistrictServices
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIAllLocalAreasCheckBox Update");
 
-            if (m_currBuildingId == 0 || m_inputMode == InputMode.GLOBAL)
+            if (m_currBuildingId == 0 || !(m_inputMode == InputMode.INCOMING || m_inputMode == InputMode.OUTGOING))
             {
                 return;
             }
@@ -744,7 +854,7 @@ namespace EnhancedDistrictServices
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIAllOutsideConnectionsCheckBox Update");
 
-            if (m_currBuildingId == 0 || m_inputMode == InputMode.GLOBAL || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
+            if (m_currBuildingId == 0 || !(m_inputMode == InputMode.INCOMING || m_inputMode == InputMode.OUTGOING) || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
             {
                 return;
             }
@@ -767,7 +877,7 @@ namespace EnhancedDistrictServices
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyReserve Update");
 
-            if (m_currBuildingId == 0 || m_inputMode == InputMode.GLOBAL || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
+            if (m_currBuildingId == 0 || !(m_inputMode == InputMode.INCOMING || m_inputMode == InputMode.OUTGOING) || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
             {
                 return;
             }
@@ -783,7 +893,7 @@ namespace EnhancedDistrictServices
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UISupplyChain Update");
 
-            if (m_currBuildingId == 0 || m_inputMode == InputMode.GLOBAL || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
+            if (m_currBuildingId == 0 || !(m_inputMode == InputMode.INCOMING || m_inputMode == InputMode.OUTGOING) || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
             {
                 return;
             }
@@ -830,11 +940,10 @@ namespace EnhancedDistrictServices
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIDistrictsDropdownDistrictItems Update");
 
-            var districtParks = DistrictPark.GetAllDistrictParks();
-
             UIDistrictsDropDown.Clear();
             m_districtParkMapping.Clear();
 
+            var districtParks = DistrictPark.GetAllDistrictParks();
             foreach (var districtPark in districtParks)
             {
                 if (!Settings.showCampusDistricts.value && districtPark.IsCampus)
@@ -863,7 +972,7 @@ namespace EnhancedDistrictServices
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIDistrictsDropdown Update");
 
-            if (m_currBuildingId == 0 || m_inputMode == InputMode.GLOBAL)
+            if (m_currBuildingId == 0 || !(m_inputMode == InputMode.INCOMING || m_inputMode == InputMode.OUTGOING))
             {
                 return;
             }
@@ -908,7 +1017,7 @@ namespace EnhancedDistrictServices
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIDistrictsSummary Update");
 
-            if (m_currBuildingId == 0 || m_inputMode == InputMode.GLOBAL)
+            if (m_currBuildingId == 0 || !(m_inputMode == InputMode.INCOMING || m_inputMode == InputMode.OUTGOING))
             {
                 return;
             }
@@ -986,8 +1095,127 @@ namespace EnhancedDistrictServices
             }
         }
 
+        private void UpdateUIVehicleDefaultsCheckBox()
+        {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIVehicleDefaultsCheckBox Update");
+
+            if (m_currBuildingId == 0 || m_inputMode != InputMode.VEHICLES)
+            {
+                return;
+            }
+
+            UIVehicleDefaultsCheckBox.isChecked = VehicleManagerMod.BuildingUseDefaultVehicles[m_currBuildingId];
+            ShowComponent(UIVehiclesSummary, !UIVehicleDefaultsCheckBox.isChecked);
+            ShowComponent(UIVehiclesDropDown, !UIVehicleDefaultsCheckBox.isChecked);
+
+            UIVehicleDefaultsCheckBox.label.text = "Use Game Defaults: ";
+            UIVehicleDefaultsCheckBox.tooltip = "If enabled, use logic from game or other mods.  Disable to specify 1 or more vehicles to be used by this building.";
+        }
+
+        private void UpdateUIVehiclesDropdownItems()
+        {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIVehiclesDropdownItems Update");
+
+            UIVehiclesDropDown.Clear();
+            m_vehicleMapping.Clear();
+
+            if (m_currBuildingId == 0)
+            {
+                return;
+            }
+
+            foreach (var prefabIndex in VehicleManagerMod.GetPrefabs(m_currBuildingId))
+            {
+                var prefab = PrefabCollection<VehicleInfo>.GetPrefab((uint)prefabIndex);
+
+                UIVehiclesDropDown.AddItem(prefab.name, isChecked: false);
+                m_vehicleMapping.Add(prefabIndex);
+            }
+
+            var info = BuildingManager.instance.m_buildings.m_buffer[m_currBuildingId].Info;
+            var service = info.GetService();
+            var subService = info.GetSubService();
+
+            Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIVehiclesDropdownItems Found {m_vehicleMapping.Count} vehicles, service={service}, subService={subService}.");
+        }
+
+        private void UpdateUIVehiclesDropdown()
+        {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIVehiclesDropdown Update");
+
+            if (m_currBuildingId == 0 || m_inputMode != InputMode.VEHICLES)
+            {
+                return;
+            }
+
+            void SetChecked(int i, bool ischecked)
+            {
+                if (UIVehiclesDropDown.GetChecked(i) != ischecked)
+                {
+                    UIVehiclesDropDown.SetChecked(i, ischecked);
+                }
+            }
+
+            var vehicles = VehicleManagerMod.BuildingToVehicles[m_currBuildingId];
+            if (vehicles != null)
+            {
+                // Do not used UICheckboxDropDown::SetChecked(bool[] isChecked) because it replaces the underlying array.
+                for (int i = 0; i < m_vehicleMapping.Count; i++)
+                {
+                    SetChecked(i, vehicles.Contains(m_vehicleMapping[i]));
+                }
+            }
+            else
+            {
+                // Do not used UICheckboxDropDown::SetChecked(bool[] isChecked) because it replaces the underlying array.
+                for (int i = 0; i < m_vehicleMapping.Count; i++)
+                {
+                    SetChecked(i, false);
+                }
+            }
+        }
+
+        private void UpdateUIVehiclesSummary()
+        {
+            Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIVehiclesSummary Update");
+
+            if (m_currBuildingId == 0 || (m_inputMode != InputMode.VEHICLES))
+            {
+                return;
+            }
+
+            if (VehicleManagerMod.BuildingToVehicles[m_currBuildingId] == null || VehicleManagerMod.BuildingToVehicles[m_currBuildingId].Count == 0)
+            {
+                UIVehiclesSummary.text = "Custom Vehicles Selected: None";
+                UIVehiclesDropDown.triggerButton.tooltip = "WARNING: No custom vehicles selected, falling back to using game defaults";
+                return;
+            }
+
+            var count = VehicleManagerMod.BuildingToVehicles[m_currBuildingId].Count;
+            UIVehiclesSummary.text = $"Custom Vehicles Selected: {count}";
+
+            if (count == 0)
+            {
+                UIVehiclesDropDown.triggerButton.tooltip = string.Empty;
+            }
+            else if (count == 1)
+            {
+                var prefabIndex = VehicleManagerMod.BuildingToVehicles[m_currBuildingId][0];
+                UIVehiclesDropDown.triggerButton.tooltip = VehicleManagerMod.PrefabNames[prefabIndex];
+            }
+            else
+            {
+                UIVehiclesDropDown.triggerButton.tooltip = $"EDS will randomly select amongst the {count} selected custom vehicles";
+            }
+        }
+
         private void UpdateGlobalIntensity()
         {
+            if (m_currBuildingId == 0 || m_inputMode != InputMode.GLOBAL)
+            {
+                return;
+            }
+
             GlobalIntensity.text = Constraints.GlobalOutsideConnectionIntensity().ToString();
 
             var tooltipText = "The intensity controls the amount of supply chain traffic entering the city, between 0 and 100\nWARNING: Do not set this too high, otherwise your traffic will become overwhelmed with traffic!";

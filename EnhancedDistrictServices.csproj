@@ -65,7 +65,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Source\Constraints.cs" />
     <Compile Include="Source\EnhancedDistrictServicesLoadingExtension.cs" />
+    <Compile Include="Source\Patches\CarAIPathfindFailurePatch.cs" />
     <Compile Include="Source\Patches\DistrictManagerReleaseDistrictPatch.cs" />
+    <Compile Include="Source\Patches\VehicleManagerGetRandomVehicleInfoPatch.cs" />
     <Compile Include="Source\Serialization\Datav3.cs" />
     <Compile Include="Source\Serialization\Datav2.cs" />
     <Compile Include="Source\Serialization\Datav1.cs" />
@@ -75,6 +77,8 @@
     <Compile Include="Source\Logger.cs" />
     <Compile Include="Source\EnhancedDistrictServicesUIPanelBase.cs" />
     <Compile Include="Source\Patches\DistrictManagerReleaseParkPatch.cs" />
+    <Compile Include="Source\Serialization\EnhancedDistrictVehiclesSerializableData.cs" />
+    <Compile Include="Source\Serialization\Vehiclesv1.cs" />
     <Compile Include="Source\UI\InputType.cs" />
     <Compile Include="Source\UI\CopyPaste.cs" />
     <Compile Include="Source\UI\ResourceLoader.cs" />
@@ -87,6 +91,7 @@
     <Compile Include="Source\TransferManagerInfo.cs" />
     <Compile Include="Source\TransferManagerMod.cs" />
     <Compile Include="Source\Patches\TransferManagerMatchOffersPatch.cs" />
+    <Compile Include="Source\Vehicles\VehicleManagerMod.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />

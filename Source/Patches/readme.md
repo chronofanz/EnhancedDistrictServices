@@ -1,9 +1,10 @@
 We use HarmonyPatch to integrate this mod's custom code with the game's code at the following integration points.
 
+- **CarAI::PathfindFailure**: We record building to building path finding failures, so that we temporarily exclude matches between these buildings.
 - **DistrictManager::ReleaseDistrictImplementation**: Remove any references to the district that has been just erased.
 - **DistrictManager::ReleaseParkImplementation**:  Remove any references to the campus/industry/park that has been just erased.
-- **TransferManager::AddIncomingOffer**:  Adjusts the priority of offers, as well as filter out certain taxi and park maintenance offers.
-- **TransferManager::AddOutgoingOffer**:  Adjusts the priority of offers, as well as filter out certain park maintenance offers.
+- **TransferManager::AddIncomingOffer**:  Adjusts the priority of offers for supported materials, as well as filter out certain taxi and park maintenance offers.
+- **TransferManager::AddOutgoingOffer**:  Adjusts the priority of offers for supported materials, as well as filter out certain park maintenance offers.
 - **TransferManager::MatchOffers**:  Calls our custom TransferManagerMod.MatchOffers for supported materials.
 
 In addition, we directly interact with game objects in the following ways:

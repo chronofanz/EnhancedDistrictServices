@@ -13,7 +13,7 @@ namespace EnhancedDistrictServices
     /// </summary>
     public class EnhancedDistrictServicesMod : IUserMod, ILoadingExtension
     {
-        public const string version = "1.0.16";
+        public const string version = "1.0.17";
         public string Name => $"Enhanced District Services {version}";
         public string Description => "Enhanced District Services mod for Cities Skylines, which allows more granular control of services and supply chains.";
 
@@ -76,6 +76,12 @@ namespace EnhancedDistrictServices
             {
                 UIHelper uiHelper = helper.AddGroup(this.Name) as UIHelper;
                 UIPanel self = uiHelper.self as UIPanel;
+
+                ((UIComponent)uiHelper.AddCheckbox(
+                    "Enable custom vehicles",
+                    Settings.enableCustomVehicles,
+                    b => Settings.enableCustomVehicles.value = b))
+                    .tooltip = "Enable ability to set vehicle types used by service buildings.  Disable to use default game logic or other mods.";
 
                 ((UIComponent)uiHelper.AddCheckbox(
                     "Enable dummy cargo traffic",
