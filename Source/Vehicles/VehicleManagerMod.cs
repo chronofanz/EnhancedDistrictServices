@@ -77,15 +77,18 @@ namespace EnhancedDistrictServices
             {
                 SetBuildingUseDefaultVehicles(building, data.BuildingUseDefaultVehicles[building]);
 
-                foreach (var prefab in data.BuildingToVehicles[building])
+                if (data.BuildingToVehicles[building] != null)
                 {
-                    if (PrefabMapping.TryGetValue(prefab, out int prefabIndex))
+                    foreach (var prefab in data.BuildingToVehicles[building])
                     {
-                        AddCustomVehicle(building, prefabIndex);
-                    }
-                    else
-                    {
-                        Logger.LogWarning($"VehicleManagerMod::LoadData: Could not load vehicle prefab {prefab}!!!");
+                        if (PrefabMapping.TryGetValue(prefab, out int prefabIndex))
+                        {
+                            AddCustomVehicle(building, prefabIndex);
+                        }
+                        else
+                        {
+                            Logger.LogWarning($"VehicleManagerMod::LoadData: Could not load vehicle prefab {prefab}!!!");
+                        }
                     }
                 }
             }
@@ -186,8 +189,11 @@ namespace EnhancedDistrictServices
             var info = BuildingManager.instance.m_buildings.m_buffer[buildingId].Info;
             var service = info.GetService();
             var subService = info.GetSubService();
+            var level = info.GetClassLevel();
 
             // Special handling for player industry ... follows logic in WarehouseAI::GetTransferVehicleService.
+            bool ignoreLevel = false;
+
             if (service == ItemClass.Service.PlayerIndustry)
             {
                 service = ItemClass.Service.Industrial;
@@ -225,6 +231,7 @@ namespace EnhancedDistrictServices
                         break;
                     case TransferManager.TransferReason.LuxuryProducts:
                         service = ItemClass.Service.PlayerIndustry;
+                        ignoreLevel = true;
                         break;
                     default:
                         if (material != TransferManager.TransferReason.Petrol)
@@ -250,7 +257,9 @@ namespace EnhancedDistrictServices
             foreach (var prefabIndex in PrefabNames.Keys)
             {
                 var prefab = PrefabCollection<VehicleInfo>.GetPrefab((uint)prefabIndex);
-                if (prefab.m_class.m_service == service && prefab.m_class.m_subService == subService)
+                if (prefab.m_class.m_service == service && 
+                    prefab.m_class.m_subService == subService && 
+                    (prefab.m_class.m_level == level || ignoreLevel))
                 {
                     yield return prefabIndex;
                 }
