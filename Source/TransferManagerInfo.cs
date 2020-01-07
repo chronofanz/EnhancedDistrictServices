@@ -620,7 +620,9 @@ namespace EnhancedDistrictServices
                     case ItemClass.Service.PublicTransport:
                         return (
                             (Settings.enableSelectOutsideConnection && info.GetAI() is OutsideConnectionAI) ||
+                            (info.GetAI() is CargoStationAI) ||
                             info.GetSubService() == ItemClass.SubService.PublicTransportCableCar ||
+                            info.GetSubService() == ItemClass.SubService.PublicTransportPlane ||
                             info.GetSubService() == ItemClass.SubService.PublicTransportPost ||
                             info.GetSubService() == ItemClass.SubService.PublicTransportTaxi);
 

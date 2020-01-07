@@ -81,6 +81,7 @@ namespace EnhancedDistrictServices
         {
             base.OnDisable();
             EnhancedDistrictServicesUIPanel.Instance?.UIDistrictsDropDown?.ClosePopup();
+            EnhancedDistrictServicesUIPanel.Instance?.UIVehiclesDropDown?.ClosePopup();
             EnhancedDistrictServicesUIPanel.Instance?.Hide();
 
             ToolCursor = null;
@@ -286,7 +287,7 @@ namespace EnhancedDistrictServices
             txtItems.Add(TransferManagerInfo.GetDistrictParkText(building));
 
             // Early return.  Rest of info pertains to building types that we deal with in the mod.
-            if (!TransferManagerInfo.IsDistrictServicesBuilding(building))
+            if (!(TransferManagerInfo.IsDistrictServicesBuilding(building) || TransferManagerInfo.IsCustomVehiclesBuilding(building)))
             {
                 return string.Join("\n", txtItems.ToArray());
             }

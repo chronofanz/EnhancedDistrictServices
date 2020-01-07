@@ -670,6 +670,14 @@ namespace EnhancedDistrictServices
             {
                 UpdateUIInputMode(InputMode.INCOMING);
             }
+            else if ((inputType & InputType.VEHICLES) != InputType.NONE)
+            {
+                UpdateUIInputMode(InputMode.VEHICLES);
+            }
+            else
+            {
+                UpdateUIInputMode(InputMode.GLOBAL);
+            }
         }
 
         private void UpdateUIInputMode(InputMode inputMode)
@@ -1019,6 +1027,8 @@ namespace EnhancedDistrictServices
 
             if (m_currBuildingId == 0 || !(m_inputMode == InputMode.INCOMING || m_inputMode == InputMode.OUTGOING))
             {
+                UIDistrictsSummary.text = string.Empty;
+                UIDistrictsDropDown.triggerButton.tooltip = string.Empty;
                 return;
             }
 
@@ -1181,6 +1191,8 @@ namespace EnhancedDistrictServices
 
             if (m_currBuildingId == 0 || (m_inputMode != InputMode.VEHICLES))
             {
+                UIVehiclesSummary.text = string.Empty;
+                UIVehiclesDropDown.triggerButton.tooltip = string.Empty;
                 return;
             }
 
