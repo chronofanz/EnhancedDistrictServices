@@ -555,7 +555,7 @@ namespace EnhancedDistrictServices
         public void SetBuilding(ushort building)
         {
             Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::SetBuilding: buildingId={building}");
-            if (TransferManagerInfo.IsDistrictServicesBuilding(building))
+            if (TransferManagerInfo.IsDistrictServicesBuilding(building) || TransferManagerInfo.IsCustomVehiclesBuilding(building))
             {
                 m_currBuildingId = building;
             }

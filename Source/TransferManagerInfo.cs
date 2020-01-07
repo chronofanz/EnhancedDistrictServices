@@ -62,13 +62,16 @@ namespace EnhancedDistrictServices
 
             // The only building type for which we will not show an outgoing tab is coal power plants.
             var info = BuildingManager.instance.m_buildings.m_buffer[building].Info;
-            if ((info?.GetService() == ItemClass.Service.Electricity && info?.GetAI() is PowerPlantAI) ||
-                (info?.GetService() == ItemClass.Service.Monument && info?.gameObject?.name == "ChirpX Launch Control Center"))
+            if (TransferManagerInfo.IsDistrictServicesBuilding(building))
             {
-            }
-            else
-            {
-                result |= InputType.OUTGOING;
+                if ((info?.GetService() == ItemClass.Service.Electricity && info?.GetAI() is PowerPlantAI) ||
+                    (info?.GetService() == ItemClass.Service.Monument && info?.gameObject?.name == "ChirpX Launch Control Center"))
+                {
+                }
+                else
+                {
+                    result |= InputType.OUTGOING;
+                }
             }
 
             if (TransferManagerInfo.IsSupplyChainBuilding(building))
@@ -617,6 +620,7 @@ namespace EnhancedDistrictServices
                     case ItemClass.Service.PublicTransport:
                         return (
                             (Settings.enableSelectOutsideConnection && info.GetAI() is OutsideConnectionAI) ||
+                            info.GetSubService() == ItemClass.SubService.PublicTransportCableCar ||
                             info.GetSubService() == ItemClass.SubService.PublicTransportPost ||
                             info.GetSubService() == ItemClass.SubService.PublicTransportTaxi);
 

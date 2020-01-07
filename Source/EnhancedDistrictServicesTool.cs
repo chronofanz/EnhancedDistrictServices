@@ -152,7 +152,7 @@ namespace EnhancedDistrictServices
                 return;
             }
 
-            if (TransferManagerInfo.IsDistrictServicesBuilding(building))
+            if (TransferManagerInfo.IsDistrictServicesBuilding(building) || TransferManagerInfo.IsCustomVehiclesBuilding(building))
             {
                 var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
                 var txt = GetBuildingInfoText(building);
@@ -173,7 +173,7 @@ namespace EnhancedDistrictServices
                 {
                     if (building == 0 || 
                         BuildingManager.instance.m_buildings.m_buffer[building].Info.GetAI() is DummyBuildingAI ||
-                        !TransferManagerInfo.IsDistrictServicesBuilding(building))
+                        !(TransferManagerInfo.IsDistrictServicesBuilding(building) || TransferManagerInfo.IsCustomVehiclesBuilding(building)))
                     {
                         Utils.DisplayMessage(
                             str1: "Enhanced District Services",
@@ -198,7 +198,7 @@ namespace EnhancedDistrictServices
 
                     if (building == 0 ||
                         BuildingManager.instance.m_buildings.m_buffer[building].Info.GetAI() is DummyBuildingAI ||
-                        !TransferManagerInfo.IsDistrictServicesBuilding(building))
+                        !(TransferManagerInfo.IsDistrictServicesBuilding(building) || TransferManagerInfo.IsCustomVehiclesBuilding(building)))
                     {
                         Utils.DisplayMessage(
                             str1: "Enhanced District Services",
@@ -236,7 +236,7 @@ namespace EnhancedDistrictServices
 
                 if (!m_toolController.IsInsideUI && e.type == UnityEngine.EventType.MouseDown && e.button == 0)
                 {
-                    if (!TransferManagerInfo.IsDistrictServicesBuilding(building))
+                    if (!(TransferManagerInfo.IsDistrictServicesBuilding(building) || TransferManagerInfo.IsCustomVehiclesBuilding(building)))
                     {
                         return;
                     }
