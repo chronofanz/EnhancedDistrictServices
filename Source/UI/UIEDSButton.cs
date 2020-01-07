@@ -80,7 +80,7 @@ namespace EnhancedDistrictServices
 
                     Utils.DisplayMessage(
                         str1: "Enhanced District Services",
-                        str2: $"Please check the EDS mod page for latest updates.  Right-click and drag the EDS button to a more convenient location.",
+                        str2: $"Please check the EDS mod page for latest updates.  New option to use custom vehicles for all supported buildings.",
                         str3: "IconMessage");
                 }
 
