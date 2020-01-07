@@ -173,8 +173,8 @@ namespace EnhancedDistrictServices
 
                 foreach (var prefabIndex in VehicleManagerMod.BuildingToVehicles[building])
                 {
-                    var prefab = PrefabCollection<VehicleInfo>.GetPrefab((uint)prefabIndex);
-                    txtItems.Add(prefab.name);
+                    var name = ColossalFramework.Globalization.Locale.Get("VEHICLE_TITLE", PrefabCollection<VehicleInfo>.PrefabName((uint)prefabIndex));
+                    txtItems.Add(name);
                 }
 
                 return string.Join("\n", txtItems.ToArray());

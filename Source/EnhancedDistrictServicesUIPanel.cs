@@ -670,7 +670,7 @@ namespace EnhancedDistrictServices
             {
                 UpdateUIInputMode(InputMode.INCOMING);
             }
-            else if ((inputType & InputType.VEHICLES) != InputType.NONE)
+            else if (Settings.enableCustomVehicles && (inputType & InputType.VEHICLES) != InputType.NONE)
             {
                 UpdateUIInputMode(InputMode.VEHICLES);
             }
@@ -1136,9 +1136,9 @@ namespace EnhancedDistrictServices
 
             foreach (var prefabIndex in VehicleManagerMod.GetPrefabs(m_currBuildingId))
             {
-                var prefab = PrefabCollection<VehicleInfo>.GetPrefab((uint)prefabIndex);
+                var name = ColossalFramework.Globalization.Locale.Get("VEHICLE_TITLE", PrefabCollection<VehicleInfo>.PrefabName((uint)prefabIndex));
 
-                UIVehiclesDropDown.AddItem(prefab.name, isChecked: false);
+                UIVehiclesDropDown.AddItem(name, isChecked: false);
                 m_vehicleMapping.Add(prefabIndex);
             }
 

@@ -94,7 +94,7 @@ namespace EnhancedDistrictServices
         {
             base.OnToolLateUpdate();
 
-            if (enabled == true && ToolCursor == null)
+            if (enabled == true && ToolCursor == null && m_edsCursor != null)
             {
                 ToolCursor = m_edsCursor;
                 Cursor.SetCursor(m_edsCursor.m_texture, m_edsCursor.m_hotspot, CursorMode.Auto);
@@ -297,10 +297,16 @@ namespace EnhancedDistrictServices
 
             if (!TransferManagerInfo.IsSupplyChainBuilding(building))
             {
-                txtItems.Add("");
-                txtItems.Add(TransferManagerInfo.GetOutputDistrictsServedText(building));
+                if (TransferManagerInfo.IsDistrictServicesBuilding(building))
+                {
+                    txtItems.Add("");
+                    txtItems.Add(TransferManagerInfo.GetOutputDistrictsServedText(building));
+                }
 
-                if (Settings.enableCustomVehicles && !VehicleManagerMod.BuildingUseDefaultVehicles[building] && (inputType & InputType.VEHICLES) != InputType.NONE)
+                if (Settings.enableCustomVehicles && 
+                    !VehicleManagerMod.BuildingUseDefaultVehicles[building] &&
+                    VehicleManagerMod.BuildingToVehicles[building] != null &&
+                    (inputType & InputType.VEHICLES) != InputType.NONE)
                 {
                     txtItems.Add("");
                     txtItems.Add(TransferManagerInfo.GetCustomVehiclesText(building));
@@ -324,7 +330,10 @@ namespace EnhancedDistrictServices
                 txtItems.Add(TransferManagerInfo.GetSupplyBuildingDestinationsText(building));
             }
 
-            if (Settings.enableCustomVehicles && !VehicleManagerMod.BuildingUseDefaultVehicles[building] && (inputType & InputType.VEHICLES) != InputType.NONE)
+            if (Settings.enableCustomVehicles &&
+                !VehicleManagerMod.BuildingUseDefaultVehicles[building] &&
+                VehicleManagerMod.BuildingToVehicles[building] != null &&
+                (inputType & InputType.VEHICLES) != InputType.NONE)
             {
                 txtItems.Add("");
                 txtItems.Add(TransferManagerInfo.GetCustomVehiclesText(building));
