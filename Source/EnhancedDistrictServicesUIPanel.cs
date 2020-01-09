@@ -44,6 +44,8 @@ namespace EnhancedDistrictServices
         /// </summary>
         public override void Start()
         {
+            Logger.Log("EnhancedDistrictServicedUIPanel::Start");
+
             base.Start();
 
             UITitle.eventClicked += (c, p) =>
@@ -538,7 +540,7 @@ namespace EnhancedDistrictServices
 
         public override void OnEnable()
         {
-            if (UIDistrictsDropDown == null)
+            if (UIDistrictsDropDown == null || UIVehiclesDropDown == null)
             {
                 return;
             }

@@ -19,8 +19,11 @@ namespace EnhancedDistrictServices.Serialization
 
             if (managers.loading.currentMode == AppMode.Game)
             {
-                try
-                {                    
+                try                
+                {
+                    TaxiMod.ClearTaxiBuildings();
+                    TransferManagerMod.ClearBuildingToBuildingExclusions();
+                    
                     Datav3 data;
 
                     // Always try to load the latest version if possible.

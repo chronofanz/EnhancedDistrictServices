@@ -7,6 +7,11 @@ namespace EnhancedDistrictServices
     {
         private static List<ushort> m_taxiBuildings = new List<ushort>();
 
+        public static void ClearTaxiBuildings()
+        {
+            m_taxiBuildings.Clear();
+        }
+
         public static void RegisterTaxiBuilding(ushort building)
         {
             if (BuildingManager.instance.m_buildings.m_buffer[building].Info?.GetSubService() == ItemClass.SubService.PublicTransportTaxi)

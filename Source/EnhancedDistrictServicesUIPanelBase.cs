@@ -91,11 +91,11 @@ namespace EnhancedDistrictServices
         {
             if (show)
             {
-                component.Show();
+                component?.Show();
             }
             else
             {
-                component.Hide();
+                component?.Hide();
             }
         }
 
