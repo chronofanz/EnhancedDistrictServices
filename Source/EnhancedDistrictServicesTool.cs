@@ -14,7 +14,6 @@ namespace EnhancedDistrictServices
     {
         #region MonoBehavior
 
-        public static UITextureAtlas m_atlas;
         private UIEDSButton m_button;
         private CursorInfo m_edsCursor;
 
@@ -24,11 +23,6 @@ namespace EnhancedDistrictServices
             base.Awake();
 
             name = "EnhancedDistrictServicesTool";
-
-            if (m_atlas == null)
-            {
-                LoadResources();
-            }
 
             if (m_button == null)
             {
@@ -40,7 +34,7 @@ namespace EnhancedDistrictServices
                 m_edsCursor = Utils.FindObject<CursorInfo>("SelfSufficient Placement");
             }
 
-            EnhancedDistrictServicesUIPanel.Create();
+             EnhancedDistrictServicesUIPanel.Create();
 
             BuildingManager.instance.EventBuildingCreated += Constraints.CreateBuilding;
             BuildingManager.instance.EventBuildingCreated += VehicleManagerMod.CreateBuilding;
@@ -255,10 +249,14 @@ namespace EnhancedDistrictServices
                         SimulationManager.instance.AddAction(() =>
                         {
                             var panel = EnhancedDistrictServicesUIPanel.Instance;
-                            panel.SetBuilding(hoverInstance.Building);
-                            panel.UpdatePositionToBuilding(hoverInstance.Building);
-                            panel.UpdatePanelToBuilding(hoverInstance.Building);
-                            panel.opacity = 1f;
+
+                            if (panel != null)
+                            {
+                                panel.SetBuilding(hoverInstance.Building);
+                                panel.UpdatePositionToBuilding(hoverInstance.Building);
+                                panel.UpdatePanelToBuilding(hoverInstance.Building);
+                                panel.opacity = 1f;
+                            }
 
                             Singleton<GuideManager>.instance.m_worldInfoNotUsed.Disable();
                         });
@@ -411,19 +409,5 @@ namespace EnhancedDistrictServices
         }
 
         #endregion
-
-        private void LoadResources()
-        {
-            var spriteNames = new string[]
-            {
-                "EDS",
-                "EDSDisabled",
-                "EDSFocused",
-                "EDSHovered",
-                "EDSPressed"
-            };
-
-            m_atlas = ResourceLoader.CreateTextureAtlas("EDS", spriteNames, "EnhancedDistrictServices.Source.Icons.");
-        }
     }
 }

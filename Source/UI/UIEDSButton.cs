@@ -22,9 +22,9 @@ namespace EnhancedDistrictServices
 
         public override void Start()
         {
-            name = "EDS";
-            atlas = EnhancedDistrictServicesTool.m_atlas;
+            LoadResources();
 
+            name = "EDS";
             tooltip = "Left-click to enable tool.  Right-click to move EDS button.";
 
             normalFgSprite = "EDS";
@@ -145,6 +145,20 @@ namespace EnhancedDistrictServices
             {
                 SimulateClick();
             }
+        }
+
+        private void LoadResources()
+        {
+            var spriteNames = new string[]
+            {
+                "EDS",
+                "EDSDisabled",
+                "EDSFocused",
+                "EDSHovered",
+                "EDSPressed"
+            };
+
+            atlas = ResourceLoader.CreateTextureAtlas("EDS", spriteNames, "EnhancedDistrictServices.Source.Icons.");
         }
     }
 }
