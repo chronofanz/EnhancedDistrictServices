@@ -172,14 +172,17 @@ namespace EnhancedDistrictServices
                 });
             };
 
-            UIVehiclesTab.eventClicked += (c, p) =>
+            if (UIVehiclesTab != null)
             {
-                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIVehiclesTab Clicked");
-                Singleton<SimulationManager>.instance.AddAction(() =>
+                UIVehiclesTab.eventClicked += (c, p) =>
                 {
-                    UpdateUIInputMode(InputMode.VEHICLES);
-                });
-            };
+                    Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIVehiclesTab Clicked");
+                    Singleton<SimulationManager>.instance.AddAction(() =>
+                    {
+                        UpdateUIInputMode(InputMode.VEHICLES);
+                    });
+                };
+            }
 
             UIGlobalTab.eventClicked += (c, p) =>
             {
