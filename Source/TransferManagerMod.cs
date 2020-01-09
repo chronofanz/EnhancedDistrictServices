@@ -280,7 +280,7 @@ namespace EnhancedDistrictServices
                         $"TransferManager::MatchOffersClosest: Searching for match for request={Utils.ToString(ref requestOffer, material)}",
                         material);
 
-                    do
+                    for (int iter2 = 0; iter2 < 5 && requestAmount != 0; iter2++)
                     {
                         int bestResponsePriority = -1;
                         int bestResponseSubIndex = -1;
@@ -311,6 +311,13 @@ namespace EnhancedDistrictServices
                             for (int responseSubIndex = 0; responseSubIndex < responseSubCount; ++responseSubIndex)
                             {
                                 var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
+                                
+                                // Not sure how this could happen, but ...
+                                if (responseOffer.Amount == 0)
+                                {
+                                    continue;
+                                }
+
                                 if (IsSameLocation(ref requestOffer,ref responseOffer))
                                 {
                                     continue;
@@ -413,6 +420,8 @@ namespace EnhancedDistrictServices
                                 var success = StartTransfer(material, requestOffer, responseOffer, delta);
                                 if (!success)
                                 {
+                                    Logger.LogWarning($"TransferManager::MatchOffersClosest: Matched {Utils.ToString(ref requestOffer, material)} to {Utils.ToString(ref responseOffer, material)}, but was unable to start the transfer!!");
+                                    AddBuildingToBuildingExclusion(requestOffer.Building, responseOffer.Building);
                                     continue;
                                 }
                             }
@@ -438,8 +447,7 @@ namespace EnhancedDistrictServices
                         {
                             break;
                         }
-                    }
-                    while (requestAmount != 0);
+                    }                   
 
                     if (requestPriority > 0 && !matched)
                     {
