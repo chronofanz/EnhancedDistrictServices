@@ -294,7 +294,7 @@ namespace EnhancedDistrictServices
 
             int index = r.Int32((uint)BuildingToVehicles[CurrentSourceBuilding].Count);
             var prefab = PrefabCollection<VehicleInfo>.GetPrefab((uint)BuildingToVehicles[CurrentSourceBuilding][index]);
-            Logger.LogVerbose($"VehicleManagerMod::GetRandomVehicleInfo: Selected {prefab.name}");
+            Logger.LogVerbose($"VehicleManagerMod::GetRandomVehicleInfo: Selected {prefab?.name}");
             return prefab;
         }
 
@@ -325,7 +325,7 @@ namespace EnhancedDistrictServices
             }
             */
 
-            var vehicles = BuildingToVehicles[CurrentSourceBuilding].Where(index => PrefabCollection<VehicleInfo>.GetPrefab((uint)index).m_vehicleType == type).ToArray();
+            var vehicles = BuildingToVehicles[CurrentSourceBuilding].Where(index => PrefabCollection<VehicleInfo>.GetPrefab((uint)index)?.m_vehicleType == type).ToArray();
             if (vehicles.Length == 0)
             {
                 return null;
@@ -333,7 +333,7 @@ namespace EnhancedDistrictServices
 
             int index1 = r.Int32((uint)vehicles.Length);
             var prefab = PrefabCollection<VehicleInfo>.GetPrefab((uint)vehicles[index1]);
-            Logger.LogVerbose($"VehicleManagerMod::GetRandomVehicleInfo: Selected {prefab.name}");
+            Logger.LogVerbose($"VehicleManagerMod::GetRandomVehicleInfo: Selected {prefab?.name}");
             return prefab;
         }
     }

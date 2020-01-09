@@ -50,10 +50,15 @@ namespace EnhancedDistrictServices
         public static void AddBuildingToBuildingExclusion(ushort source, ushort target)
         {
             int exclusion = (source << 16) | target;
-            if (!m_buildingToBuildingExclusions.Contains(exclusion))
+            if (!m_buildingToBuildingExclusions.Contains(exclusion) && m_buildingToBuildingExclusions.Count < 64)
             {
                 m_buildingToBuildingExclusions.Add(exclusion);
             }
+        }
+
+        public static void ClearBuildingToBuildingExclusions()
+        {
+            m_buildingToBuildingExclusions.Clear();
         }
 
         public static bool ContainsBuildingToBuildingExclusion(ushort source, ushort target)
@@ -773,7 +778,6 @@ namespace EnhancedDistrictServices
                 if (offerIn.Building != 0 && TransferManagerInfo.IsCustomVehiclesBuilding(offerIn.Building))
                 {
                     VehicleManagerMod.CurrentSourceBuilding = offerIn.Building;
-                    Logger.LogVerbose($"TransferManager::StartTransfer: {Utils.ToString(ref offerIn, material)}");
                 }
 
                 bool active1 = offerIn.Active;

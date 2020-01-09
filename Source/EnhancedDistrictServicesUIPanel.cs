@@ -44,6 +44,8 @@ namespace EnhancedDistrictServices
         /// </summary>
         public override void Start()
         {
+            Logger.Log("EnhancedDistrictServicedUIPanel::Start");
+
             base.Start();
 
             UITitle.eventClicked += (c, p) =>
@@ -170,14 +172,17 @@ namespace EnhancedDistrictServices
                 });
             };
 
-            UIVehiclesTab.eventClicked += (c, p) =>
+            if (UIVehiclesTab != null)
             {
-                Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIVehiclesTab Clicked");
-                Singleton<SimulationManager>.instance.AddAction(() =>
+                UIVehiclesTab.eventClicked += (c, p) =>
                 {
-                    UpdateUIInputMode(InputMode.VEHICLES);
-                });
-            };
+                    Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIVehiclesTab Clicked");
+                    Singleton<SimulationManager>.instance.AddAction(() =>
+                    {
+                        UpdateUIInputMode(InputMode.VEHICLES);
+                    });
+                };
+            }
 
             UIGlobalTab.eventClicked += (c, p) =>
             {
@@ -538,7 +543,7 @@ namespace EnhancedDistrictServices
 
         public override void OnEnable()
         {
-            if (UIDistrictsDropDown == null)
+            if (UIDistrictsDropDown == null || UIVehiclesDropDown == null)
             {
                 return;
             }
