@@ -19,6 +19,7 @@ namespace EnhancedDistrictServices
         private static readonly int[] m_incomingAmount;
 
         private static readonly HashSet<int> m_buildingToBuildingExclusions = new HashSet<int>();
+        private static readonly List<int> m_currentBuildingExclusions = new List<int>();
 
         /// <summary>
         /// Constructor.  Gets references to the array of incoming and outgoing offers from the TransferManager, so 
@@ -280,6 +281,8 @@ namespace EnhancedDistrictServices
                         $"TransferManager::MatchOffersClosest: Searching for match for request={Utils.ToString(ref requestOffer, material)}",
                         material);
 
+                    m_currentBuildingExclusions.Clear();
+
                     for (int iter2 = 0; iter2 < 5 && requestAmount != 0; iter2++)
                     {
                         int bestResponsePriority = -1;
@@ -314,6 +317,11 @@ namespace EnhancedDistrictServices
                                 
                                 // Not sure how this could happen, but ...
                                 if (responseOffer.Amount == 0)
+                                {
+                                    continue;
+                                }
+
+                                if (responseOffer.Building != 0 && m_currentBuildingExclusions.Contains(responseOffer.Building))
                                 {
                                     continue;
                                 }
@@ -421,7 +429,7 @@ namespace EnhancedDistrictServices
                                 if (!success)
                                 {
                                     Logger.LogWarning($"TransferManager::MatchOffersClosest: Matched {Utils.ToString(ref requestOffer, material)} to {Utils.ToString(ref responseOffer, material)}, but was unable to start the transfer!!");
-                                    AddBuildingToBuildingExclusion(requestOffer.Building, responseOffer.Building);
+                                    m_currentBuildingExclusions.Add(responseOffer.Building);
                                     continue;
                                 }
                             }
