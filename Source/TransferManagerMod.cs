@@ -154,6 +154,11 @@ namespace EnhancedDistrictServices
                     return true;
                 }
 
+                if (Settings.enableIndustriesControl == false && TransferManagerInfo.IsSupplyChainOffer(material))
+                {
+                    return false;
+                }
+
                 // Park/Road maintenance, taxis, etc. are switched around ...
                 if (material == TransferManager.TransferReason.ChildCare ||
                     material == TransferManager.TransferReason.ElderCare ||

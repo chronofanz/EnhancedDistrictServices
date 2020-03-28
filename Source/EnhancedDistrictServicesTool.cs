@@ -313,36 +313,39 @@ namespace EnhancedDistrictServices
                 return string.Join("\n", txtItems.ToArray());
             }
 
-            // From this point forth, we know this is a supply chain building ...
-            txtItems.Add($"Supply Reserve: {Constraints.InternalSupplyBuffer(building)}");
-
-            if ((inputType & InputType.INCOMING) != InputType.NONE)
+            if (Settings.enableIndustriesControl)
             {
-                txtItems.Add("");
-                txtItems.Add(TransferManagerInfo.GetSupplyBuildingSourcesText(building));
-            }
+                // From this point forth, we know this is a supply chain building ...
+                txtItems.Add($"Supply Reserve: {Constraints.InternalSupplyBuffer(building)}");
 
-            if ((inputType & InputType.OUTGOING) != InputType.NONE)
-            {
-                txtItems.Add("");
-                txtItems.Add(TransferManagerInfo.GetSupplyBuildingDestinationsText(building));
-            }
+                if ((inputType & InputType.INCOMING) != InputType.NONE)
+                {
+                    txtItems.Add("");
+                    txtItems.Add(TransferManagerInfo.GetSupplyBuildingSourcesText(building));
+                }
 
-            if (Settings.enableCustomVehicles &&
-                !VehicleManagerMod.BuildingUseDefaultVehicles[building] &&
-                VehicleManagerMod.BuildingToVehicles[building] != null &&
-                (inputType & InputType.VEHICLES) != InputType.NONE)
-            {
-                txtItems.Add("");
-                txtItems.Add(TransferManagerInfo.GetCustomVehiclesText(building));
-            }
+                if ((inputType & InputType.OUTGOING) != InputType.NONE)
+                {
+                    txtItems.Add("");
+                    txtItems.Add(TransferManagerInfo.GetSupplyBuildingDestinationsText(building));
+                }
 
-            var problemText = TransferManagerInfo.GetSupplyBuildingProblemsText(building);
-            if (problemText != string.Empty)
-            {
-                txtItems.Add("");
-                txtItems.Add($"<<WARNING: Cannot find the following materials to procure!>>");
-                txtItems.Add(problemText);
+                if (Settings.enableCustomVehicles &&
+                    !VehicleManagerMod.BuildingUseDefaultVehicles[building] &&
+                    VehicleManagerMod.BuildingToVehicles[building] != null &&
+                    (inputType & InputType.VEHICLES) != InputType.NONE)
+                {
+                    txtItems.Add("");
+                    txtItems.Add(TransferManagerInfo.GetCustomVehiclesText(building));
+                }
+
+                var problemText = TransferManagerInfo.GetSupplyBuildingProblemsText(building);
+                if (problemText != string.Empty)
+                {
+                    txtItems.Add("");
+                    txtItems.Add($"<<WARNING: Cannot find the following materials to procure!>>");
+                    txtItems.Add(problemText);
+                }
             }
 
             return string.Join("\n", txtItems.ToArray());

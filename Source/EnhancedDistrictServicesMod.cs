@@ -90,6 +90,12 @@ namespace EnhancedDistrictServices
                     .tooltip = "By default, the base game will generate a little dummy cargo traffic.  Disable this option if you have massive traffic problems emanating from outside connections.";
 
                 ((UIComponent)uiHelper.AddCheckbox(
+                    "Enable ability to customize industries supply chain",
+                    Settings.enableIndustriesControl,
+                    b => Settings.enableIndustriesControl.value = b))
+                    .tooltip = "By default, the mod offers the ability to control your industries supply chain.  Disable this option if you want the base game to control the supply chain.";
+
+                ((UIComponent)uiHelper.AddCheckbox(
                     "Enable legacy ability to select individual outside connections using the tool",
                     Settings.enableSelectOutsideConnection,
                     b => Settings.enableSelectOutsideConnection.value = b))

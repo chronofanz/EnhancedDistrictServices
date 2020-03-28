@@ -68,13 +68,16 @@ namespace EnhancedDistrictServices
                     (info?.GetService() == ItemClass.Service.Monument && info?.gameObject?.name == "ChirpX Launch Control Center"))
                 {
                 }
+                else if (!Settings.enableIndustriesControl && info?.GetService() == ItemClass.Service.PlayerIndustry)
+                {
+                }
                 else
                 {
                     result |= InputType.OUTGOING;
                 }
             }
 
-            if (TransferManagerInfo.IsSupplyChainBuilding(building))
+            if (Settings.enableIndustriesControl && TransferManagerInfo.IsSupplyChainBuilding(building))
             {
                 result |= InputType.SUPPLY_CHAIN;
 

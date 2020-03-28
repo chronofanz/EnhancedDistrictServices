@@ -13,6 +13,7 @@ namespace EnhancedDistrictServices
 
         public static readonly SavedBool enableCustomVehicles = new SavedBool(nameof(enableCustomVehicles), FileName, true, true);
         public static readonly SavedBool enableDummyCargoTraffic = new SavedBool(nameof(enableDummyCargoTraffic), FileName, true, true);
+        public static readonly SavedBool enableIndustriesControl = new SavedBool(nameof(enableIndustriesControl), FileName, true, true);
         public static readonly SavedBool enableSelectOutsideConnection = new SavedBool(nameof(enableSelectOutsideConnection), FileName, false, true);
         public static readonly SavedBool showCampusDistricts = new SavedBool(nameof(showCampusDistricts), FileName, true, true);
         public static readonly SavedBool showIndustryDistricts = new SavedBool(nameof(showIndustryDistricts), FileName, true, true);
