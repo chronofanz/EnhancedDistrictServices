@@ -80,7 +80,7 @@ namespace EnhancedDistrictServices
 
                     Utils.DisplayMessage(
                         str1: "Enhanced District Services",
-                        str2: $"Please check the EDS mod page for latest updates.  New option to use custom vehicles for all supported buildings.",
+                        str2: $"Please check the EDS mod page for latest updates.  Updated for Sunset Harbor.  Supports Garbage Transfers, Child and Elder Care.",
                         str3: "IconMessage");
                 }
 

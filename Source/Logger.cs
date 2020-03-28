@@ -57,13 +57,13 @@ namespace EnhancedDistrictServices
         /// Logs the message only if the dll was compiled with "VERBOSE" and the material is the one we want to examine.
         /// </summary>
         /// <param name="msg"></param>
-        /// <param name="logIf"></param>
         [Conditional("VERBOSE")]
         public static void LogMaterial(string msg, TransferManager.TransferReason material)
         {
             if (material == TransferManager.TransferReason.None)
             {
                 m_instance.WriteLine(msg);
+                // m_instance.WriteLine(System.Environment.StackTrace);
             }
         }
 

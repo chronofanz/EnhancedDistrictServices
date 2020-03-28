@@ -190,11 +190,26 @@ namespace EnhancedDistrictServices
             var service = info.GetService();
             var subService = info.GetSubService();
             var level = info.GetClassLevel();
+            var service2 = info.GetService();
+            var subService2 = ItemClass.SubService.None;
+            var level2 = ItemClass.Level.None;
 
             // Special handling for player industry ... follows logic in WarehouseAI::GetTransferVehicleService.
             bool ignoreLevel = false;
 
-            if (service == ItemClass.Service.PlayerIndustry)
+            if (info.GetAI() is PostOfficeAI)
+            {
+                ignoreLevel = true;
+            }
+            else if (info.GetAI() is CargoStationAI cargoStationAI)
+            {
+                if (cargoStationAI.m_transportInfo != null && cargoStationAI.m_transportInfo.m_netSubService == ItemClass.SubService.PublicTransportTrain)
+                {
+                    subService2 = ItemClass.SubService.PublicTransportTrain;
+                    level2 = ItemClass.Level.Level4;
+                }
+            }
+            else if (service == ItemClass.Service.PlayerIndustry)
             {
                 service = ItemClass.Service.Industrial;
                 subService = ItemClass.SubService.None;
@@ -257,9 +272,15 @@ namespace EnhancedDistrictServices
             foreach (var prefabIndex in PrefabNames.Keys)
             {
                 var prefab = PrefabCollection<VehicleInfo>.GetPrefab((uint)prefabIndex);
-                if (prefab.m_class.m_service == service && 
-                    prefab.m_class.m_subService == subService && 
+                if (prefab.m_class.m_service == service &&
+                    prefab.m_class.m_subService == subService &&
                     (prefab.m_class.m_level == level || ignoreLevel))
+                {
+                    yield return prefabIndex;
+                }
+                else if (prefab.m_class.m_service == service2 &&
+                         prefab.m_class.m_subService == subService2 &&
+                         prefab.m_class.m_level == level2)
                 {
                     yield return prefabIndex;
                 }
@@ -294,7 +315,6 @@ namespace EnhancedDistrictServices
 
             int index = r.Int32((uint)BuildingToVehicles[CurrentSourceBuilding].Count);
             var prefab = PrefabCollection<VehicleInfo>.GetPrefab((uint)BuildingToVehicles[CurrentSourceBuilding][index]);
-            Logger.LogVerbose($"VehicleManagerMod::GetRandomVehicleInfo: Selected {prefab?.name}");
             return prefab;
         }
 
@@ -333,7 +353,6 @@ namespace EnhancedDistrictServices
 
             int index1 = r.Int32((uint)vehicles.Length);
             var prefab = PrefabCollection<VehicleInfo>.GetPrefab((uint)vehicles[index1]);
-            Logger.LogVerbose($"VehicleManagerMod::GetRandomVehicleInfo: Selected {prefab?.name}");
             return prefab;
         }
     }

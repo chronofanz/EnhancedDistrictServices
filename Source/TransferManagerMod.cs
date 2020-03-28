@@ -154,8 +154,10 @@ namespace EnhancedDistrictServices
                     return true;
                 }
 
-                // Park/Road maintenance and taxis are switched around ...
-                if (material == TransferManager.TransferReason.ParkMaintenance ||
+                // Park/Road maintenance, taxis, etc. are switched around ...
+                if (material == TransferManager.TransferReason.ChildCare ||
+                    material == TransferManager.TransferReason.ElderCare ||
+                    material == TransferManager.TransferReason.ParkMaintenance ||
                     material == TransferManager.TransferReason.RoadMaintenance || 
                     material == TransferManager.TransferReason.Taxi)
                 {
@@ -459,6 +461,9 @@ namespace EnhancedDistrictServices
 
                     if (requestPriority > 0 && !matched)
                     {
+                        Logger.LogMaterial(
+                            $"TransferManager::MatchOffersClosest: Failed to match {Utils.ToString(ref requestOffer, material)}",
+                            material);
                         matchesMissed++;
                     }
                 }

@@ -608,7 +608,9 @@ namespace EnhancedDistrictServices
                     case ItemClass.Service.HealthCare:
                     case ItemClass.Service.PoliceDepartment:
                         return !(
+                            info.GetAI() is ChildcareAI ||
                             info.GetAI() is DummyBuildingAI ||
+                            info.GetAI() is EldercareAI ||
                             info.GetAI() is SaunaAI);
 
                     case ItemClass.Service.PlayerIndustry:
@@ -835,6 +837,7 @@ namespace EnhancedDistrictServices
                 material == TransferManager.TransferReason.Dead ||
                 material == TransferManager.TransferReason.Fire ||
                 material == TransferManager.TransferReason.Mail ||
+                material == TransferManager.TransferReason.GarbageTransfer ||
 
                 material == TransferManager.TransferReason.ParkMaintenance ||
                 material == TransferManager.TransferReason.RoadMaintenance ||
@@ -855,6 +858,8 @@ namespace EnhancedDistrictServices
                 material == TransferManager.TransferReason.EvacuateVipC ||
                 material == TransferManager.TransferReason.EvacuateVipD ||
 
+                material == TransferManager.TransferReason.ChildCare ||
+                material == TransferManager.TransferReason.ElderCare ||
                 material == TransferManager.TransferReason.Student1 ||
                 material == TransferManager.TransferReason.Student2 ||
                 material == TransferManager.TransferReason.Taxi ||

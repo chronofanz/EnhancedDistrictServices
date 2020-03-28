@@ -54,6 +54,12 @@ namespace EnhancedDistrictServices
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)        
         {
+            // Filter out these offers ... a bug in the base game.  Citizens should not offer health care services.
+            if (material == TransferManager.TransferReason.ElderCare && offer.Citizen != 0)
+            {
+                return false;
+            }
+
             if (!(TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material)))
             {
                 // Fix for certain assets that have sub buildings that should not be making offers ...

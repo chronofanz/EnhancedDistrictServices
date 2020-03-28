@@ -1218,7 +1218,8 @@ namespace EnhancedDistrictServices
             else if (count == 1)
             {
                 var prefabIndex = VehicleManagerMod.BuildingToVehicles[m_currBuildingId][0];
-                UIVehiclesDropDown.triggerButton.tooltip = VehicleManagerMod.PrefabNames[prefabIndex];
+                var prefabName = ColossalFramework.Globalization.Locale.Get("VEHICLE_TITLE", PrefabCollection<VehicleInfo>.PrefabName((uint)prefabIndex));
+                UIVehiclesDropDown.triggerButton.tooltip = prefabName;
             }
             else
             {
