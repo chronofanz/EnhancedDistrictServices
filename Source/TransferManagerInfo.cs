@@ -696,6 +696,11 @@ namespace EnhancedDistrictServices
                             info.GetSubService() == ItemClass.SubService.PlayerEducationTradeSchool ||
                             info.GetSubService() == ItemClass.SubService.PlayerEducationUniversity);
 
+                    case ItemClass.Service.Fishing:
+                        return (
+                            info.GetAI() is FishFarmAI ||
+                            info.GetAI() is FishingHarborAI);
+
                     case ItemClass.Service.PlayerIndustry:
                         return !(
                             info.GetAI() is AuxiliaryBuildingAI ||
@@ -867,6 +872,7 @@ namespace EnhancedDistrictServices
                 material == TransferManager.TransferReason.Student2 ||
                 material == TransferManager.TransferReason.Taxi ||
 
+                material == TransferManager.TransferReason.Fish ||
                 material == TransferManager.TransferReason.UnsortedMail;
         }
 

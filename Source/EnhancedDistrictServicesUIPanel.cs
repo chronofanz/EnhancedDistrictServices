@@ -702,10 +702,18 @@ namespace EnhancedDistrictServices
                     AddTabContainerRow();
                     AddElementToTabContainerRow(UIAllLocalAreasCheckBox);
 
-                    if (TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
+                    var info = BuildingManager.instance.m_buildings.m_buffer[m_currBuildingId].Info;
+                    if (TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId) || info.GetAI() is FishFarmAI || info.GetAI() is FishingHarborAI)
                     {
                         AddElementToTabContainerRow(UIAllOutsideConnectionsCheckBox);
+                    }
+                    else
+                    {
+                        ShowComponent(UIAllOutsideConnectionsCheckBox, false);
+                    }
 
+                    if (TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
+                    {
                         AddTabContainerRow();
                         AddElementToTabContainerRow(UISupplyReserve);
                         AddElementToTabContainerRow(UISupplyReserveLabel);
@@ -716,7 +724,6 @@ namespace EnhancedDistrictServices
                     }
                     else
                     {
-                        ShowComponent(UIAllOutsideConnectionsCheckBox, false);
                         ShowComponent(UISupplyReserve, false);
                         ShowComponent(UISupplyReserveLabel, false);
                         ShowComponent(UISupplyChain, false);
@@ -867,7 +874,13 @@ namespace EnhancedDistrictServices
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIAllOutsideConnectionsCheckBox Update");
 
-            if (m_currBuildingId == 0 || !(m_inputMode == InputMode.INCOMING || m_inputMode == InputMode.OUTGOING) || !TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId))
+            if (m_currBuildingId == 0 || !(m_inputMode == InputMode.INCOMING || m_inputMode == InputMode.OUTGOING))
+            {
+                return;
+            }
+
+            var info = BuildingManager.instance.m_buildings.m_buffer[m_currBuildingId].Info;
+            if (!(TransferManagerInfo.IsSupplyChainBuilding(m_currBuildingId) || info.GetAI() is FishFarmAI || info.GetAI() is FishingHarborAI))
             {
                 return;
             }

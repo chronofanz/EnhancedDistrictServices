@@ -207,6 +207,13 @@ namespace EnhancedDistrictServices
             SetAllInputOutsideConnections(buildingId, true);
             m_inputBuildingToDistrictParkServiced[buildingId] = null;
 
+            // Do not set the home district for these types of buildings.
+            if (ai is ChildcareAI || ai is EldercareAI)
+            {
+                homeDistrict = 0;
+                homePark = 0;
+            }
+
             // Serve all areas if the building doesn't belong to any district or park.
             SetAllOutputLocalAreas(buildingId, homeDistrict == 0 && homePark == 0);
             SetAllOutputOutsideConnections(buildingId, homeDistrict == 0 && homePark == 0);

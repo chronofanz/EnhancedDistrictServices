@@ -184,8 +184,9 @@ namespace EnhancedDistrictServices
                         requestCount: m_outgoingCount, requestOffers: m_outgoingOffers,
                         requestPriorityMax: 7, requestPriorityMin: 1,
                         responseCount: m_incomingCount, responseOffers: m_incomingOffers,
-                        responsePriorityMax: 7, responsePriorityMin: 1,
-                        matchFilter: IsValidDistrictOffer);
+                        responsePriorityMax: 7, responsePriorityMin: 0,
+                        matchFilter: IsValidDistrictOffer,
+                        maxMatchesOutside: 1);
 
                     Clear(material);
                     return true;

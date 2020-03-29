@@ -9,6 +9,8 @@ namespace EnhancedDistrictServices
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
+            Logger.LogMaterial($"TransferManager::AddIncomingOffer: {Utils.ToString(ref offer, material)}!", material);
+
             if (!(TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material)))
             {
                 // Fix for certain assets that have sub buildings that should not be making offers ...
@@ -42,7 +44,6 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            Logger.LogMaterial($"TransferManager::AddIncomingOffer: {Utils.ToString(ref offer, material)}!", material);
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
             return true;
         }
@@ -52,12 +53,14 @@ namespace EnhancedDistrictServices
     [HarmonyPatch("AddOutgoingOffer")]
     public class TransferManagerAddOutgoingOfferPatch
     {
-        public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)        
+        public static bool Prefix(ref TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)        
         {
+            Logger.LogMaterial($"TransferManager::AddOutgoingOffer: {Utils.ToString(ref offer, material)}!", material);
+
             // Filter out these offers ... a bug in the base game.  Citizens should not offer health care services.
-            if (material == TransferManager.TransferReason.ElderCare && offer.Citizen != 0)
+            if ((material == TransferManager.TransferReason.ElderCare || material == TransferManager.TransferReason.ChildCare) && offer.Citizen != 0)
             {
-                return false;
+                material = TransferManager.TransferReason.Sick;
             }
 
             if (!(TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material)))
@@ -75,7 +78,6 @@ namespace EnhancedDistrictServices
                 return true;
             }
 
-            Logger.LogMaterial($"TransferManager::AddOutgoingOffer: {Utils.ToString(ref offer, material)}!", material);
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
             return true;
         }
