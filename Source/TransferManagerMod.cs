@@ -162,6 +162,7 @@ namespace EnhancedDistrictServices
                 // Park/Road maintenance, taxis, etc. are switched around ...
                 if (material == TransferManager.TransferReason.ChildCare ||
                     material == TransferManager.TransferReason.ElderCare ||
+                    material == TransferManager.TransferReason.Fish ||
                     material == TransferManager.TransferReason.ParkMaintenance ||
                     material == TransferManager.TransferReason.RoadMaintenance || 
                     material == TransferManager.TransferReason.Taxi)
@@ -171,8 +172,9 @@ namespace EnhancedDistrictServices
                         requestCount: m_incomingCount, requestOffers: m_incomingOffers,
                         requestPriorityMax: 7, requestPriorityMin: 1,
                         responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
-                        responsePriorityMax: 7, responsePriorityMin: 1,
-                        matchFilter: IsValidDistrictOffer);
+                        responsePriorityMax: 7, responsePriorityMin: 0,
+                        matchFilter: IsValidDistrictOffer,
+                        maxMatchesOutside: 1);
 
                     Clear(material);
                     return true;
@@ -184,7 +186,7 @@ namespace EnhancedDistrictServices
                         requestCount: m_outgoingCount, requestOffers: m_outgoingOffers,
                         requestPriorityMax: 7, requestPriorityMin: 1,
                         responseCount: m_incomingCount, responseOffers: m_incomingOffers,
-                        responsePriorityMax: 7, responsePriorityMin: 0,
+                        responsePriorityMax: 7, responsePriorityMin: 1,
                         matchFilter: IsValidDistrictOffer,
                         maxMatchesOutside: 1);
 
@@ -833,6 +835,13 @@ namespace EnhancedDistrictServices
                     if (citizenInfo == null)
                         return false;
                     offerOut.Amount = delta;
+
+                    // Workaround a bug in ResidentAI.StartTransfer
+                    if (material == TransferManager.TransferReason.ChildCare || material == TransferManager.TransferReason.ElderCare)
+                    {
+                        citizens.m_buffer[citizen].Sick = false;
+                    }
+
                     citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerOut);
                 }
                 else if (active2 && (int)offerOut.Citizen != 0)
@@ -843,6 +852,13 @@ namespace EnhancedDistrictServices
                     if (citizenInfo == null)
                         return false;
                     offerIn.Amount = delta;
+
+                    // Workaround a bug in ResidentAI.StartTransfer
+                    if (material == TransferManager.TransferReason.ChildCare || material == TransferManager.TransferReason.ElderCare)
+                    {
+                        citizens.m_buffer[citizen].Sick = false;
+                    }
+
                     citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerIn);
                 }
                 else if (active2 && offerOut.Building != 0)

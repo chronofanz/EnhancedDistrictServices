@@ -1,4 +1,5 @@
-﻿using Harmony;
+﻿using ColossalFramework;
+using Harmony;
 using UnityEngine;
 
 namespace EnhancedDistrictServices
@@ -57,10 +58,21 @@ namespace EnhancedDistrictServices
         {
             Logger.LogMaterial($"TransferManager::AddOutgoingOffer: {Utils.ToString(ref offer, material)}!", material);
 
-            // Filter out these offers ... a bug in the base game.  Citizens should not offer health care services.
+            // Change these offers ... a bug in the base game.  Citizens should not offer health care services.
             if ((material == TransferManager.TransferReason.ElderCare || material == TransferManager.TransferReason.ChildCare) && offer.Citizen != 0)
             {
-                material = TransferManager.TransferReason.Sick;
+                offer.Active = true;
+                TransferManager.instance.AddIncomingOffer(material, offer);
+                return false;
+            }
+
+            // Too many requests for helicopters ... 
+            if (material == TransferManager.TransferReason.Sick2)
+            {
+                if (Singleton<SimulationManager>.instance.m_randomizer.Int32(10U) != 0)
+                {
+                    material = TransferManager.TransferReason.Sick;
+                }                
             }
 
             if (!(TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material)))

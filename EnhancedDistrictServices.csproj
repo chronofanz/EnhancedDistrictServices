@@ -69,6 +69,7 @@
     <Compile Include="Source\Patches\CarAIPathfindFailurePatch.cs" />
     <Compile Include="Source\Patches\CargoTruckAIChangeVehicleTypePatch.cs" />
     <Compile Include="Source\Patches\DistrictManagerReleaseDistrictPatch.cs" />
+    <Compile Include="Source\Patches\HumanAIStartMovingPatch.cs" />
     <Compile Include="Source\Patches\TransportStationAICreateVehiclePatch.cs" />
     <Compile Include="Source\Patches\VehicleManagerGetRandomVehicleInfoPatch.cs" />
     <Compile Include="Source\Serialization\Datav3.cs" />
