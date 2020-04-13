@@ -306,12 +306,6 @@ namespace EnhancedDistrictServices
                                 break;
                             }
 
-                            // Do not match lowest priority to lowest priority.
-                            if (requestPriority == 1 && responsePriority == 1)
-                            {
-                                break;
-                            }
-
                             // Do not match to outside offer if we can match locally.
                             if (bestResponsePriority != -1 && responsePriority == 0)
                             {
@@ -425,22 +419,24 @@ namespace EnhancedDistrictServices
                             int delta = Mathf.Min(requestAmount, responseAmount);
                             if (delta != 0)
                             {
-                                matched = true;
-                                if (requestPriority == 0 || bestResponsePriority == 0)
-                                {
-                                    matchesOutside++;
-                                }
-                                else
-                                {
-                                    matchesInside++;
-                                }
-
                                 var success = StartTransfer(material, requestOffer, responseOffer, delta);
                                 if (!success)
                                 {
                                     Logger.LogWarning($"TransferManager::MatchOffersClosest: Matched {Utils.ToString(ref requestOffer, material)} to {Utils.ToString(ref responseOffer, material)}, but was unable to start the transfer!!");
                                     m_currentBuildingExclusions.Add(responseOffer.Building);
                                     continue;
+                                }
+
+                                matched = true;
+                                if (requestPriority == 0 || bestResponsePriority == 0)
+                                {
+                                    // Only record matches to outside connections for now ...
+                                    TransferHistory.RecordMatch(material, requestOffer.Building, responseOffer.Building);
+                                    matchesOutside++;
+                                }
+                                else
+                                {
+                                    matchesInside++;
                                 }
                             }
 
@@ -501,6 +497,48 @@ namespace EnhancedDistrictServices
 
             m_incomingAmount[(int)material] = 0;
             m_outgoingAmount[(int)material] = 0;
+        }
+
+        private static bool IsSameLocation(
+            ref TransferManager.TransferOffer requestOffer,
+            ref TransferManager.TransferOffer responseOffer)
+        {
+            if (requestOffer.m_object == responseOffer.m_object)
+            {
+                return true;
+            }
+
+            var requestHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
+            var responseHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
+            if (requestHomeBuilding == responseHomeBuilding)
+            {
+                return true;
+            }
+
+            // Don't match a guest vehicle to its host building.  For instance, Taxi stands.
+            if (responseOffer.Vehicle != 0 && BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_guestVehicles != 0)
+            {
+                var vehicleID = BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_guestVehicles;
+                int num = 0;
+                while (vehicleID != 0)
+                {
+                    if (responseOffer.Vehicle == vehicleID)
+                    {
+                        return true;
+                    }
+
+                    vehicleID = VehicleManager.instance.m_vehicles.m_buffer[vehicleID].m_nextGuestVehicle;
+                    ++num;
+
+                    if (++num > 16384)
+                    {
+                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                        break;
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -645,48 +683,6 @@ namespace EnhancedDistrictServices
             return false;
         }
 
-        private static bool IsSameLocation(
-            ref TransferManager.TransferOffer requestOffer,
-            ref TransferManager.TransferOffer responseOffer)
-        {
-            if (requestOffer.m_object == responseOffer.m_object)
-            {
-                return true;
-            }
-
-            var requestHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
-            var responseHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
-            if (requestHomeBuilding == responseHomeBuilding)
-            {
-                return true;
-            }
-
-            // Don't match a guest vehicle to its host building.  For instance, Taxi stands.
-            if (responseOffer.Vehicle != 0 && BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_guestVehicles != 0)
-            {
-                var vehicleID = BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_guestVehicles;
-                int num = 0;
-                while (vehicleID != 0)
-                {
-                    if (responseOffer.Vehicle == vehicleID)
-                    {
-                        return true;
-                    }
-
-                    vehicleID = VehicleManager.instance.m_vehicles.m_buffer[vehicleID].m_nextGuestVehicle;
-                    ++num;
-
-                    if (++num > 16384)
-                    {
-                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
-                        break;
-                    }
-                }
-            }
-
-            return false;
-        }
-
         /// <summary>
         /// Returns true if we can potentially match the two given offers.
         /// </summary>
@@ -720,7 +716,7 @@ namespace EnhancedDistrictServices
             if (responseBuilding != 0 && BuildingManager.instance.m_buildings.m_buffer[responseBuilding].Info.GetAI() is LandfillSiteAI)
             {
                 Logger.LogMaterial(
-                    $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, allow recycling centers",
+                    $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, allow recycling centers",
                     material);
                 return true;
             }
