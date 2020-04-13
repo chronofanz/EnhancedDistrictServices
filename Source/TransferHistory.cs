@@ -25,7 +25,7 @@ namespace EnhancedDistrictServices
             /// <summary>
             /// After this time period in days, TransferEvents are purged.
             /// </summary>
-            public const int MAX_TTL = 60;
+            public const int MAX_TTL = 45;
 
             /// <summary>
             /// Principles: 
@@ -71,14 +71,9 @@ namespace EnhancedDistrictServices
                 var maxConcurrentOrderCount = Math.Ceiling(Constraints.GlobalOutsideConnectionIntensity() / 10.0);
                 var maxConcurrentOrderCountToResponseBuilding = Math.Ceiling(Constraints.GlobalOutsideConnectionIntensity() / 20.0);
 
-                if (isRequestBuildingOutside)
+                if (isRequestBuildingOutside && TransferManagerInfo.IsOutsideRoadConnection(requestBuilding))
                 {
-                    maxConcurrentOrderCount *= 2;
-
-                    if (isResponseBuildingOutside)
-                    {
-                        maxConcurrentOrderCountToResponseBuilding /= 2;
-                    }                
+                    maxConcurrentOrderCount *= 6;
                 }
 
                 return

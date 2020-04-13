@@ -161,7 +161,6 @@ namespace EnhancedDistrictServices
                 // Park/Road maintenance, taxis, etc. are switched around ...
                 if (material == TransferManager.TransferReason.ChildCare ||
                     material == TransferManager.TransferReason.ElderCare ||
-                    material == TransferManager.TransferReason.Fish ||
                     material == TransferManager.TransferReason.ParkMaintenance ||
                     material == TransferManager.TransferReason.RoadMaintenance || 
                     material == TransferManager.TransferReason.Taxi)
@@ -173,6 +172,19 @@ namespace EnhancedDistrictServices
                         responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
                         responsePriorityMax: 7, responsePriorityMin: 0,
                         matchFilter: IsValidDistrictOffer);
+
+                    Clear(material);
+                    return true;
+                }
+                else if (material == TransferManager.TransferReason.Fish)
+                {
+                    MatchOffersClosest(
+                        material,
+                        requestCount: m_incomingCount, requestOffers: m_incomingOffers,
+                        requestPriorityMax: 7, requestPriorityMin: 1,
+                        responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
+                        responsePriorityMax: 7, responsePriorityMin: 0,
+                        matchFilter: IsValidSupplyChainOffer);
 
                     Clear(material);
                     return true;
@@ -730,7 +742,12 @@ namespace EnhancedDistrictServices
             {
                 if (TransferManagerInfo.IsOutsideOffer(ref responseOffer))
                 {
-                    return true;
+                    if (TransferManagerInfo.IsOutsideRoadConnection(requestOffer.Building) && TransferManagerInfo.IsOutsideRoadConnection(responseOffer.Building))
+                    {
+                        // Prevent matching roads that are too close together ...
+                        var distanceSquared = Vector3.SqrMagnitude(responseOffer.Position - requestOffer.Position);
+                        return distanceSquared > 100;
+                    }
                 }
                 else if (TransferManagerInfo.GetSupplyBuildingAmount(responseBuilding) > Constraints.InternalSupplyBuffer(responseBuilding))
                 {
