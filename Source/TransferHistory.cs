@@ -10,6 +10,7 @@ namespace EnhancedDistrictServices
     /// </summary>
     public static class TransferHistory
     {
+        [Serializable]
         public class TransferEvent
         {
             public ushort RequestBuilding { get; set; }
