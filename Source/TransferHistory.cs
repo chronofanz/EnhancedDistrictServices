@@ -25,7 +25,7 @@ namespace EnhancedDistrictServices
             /// <summary>
             /// After this time period in days, TransferEvents are purged.
             /// </summary>
-            public const int MAX_TTL = 45;
+            public const int MAX_TTL = 30;
 
             /// <summary>
             /// Principles: 
@@ -38,8 +38,6 @@ namespace EnhancedDistrictServices
             /// <returns></returns>
             public bool IsRestricted(TransferManager.TransferReason material, ushort requestBuilding, ushort responseBuilding)
             {
-                var timestamp = Singleton<SimulationManager>.instance.m_currentGameTime;
-
                 if (!Events.TryGetValue(requestBuilding, out var list))
                 {
                     return false;
@@ -53,32 +51,50 @@ namespace EnhancedDistrictServices
                     return true;
                 }
 
-                var expiry = timestamp.AddDays(-MaterialEvents.MAX_TTL);
-                var concurrentOrderCount = 0;
+                var concurrentOrderCount = list.Count;
+
                 var concurrentOrderCountToResponseBuilding = 0;
                 for (int i = 0; i < list.Count; i++)
                 {
-                    if (list[i].TimeStamp >= expiry)
+                    if (list[i].ResponseBuilding == responseBuilding)
                     {
-                        concurrentOrderCount++;
-                        if (list[i].ResponseBuilding == responseBuilding)
-                        {
-                            concurrentOrderCountToResponseBuilding++;
-                        }
+                        concurrentOrderCountToResponseBuilding++;
                     }
                 }
 
                 var maxConcurrentOrderCount = Math.Ceiling(Constraints.GlobalOutsideConnectionIntensity() / 10.0);
-                var maxConcurrentOrderCountToResponseBuilding = Math.Ceiling(Constraints.GlobalOutsideConnectionIntensity() / 20.0);
-
                 if (isRequestBuildingOutside && TransferManagerInfo.IsOutsideRoadConnection(requestBuilding))
                 {
-                    maxConcurrentOrderCount *= 6;
+                    maxConcurrentOrderCount *= 4;
                 }
 
-                return
-                    (concurrentOrderCount > maxConcurrentOrderCount) ||
-                    (concurrentOrderCountToResponseBuilding > maxConcurrentOrderCountToResponseBuilding);
+                var maxConcurrentOrderCountToResponseBuilding = Math.Ceiling(Constraints.GlobalOutsideConnectionIntensity() / 20.0);
+
+                bool isRestrictedConcurrent = concurrentOrderCount >= maxConcurrentOrderCount;
+                bool isRestrictedConcurrentToBuilding = concurrentOrderCountToResponseBuilding >= maxConcurrentOrderCountToResponseBuilding;
+
+                return isRestrictedConcurrent || isRestrictedConcurrentToBuilding;
+            }
+
+            public void PurgeOldEvents()
+            {
+                var timestamp = Singleton<SimulationManager>.instance.m_currentGameTime;
+                var expiry = timestamp.AddDays(-MaterialEvents.MAX_TTL);
+
+                foreach (var list in Events.Values)
+                {
+                    for (int i = 0; i < list.Count;)
+                    {
+                        if (list[i].TimeStamp < expiry)
+                        {
+                            list.RemoveAt(i);
+                        }
+                        else
+                        {
+                            i++;
+                        }
+                    }
+                }
             }
         }
 
@@ -136,14 +152,20 @@ namespace EnhancedDistrictServices
                 materialEvents.IsRestricted(material, requestBuilding, responseBuilding) ||
                 materialEvents.IsRestricted(material, responseBuilding, requestBuilding);
 
-            /*
             if (isRestricted)
             {
-                Logger.Log($"{material} match disallowed: B{requestBuilding} to B{responseBuilding}");
+                Logger.LogMaterial($"{material} match disallowed: B{requestBuilding} to B{responseBuilding}", material);
             }
-            */
 
             return isRestricted;
+        }
+
+        public static void PurgeOldEvents(TransferManager.TransferReason material)
+        {
+            if (m_data.TryGetValue(material, out var materialEvents))
+            {
+                materialEvents.PurgeOldEvents();
+            }
         }
 
         public static void RecordMatch(TransferManager.TransferReason material, ushort requestBuilding, ushort responseBuilding)
@@ -155,8 +177,6 @@ namespace EnhancedDistrictServices
             }
 
             var timestamp = Singleton<SimulationManager>.instance.m_currentGameTime;
-
-            // Logger.Log($"{material} match: B{requestBuilding} to B{responseBuilding} @ {timestamp}");
 
             Add(requestBuilding, responseBuilding, material, timestamp);
             Add(responseBuilding, requestBuilding, material, timestamp);
@@ -172,20 +192,6 @@ namespace EnhancedDistrictServices
             if (!materialEvents.Events.TryGetValue(requestBuilding, out var list))
             {
                 list = materialEvents.Events[requestBuilding] = new List<TransferEvent>();
-            }
-
-            // First purge old events
-            var expiry = timestamp.AddDays(-MaterialEvents.MAX_TTL);
-            for (int i = 0; i < list.Count;)
-            {
-                if (list[i].TimeStamp < expiry)
-                {
-                    list.RemoveAt(i);
-                }
-                else
-                {
-                    break;
-                }
             }
 
             list.Add(new TransferEvent

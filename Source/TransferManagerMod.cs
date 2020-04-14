@@ -170,7 +170,7 @@ namespace EnhancedDistrictServices
                         requestCount: m_incomingCount, requestOffers: m_incomingOffers,
                         requestPriorityMax: 7, requestPriorityMin: 1,
                         responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
-                        responsePriorityMax: 7, responsePriorityMin: 0,
+                        responsePriorityMax: 7, responsePriorityMin: 1,
                         matchFilter: IsValidDistrictOffer);
 
                     Clear(material);
@@ -183,8 +183,16 @@ namespace EnhancedDistrictServices
                         requestCount: m_incomingCount, requestOffers: m_incomingOffers,
                         requestPriorityMax: 7, requestPriorityMin: 1,
                         responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
-                        responsePriorityMax: 7, responsePriorityMin: 0,
+                        responsePriorityMax: 7, responsePriorityMin: 1,
                         matchFilter: IsValidSupplyChainOffer);
+
+                    MatchOffersClosest(
+                        material,
+                        requestCount: m_incomingCount, requestOffers: m_incomingOffers,
+                        requestPriorityMax: 0, requestPriorityMin: 0,
+                        responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
+                        responsePriorityMax: 7, responsePriorityMin: 1,
+                        matchFilter: IsValidLowPriorityOffer);
 
                     Clear(material);
                     return true;
@@ -264,6 +272,8 @@ namespace EnhancedDistrictServices
             int matchesMissed = 0;
             int matchesOutside = 0;
             int matchesInside = 0;
+
+            TransferHistory.PurgeOldEvents(material);
 
             // We already previously patched the offers so that priority >= 1 correspond to local offers and priority == 0 correspond to outside offers.
             for (int requestPriority = requestPriorityMax; requestPriority >= requestPriorityMin; --requestPriority)
@@ -742,12 +752,9 @@ namespace EnhancedDistrictServices
             {
                 if (TransferManagerInfo.IsOutsideOffer(ref responseOffer))
                 {
-                    if (TransferManagerInfo.IsOutsideRoadConnection(requestOffer.Building) && TransferManagerInfo.IsOutsideRoadConnection(responseOffer.Building))
-                    {
-                        // Prevent matching roads that are too close together ...
-                        var distanceSquared = Vector3.SqrMagnitude(responseOffer.Position - requestOffer.Position);
-                        return distanceSquared > 100;
-                    }
+                    // Prevent matching roads that are too close together ...
+                    var distanceSquared = Vector3.SqrMagnitude(responseOffer.Position - requestOffer.Position);
+                    return distanceSquared > 100000;
                 }
                 else if (TransferManagerInfo.GetSupplyBuildingAmount(responseBuilding) > Constraints.InternalSupplyBuffer(responseBuilding))
                 {
