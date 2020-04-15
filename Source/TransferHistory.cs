@@ -30,7 +30,7 @@ namespace EnhancedDistrictServices
 
             /// <summary>
             /// Principles: 
-            ///   1) max concurrent orders per building per type is capped per 30 day period
+            ///   1) max concurrent orders per building per type is capped per MAX_TTL day period
             ///   2) 
             /// </summary>
             /// <param name="material"></param>
@@ -120,6 +120,7 @@ namespace EnhancedDistrictServices
 
             foreach (var e in data.TransferEvents)
             {
+                Logger.Log($"TransferHistory::LoadData: B{e.RequestBuilding} to B{e.ResponseBuilding}, {e.Material}, {e.TimeStamp}");
                 Add(e.RequestBuilding, e.ResponseBuilding, e.Material, e.TimeStamp);
             }
         }

@@ -309,7 +309,7 @@ namespace EnhancedDistrictServices
 
                     m_currentBuildingExclusions.Clear();
 
-                    for (int iter2 = 0; iter2 < 5 && requestAmount != 0; iter2++)
+                    for (int iter2 = 0; iter2 < 10 && requestAmount != 0; iter2++)
                     {
                         int bestResponsePriority = -1;
                         int bestResponseSubIndex = -1;

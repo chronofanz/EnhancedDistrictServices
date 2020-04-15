@@ -15,7 +15,23 @@ namespace EnhancedDistrictServices.Serialization
         {
             public override Type BindToType(string assemblyName, string typeName)
             {
-                return typeof(TransferHistoryv1);
+                switch (typeName)
+                {
+                    case "EnhancedDistrictServices.Serialization.TransferHistoryv1":
+                        return typeof(TransferHistoryv1);
+
+                    case "EnhancedDistrictServices.TransferHistory+TransferEvent[]":
+                        return typeof(TransferHistory.TransferEvent[]);
+
+                    case "EnhancedDistrictServices.TransferHistory+TransferEvent":
+                        return typeof(TransferHistory.TransferEvent);
+
+                    case "TransferManager+TransferReason":
+                        return typeof(TransferManager.TransferReason);
+
+                    default:
+                        return null;
+                }
             }
         }
 
