@@ -81,8 +81,11 @@
     <Compile Include="Source\Logger.cs" />
     <Compile Include="Source\EnhancedDistrictServicesUIPanelBase.cs" />
     <Compile Include="Source\Patches\DistrictManagerReleaseParkPatch.cs" />
+    <Compile Include="Source\Serialization\EnhancedDistrictTransferHistorySerializableData.cs" />
     <Compile Include="Source\Serialization\EnhancedDistrictVehiclesSerializableData.cs" />
+    <Compile Include="Source\Serialization\TransferHistoryv1.cs" />
     <Compile Include="Source\Serialization\Vehiclesv1.cs" />
+    <Compile Include="Source\TransferHistory.cs" />
     <Compile Include="Source\UI\InputType.cs" />
     <Compile Include="Source\UI\CopyPaste.cs" />
     <Compile Include="Source\UI\ResourceLoader.cs" />

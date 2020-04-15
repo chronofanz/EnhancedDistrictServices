@@ -81,7 +81,7 @@ namespace EnhancedDistrictServices
             {
                 result |= InputType.SUPPLY_CHAIN;
 
-                if (!(info?.GetAI() is ExtractingFacilityAI))
+                if (!(info?.GetAI() is ExtractingFacilityAI || info?.GetAI() is FishFarmAI || info?.GetAI() is FishingHarborAI))
                 {
                     result |= InputType.INCOMING;
                 }
@@ -572,6 +572,12 @@ namespace EnhancedDistrictServices
                 case ExtractingFacilityAI extractingFacilityAI:
                     return extractingFacilityAI.m_outputResource;
 
+                case FishFarmAI fishFarmAI:
+                    return fishFarmAI.m_outputResource;
+
+                case FishingHarborAI fishingHarborAI:
+                    return fishingHarborAI.m_outputResource;
+
                 case ProcessingFacilityAI processingFacilityAI:
                     return processingFacilityAI.m_outputResource;
 
@@ -699,7 +705,8 @@ namespace EnhancedDistrictServices
                     case ItemClass.Service.Fishing:
                         return (
                             info.GetAI() is FishFarmAI ||
-                            info.GetAI() is FishingHarborAI);
+                            info.GetAI() is FishingHarborAI ||
+                            info.GetAI() is ProcessingFacilityAI);
 
                     case ItemClass.Service.PlayerIndustry:
                         return !(
@@ -742,6 +749,20 @@ namespace EnhancedDistrictServices
             return building != 0 && Singleton<BuildingManager>.instance.m_buildings.m_buffer[building].Info.m_buildingAI is OutsideConnectionAI;
         }
 
+        public static bool IsOutsideRoadConnection(int building)
+        {
+            if (building != 0 && 
+                Singleton<BuildingManager>.instance.m_buildings.m_buffer[building].Info.m_buildingAI is OutsideConnectionAI outsideConnectionAI &&
+                outsideConnectionAI.m_transportInfo?.m_netService == ItemClass.Service.Road)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         /// <summary>
         /// Returns true if the building's service is a supported supply chain service.
         /// </summary>
@@ -764,6 +785,12 @@ namespace EnhancedDistrictServices
                     case ItemClass.Service.Electricity:
                         return (
                             info.GetAI() is PowerPlantAI);
+
+                    case ItemClass.Service.Fishing:
+                        return (
+                            info.GetAI() is FishFarmAI ||
+                            info.GetAI() is FishingHarborAI ||
+                            info.GetAI() is ProcessingFacilityAI);
 
                     case ItemClass.Service.Monument:
                         return (info?.gameObject?.name == "ChirpX Launch Control Center");
@@ -812,7 +839,7 @@ namespace EnhancedDistrictServices
                     sourceMaterial == TransferManager.TransferReason.Petrol;
             }
 
-            if (info?.GetService() == ItemClass.Service.PlayerIndustry && info?.GetAI() is ProcessingFacilityAI processingFacilityAI)
+            if ((info?.GetService() == ItemClass.Service.PlayerIndustry || info?.GetService() == ItemClass.Service.Fishing) && info?.GetAI() is ProcessingFacilityAI processingFacilityAI)
             {
                 return
                     processingFacilityAI.m_inputResource1 == sourceMaterial ||
@@ -872,7 +899,6 @@ namespace EnhancedDistrictServices
                 material == TransferManager.TransferReason.Student2 ||
                 material == TransferManager.TransferReason.Taxi ||
 
-                material == TransferManager.TransferReason.Fish ||
                 material == TransferManager.TransferReason.UnsortedMail;
         }
 
@@ -905,6 +931,8 @@ namespace EnhancedDistrictServices
                 material == TransferManager.TransferReason.Glass ||
                 material == TransferManager.TransferReason.Metals ||
 
+                material == TransferManager.TransferReason.Fish ||
+                material == TransferManager.TransferReason.Goods ||
                 material == TransferManager.TransferReason.LuxuryProducts ||
                 material == TransferManager.TransferReason.SortedMail;
         }

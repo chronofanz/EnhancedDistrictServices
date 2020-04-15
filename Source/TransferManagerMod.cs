@@ -136,8 +136,7 @@ namespace EnhancedDistrictServices
         public delegate bool MatchFilter(
             TransferManager.TransferReason material,
             ref TransferManager.TransferOffer requestOffer, int requestPriority,
-            ref TransferManager.TransferOffer responseOffer, int responsePriority,
-            int randomMax);
+            ref TransferManager.TransferOffer responseOffer, int responsePriority);
 
         /// <summary>
         /// Matches all offers of the given material, if supported.  Returns true if this method did attempt to match 
@@ -162,7 +161,6 @@ namespace EnhancedDistrictServices
                 // Park/Road maintenance, taxis, etc. are switched around ...
                 if (material == TransferManager.TransferReason.ChildCare ||
                     material == TransferManager.TransferReason.ElderCare ||
-                    material == TransferManager.TransferReason.Fish ||
                     material == TransferManager.TransferReason.ParkMaintenance ||
                     material == TransferManager.TransferReason.RoadMaintenance || 
                     material == TransferManager.TransferReason.Taxi)
@@ -172,9 +170,29 @@ namespace EnhancedDistrictServices
                         requestCount: m_incomingCount, requestOffers: m_incomingOffers,
                         requestPriorityMax: 7, requestPriorityMin: 1,
                         responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
-                        responsePriorityMax: 7, responsePriorityMin: 0,
-                        matchFilter: IsValidDistrictOffer,
-                        maxMatchesOutside: 1);
+                        responsePriorityMax: 7, responsePriorityMin: 1,
+                        matchFilter: IsValidDistrictOffer);
+
+                    Clear(material);
+                    return true;
+                }
+                else if (material == TransferManager.TransferReason.Fish)
+                {
+                    MatchOffersClosest(
+                        material,
+                        requestCount: m_incomingCount, requestOffers: m_incomingOffers,
+                        requestPriorityMax: 7, requestPriorityMin: 1,
+                        responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
+                        responsePriorityMax: 7, responsePriorityMin: 1,
+                        matchFilter: IsValidSupplyChainOffer);
+
+                    MatchOffersClosest(
+                        material,
+                        requestCount: m_incomingCount, requestOffers: m_incomingOffers,
+                        requestPriorityMax: 0, requestPriorityMin: 0,
+                        responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
+                        responsePriorityMax: 7, responsePriorityMin: 1,
+                        matchFilter: IsValidLowPriorityOffer);
 
                     Clear(material);
                     return true;
@@ -187,8 +205,7 @@ namespace EnhancedDistrictServices
                         requestPriorityMax: 7, requestPriorityMin: 1,
                         responseCount: m_incomingCount, responseOffers: m_incomingOffers,
                         responsePriorityMax: 7, responsePriorityMin: 1,
-                        matchFilter: IsValidDistrictOffer,
-                        maxMatchesOutside: 1);
+                        matchFilter: IsValidDistrictOffer);
 
                     Clear(material);
                     return true;
@@ -204,15 +221,13 @@ namespace EnhancedDistrictServices
                         responsePriorityMax: 7, responsePriorityMin: 1,
                         matchFilter: IsValidSupplyChainOffer);
 
-                    var globalOutsideConnectionIntensity = Constraints.GlobalOutsideConnectionIntensity();
                     MatchOffersClosest(
                         material,
                         requestCount: m_incomingCount, requestOffers: m_incomingOffers,
                         requestPriorityMax: 7, requestPriorityMin: 1,
                         responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
                         responsePriorityMax: 7, responsePriorityMin: 0,
-                        matchFilter: IsValidLowPriorityOffer,
-                        maxMatchesOutside: globalOutsideConnectionIntensity);
+                        matchFilter: IsValidLowPriorityOffer);
 
                     // Now finally try and match to outside offers, as well as match using extra supply.
                     MatchOffersClosest(
@@ -221,8 +236,7 @@ namespace EnhancedDistrictServices
                         requestPriorityMax: 0, requestPriorityMin: 0,
                         responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
                         responsePriorityMax: 7, responsePriorityMin: 0,
-                        matchFilter: IsValidLowPriorityOffer,
-                        maxMatchesOutside: globalOutsideConnectionIntensity);
+                        matchFilter: IsValidLowPriorityOffer);
 
                     Clear(material);
                     return true;
@@ -253,11 +267,13 @@ namespace EnhancedDistrictServices
             int requestPriorityMax, int requestPriorityMin,
             ushort[] responseCount, TransferManager.TransferOffer[] responseOffers,
             int responsePriorityMax, int responsePriorityMin,
-            MatchFilter matchFilter, int maxMatchesOutside = int.MaxValue)
+            MatchFilter matchFilter)
         {
             int matchesMissed = 0;
             int matchesOutside = 0;
             int matchesInside = 0;
+
+            TransferHistory.PurgeOldEvents(material);
 
             // We already previously patched the offers so that priority >= 1 correspond to local offers and priority == 0 correspond to outside offers.
             for (int requestPriority = requestPriorityMax; requestPriority >= requestPriorityMin; --requestPriority)
@@ -293,7 +309,7 @@ namespace EnhancedDistrictServices
 
                     m_currentBuildingExclusions.Clear();
 
-                    for (int iter2 = 0; iter2 < 5 && requestAmount != 0; iter2++)
+                    for (int iter2 = 0; iter2 < 10 && requestAmount != 0; iter2++)
                     {
                         int bestResponsePriority = -1;
                         int bestResponseSubIndex = -1;
@@ -301,17 +317,6 @@ namespace EnhancedDistrictServices
 
                         for (int responsePriority = responsePriorityMax; responsePriority >= responsePriorityMin; --responsePriority)
                         {
-                            if (matchesOutside >= maxMatchesOutside && (requestPriority == 0 || responsePriority == 0))
-                            {
-                                break;
-                            }
-
-                            // Do not match lowest priority to lowest priority.
-                            if (requestPriority == 1 && responsePriority == 1)
-                            {
-                                break;
-                            }
-
                             // Do not match to outside offer if we can match locally.
                             if (bestResponsePriority != -1 && responsePriority == 0)
                             {
@@ -324,7 +329,15 @@ namespace EnhancedDistrictServices
                             for (int responseSubIndex = 0; responseSubIndex < responseSubCount; ++responseSubIndex)
                             {
                                 var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
-                                
+
+                                if (requestPriority == 0 || responsePriority == 0)
+                                {
+                                    if (TransferHistory.IsRestricted(material, requestOffer.Building, responseOffer.Building))
+                                    {
+                                        continue;
+                                    }
+                                }
+
                                 // Not sure how this could happen, but ...
                                 if (responseOffer.Amount == 0)
                                 {
@@ -344,8 +357,7 @@ namespace EnhancedDistrictServices
                                 if (!matchFilter(
                                     material,
                                     ref requestOffer, requestPriority,
-                                    ref responseOffer, responsePriority,
-                                    maxMatchesOutside))
+                                    ref responseOffer, responsePriority))
                                 {
                                     continue;
                                 }
@@ -391,13 +403,24 @@ namespace EnhancedDistrictServices
                                     foundBetterMatch = true;
                                 }
 
-                                if (responsePriority == bestResponsePriority && distanceSquared < bestDistanceSquared)
+                                if (responsePriority == bestResponsePriority)
                                 {
-                                    foundBetterMatch = true;
+                                    if (distanceSquared < bestDistanceSquared)
+                                    {
+                                        foundBetterMatch = true;
+                                    }
+                                    else if (distanceSquared < 1.25 * bestDistanceSquared && m_randomizer.Int32(10) < 2)
+                                    {
+                                        // Give the algorithm a chance not to get stuck in a "local minimum" ...
+                                        foundBetterMatch = true;
+                                    }
+                                    else if ((requestPriority == 0 || responsePriority == 0) && m_randomizer.Int32(10) < 5)
+                                    {
+                                        foundBetterMatch = true;
+                                    }
                                 }
 
-                                // Magic number 0.75.  Allow matching a lower priority offer only if it is substantially 
-                                // closer.
+                                // Magic number 0.75.  Allow matching a lower priority offer only if it is substantially closer.
                                 if (responsePriority < bestResponsePriority && distanceSquared < 0.75 * bestDistanceSquared)
                                 {
                                     foundBetterMatch = true;
@@ -425,22 +448,24 @@ namespace EnhancedDistrictServices
                             int delta = Mathf.Min(requestAmount, responseAmount);
                             if (delta != 0)
                             {
-                                matched = true;
-                                if (requestPriority == 0 || bestResponsePriority == 0)
-                                {
-                                    matchesOutside++;
-                                }
-                                else
-                                {
-                                    matchesInside++;
-                                }
-
                                 var success = StartTransfer(material, requestOffer, responseOffer, delta);
                                 if (!success)
                                 {
                                     Logger.LogWarning($"TransferManager::MatchOffersClosest: Matched {Utils.ToString(ref requestOffer, material)} to {Utils.ToString(ref responseOffer, material)}, but was unable to start the transfer!!");
                                     m_currentBuildingExclusions.Add(responseOffer.Building);
                                     continue;
+                                }
+
+                                matched = true;
+                                if (requestPriority == 0 || bestResponsePriority == 0)
+                                {
+                                    // Only record matches to outside connections for now ...
+                                    TransferHistory.RecordMatch(material, requestOffer.Building, responseOffer.Building);
+                                    matchesOutside++;
+                                }
+                                else
+                                {
+                                    matchesInside++;
                                 }
                             }
 
@@ -479,7 +504,7 @@ namespace EnhancedDistrictServices
                 if (requestSubCount > 0)
                 {
                     Logger.LogMaterial(
-                        $"TransferManager::MatchOffersClosest: material={material}, request_priority={requestPriority}, outside_matches={matchesOutside}, inside_matches={matchesInside}, missed_matches={matchesMissed}, max_matches_outside={maxMatchesOutside}",
+                        $"TransferManager::MatchOffersClosest: material={material}, request_priority={requestPriority}, outside_matches={matchesOutside}, inside_matches={matchesInside}, missed_matches={matchesMissed}",
                         material);
                 }
             }
@@ -503,6 +528,48 @@ namespace EnhancedDistrictServices
             m_outgoingAmount[(int)material] = 0;
         }
 
+        private static bool IsSameLocation(
+            ref TransferManager.TransferOffer requestOffer,
+            ref TransferManager.TransferOffer responseOffer)
+        {
+            if (requestOffer.m_object == responseOffer.m_object)
+            {
+                return true;
+            }
+
+            var requestHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
+            var responseHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
+            if (requestHomeBuilding == responseHomeBuilding)
+            {
+                return true;
+            }
+
+            // Don't match a guest vehicle to its host building.  For instance, Taxi stands.
+            if (responseOffer.Vehicle != 0 && BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_guestVehicles != 0)
+            {
+                var vehicleID = BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_guestVehicles;
+                int num = 0;
+                while (vehicleID != 0)
+                {
+                    if (responseOffer.Vehicle == vehicleID)
+                    {
+                        return true;
+                    }
+
+                    vehicleID = VehicleManager.instance.m_vehicles.m_buffer[vehicleID].m_nextGuestVehicle;
+                    ++num;
+
+                    if (++num > 16384)
+                    {
+                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                        break;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Returns true if we can potentially match the two given offers.
         /// </summary>
@@ -510,8 +577,7 @@ namespace EnhancedDistrictServices
         private static bool IsValidDistrictOffer(
             TransferManager.TransferReason material, 
             ref TransferManager.TransferOffer requestOffer, int requestPriority,
-            ref TransferManager.TransferOffer responseOffer, int responsePriority,
-            int randomMax)
+            ref TransferManager.TransferOffer responseOffer, int responsePriority)
         {
             var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
             var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
@@ -564,8 +630,7 @@ namespace EnhancedDistrictServices
         private static bool IsValidSupplyChainOffer(
             TransferManager.TransferReason material,
             ref TransferManager.TransferOffer requestOffer, int requestPriority,
-            ref TransferManager.TransferOffer responseOffer, int responsePriority,
-            int randomMax)
+            ref TransferManager.TransferOffer responseOffer, int responsePriority)
         {
             var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
             var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
@@ -645,48 +710,6 @@ namespace EnhancedDistrictServices
             return false;
         }
 
-        private static bool IsSameLocation(
-            ref TransferManager.TransferOffer requestOffer,
-            ref TransferManager.TransferOffer responseOffer)
-        {
-            if (requestOffer.m_object == responseOffer.m_object)
-            {
-                return true;
-            }
-
-            var requestHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
-            var responseHomeBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
-            if (requestHomeBuilding == responseHomeBuilding)
-            {
-                return true;
-            }
-
-            // Don't match a guest vehicle to its host building.  For instance, Taxi stands.
-            if (responseOffer.Vehicle != 0 && BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_guestVehicles != 0)
-            {
-                var vehicleID = BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_guestVehicles;
-                int num = 0;
-                while (vehicleID != 0)
-                {
-                    if (responseOffer.Vehicle == vehicleID)
-                    {
-                        return true;
-                    }
-
-                    vehicleID = VehicleManager.instance.m_vehicles.m_buffer[vehicleID].m_nextGuestVehicle;
-                    ++num;
-
-                    if (++num > 16384)
-                    {
-                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
-                        break;
-                    }
-                }
-            }
-
-            return false;
-        }
-
         /// <summary>
         /// Returns true if we can potentially match the two given offers.
         /// </summary>
@@ -694,8 +717,7 @@ namespace EnhancedDistrictServices
         private static bool IsValidLowPriorityOffer(
             TransferManager.TransferReason material,
             ref TransferManager.TransferOffer requestOffer, int requestPriority,
-            ref TransferManager.TransferOffer responseOffer, int responsePriority,
-            int randomMax)
+            ref TransferManager.TransferOffer responseOffer, int responsePriority)
         {
             var requestBuilding = TransferManagerInfo.GetHomeBuilding(ref requestOffer);
             var responseBuilding = TransferManagerInfo.GetHomeBuilding(ref responseOffer);
@@ -720,7 +742,7 @@ namespace EnhancedDistrictServices
             if (responseBuilding != 0 && BuildingManager.instance.m_buildings.m_buffer[responseBuilding].Info.GetAI() is LandfillSiteAI)
             {
                 Logger.LogMaterial(
-                    $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, allow recycling centers",
+                    $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, allow recycling centers",
                     material);
                 return true;
             }
@@ -730,17 +752,9 @@ namespace EnhancedDistrictServices
             {
                 if (TransferManagerInfo.IsOutsideOffer(ref responseOffer))
                 {
-                    if (Settings.enableDummyCargoTraffic.value && m_randomizer.Int32(1000) <= randomMax)
-                    {
-                        Logger.LogMaterial(
-                            $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, matching outside to outside",
-                            material);
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    // Prevent matching roads that are too close together ...
+                    var distanceSquared = Vector3.SqrMagnitude(responseOffer.Position - requestOffer.Position);
+                    return distanceSquared > 100000;
                 }
                 else if (TransferManagerInfo.GetSupplyBuildingAmount(responseBuilding) > Constraints.InternalSupplyBuffer(responseBuilding))
                 {
