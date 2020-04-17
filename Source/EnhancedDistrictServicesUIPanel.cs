@@ -1311,7 +1311,7 @@ namespace EnhancedDistrictServices
 
             GlobalOutsideToOutsideMaxPerc.text = Constraints.GlobalOutsideToOutsidePerc().ToString();
 
-            var tooltipText = "Max fraction of traffic allowed for dummy outside to outside cargo transfers, between 0 and 100";
+            var tooltipText = "Max percentage of traffic allowed for dummy outside to outside cargo transfers, between 0 and 100";
             GlobalOutsideToOutsideMaxPerc.tooltip = tooltipText;
             GlobalOutsideToOutsideMaxPercLabel.tooltip = tooltipText;
         }

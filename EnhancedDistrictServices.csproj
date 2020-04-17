@@ -72,6 +72,7 @@
     <Compile Include="Source\Patches\HumanAIStartMovingPatch.cs" />
     <Compile Include="Source\Patches\TransportStationAICreateVehiclePatch.cs" />
     <Compile Include="Source\Patches\VehicleManagerGetRandomVehicleInfoPatch.cs" />
+    <Compile Include="Source\Serialization\Datav4.cs" />
     <Compile Include="Source\Serialization\Datav3.cs" />
     <Compile Include="Source\Serialization\Datav2.cs" />
     <Compile Include="Source\Serialization\Datav1.cs" />

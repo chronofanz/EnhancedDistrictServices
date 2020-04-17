@@ -86,7 +86,7 @@ namespace EnhancedDistrictServices
         /// Load data from given object.
         /// </summary>
         /// <param name="data"></param>
-        public static void LoadData(Serialization.Datav3 data)
+        public static void LoadData(Serialization.Datav4 data)
         {
             Logger.Log($"Constraints::LoadData: version {data.Id}");
             Clear();
@@ -151,6 +151,7 @@ namespace EnhancedDistrictServices
                 }
 
                 m_globalOutsideConnectionIntensity = data.GlobalOutsideConnectionIntensity;
+                m_globalOutsideToOutsideMaxPerc = data.GlobalOutsideToOutsideMaxPerc;
 
                 Logger.Log("");
             }
@@ -160,9 +161,9 @@ namespace EnhancedDistrictServices
         /// Saves a copy of the data in this object, for serialization.
         /// </summary>
         /// <returns></returns>
-        public static Serialization.Datav3 SaveData()
+        public static Serialization.Datav4 SaveData()
         {
-            return new Serialization.Datav3
+            return new Serialization.Datav4
             {
                 InputBuildingToAllLocalAreas = m_inputBuildingToAllLocalAreas.ToArray(),
                 InputBuildingToOutsideConnections = m_inputBuildingToOutsideConnections.ToArray(),
@@ -178,7 +179,8 @@ namespace EnhancedDistrictServices
 
                 BuildingToInternalSupplyBuffer = m_buildingToInternalSupplyBuffer.ToArray(),
                 BuildingToBuildingServiced = m_supplyDestinations.ToArray(),
-                GlobalOutsideConnectionIntensity = m_globalOutsideConnectionIntensity
+                GlobalOutsideConnectionIntensity = m_globalOutsideConnectionIntensity,
+                GlobalOutsideToOutsideMaxPerc = m_globalOutsideToOutsideMaxPerc
             };
         }
 

@@ -24,10 +24,14 @@ namespace EnhancedDistrictServices.Serialization
                     TaxiMod.ClearTaxiBuildings();
                     TransferManagerMod.ClearBuildingToBuildingExclusions();
                     
-                    Datav3 data;
+                    Datav4 data;
 
                     // Always try to load the latest version if possible.
-                    if (Datav3.TryLoadData(this, out data))
+                    if (Datav4.TryLoadData(this, out data))
+                    {
+                        Constraints.LoadData(data);
+                    }
+                    else if (Datav3.TryLoadData(this, out data))
                     {
                         Constraints.LoadData(data);
                     }
