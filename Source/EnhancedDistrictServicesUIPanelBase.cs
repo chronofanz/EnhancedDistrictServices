@@ -140,6 +140,9 @@ namespace EnhancedDistrictServices
         public UILabel GlobalIntensityLabel;
         public UITextField GlobalIntensity;
 
+        public UILabel GlobalOutsideToOutsideMaxPercLabel;
+        public UITextField GlobalOutsideToOutsideMaxPerc;
+
         /// <summary>
         /// Layout the GUI.
         /// </summary>
@@ -195,6 +198,9 @@ namespace EnhancedDistrictServices
 
             GlobalIntensityLabel = AttachUILabelTo(this, 3, 88, text: "Outside Connection Intensity:");
             GlobalIntensity = AttachUITextFieldTo(this, 3, 29, 213);
+
+            GlobalOutsideToOutsideMaxPercLabel = AttachUILabelTo(this, 3, 88, text: "Outside To Outside Max Perc:");
+            GlobalOutsideToOutsideMaxPerc = AttachUITextFieldTo(this, 3, 29, 213);
 
             m_FullscreenContainer = UIView.Find("FullScreenContainer");
             m_FullscreenContainer.AttachUIComponent(gameObject);
