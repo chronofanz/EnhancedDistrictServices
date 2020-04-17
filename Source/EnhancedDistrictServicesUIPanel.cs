@@ -539,6 +539,42 @@ namespace EnhancedDistrictServices
                     UpdateGlobalIntensity();
                 });
             };
+
+            GlobalOutsideToOutsideMaxPerc.eventTextCancelled += (c, p) =>
+            {
+                Logger.LogVerbose("UITitlePanel::GlobalOutsideToOutsideMaxPerc TextCancelled");
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    UpdateGlobalOutsideToOutsideMaxPerc();
+                });
+            };
+
+            GlobalOutsideToOutsideMaxPerc.eventTextSubmitted += (c, p) =>
+            {
+                Logger.LogVerbose("UITitlePanel::GlobalOutsideToOutsideMaxPerc TextSubmitted");
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    if (string.IsNullOrEmpty(GlobalOutsideToOutsideMaxPerc.text.Trim()))
+                    {
+                        UpdateGlobalOutsideToOutsideMaxPerc();
+                        return;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var amount = ushort.Parse(GlobalOutsideToOutsideMaxPerc.text);
+                            Constraints.SetGlobalOutsideToOutsideMaxPerc(amount);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogException(ex);
+                        }
+                    }
+
+                    UpdateGlobalOutsideToOutsideMaxPerc();
+                });
+            };
         }
 
         public override void OnEnable()
@@ -739,6 +775,8 @@ namespace EnhancedDistrictServices
                     ShowComponent(UIVehiclesDropDown, false);
                     ShowComponent(GlobalIntensity, false);
                     ShowComponent(GlobalIntensityLabel, false);
+                    ShowComponent(GlobalOutsideToOutsideMaxPerc, false);
+                    ShowComponent(GlobalOutsideToOutsideMaxPercLabel, false);
                     break;
 
                 case InputMode.INCOMING:
@@ -762,6 +800,9 @@ namespace EnhancedDistrictServices
                     ShowComponent(UIVehiclesDropDown, false);
                     ShowComponent(GlobalIntensity, false);
                     ShowComponent(GlobalIntensityLabel, false);
+                    ShowComponent(GlobalOutsideToOutsideMaxPerc, false);
+                    ShowComponent(GlobalOutsideToOutsideMaxPercLabel, false);
+
                     break;
 
                 case InputMode.VEHICLES:
@@ -783,6 +824,9 @@ namespace EnhancedDistrictServices
 
                     ShowComponent(GlobalIntensity, false);
                     ShowComponent(GlobalIntensityLabel, false);
+                    ShowComponent(GlobalOutsideToOutsideMaxPerc, false);
+                    ShowComponent(GlobalOutsideToOutsideMaxPercLabel, false);
+
                     break;
 
                 case InputMode.GLOBAL:
@@ -801,6 +845,9 @@ namespace EnhancedDistrictServices
                     AddTabContainerRow();
                     AddElementToTabContainerRow(GlobalIntensity);
                     AddElementToTabContainerRow(GlobalIntensityLabel);
+                    AddTabContainerRow();
+                    AddElementToTabContainerRow(GlobalOutsideToOutsideMaxPerc);
+                    AddElementToTabContainerRow(GlobalOutsideToOutsideMaxPercLabel);
                     break;
 
                 default:
@@ -817,6 +864,7 @@ namespace EnhancedDistrictServices
             UpdateUIVehiclesDropdown();
             UpdateUIVehiclesSummary();
             UpdateGlobalIntensity();
+            UpdateGlobalOutsideToOutsideMaxPerc();
         }
 
         private void UpdateUIAllLocalAreasCheckBox()
@@ -1249,9 +1297,23 @@ namespace EnhancedDistrictServices
 
             GlobalIntensity.text = Constraints.GlobalOutsideConnectionIntensity().ToString();
 
-            var tooltipText = "The intensity controls the amount of supply chain traffic entering the city, between 0 and 100\nWARNING: Do not set this too high, otherwise your traffic will become overwhelmed with traffic!";
+            var tooltipText = "The intensity controls the amount of supply chain traffic entering the city, between 0 and 1000\nWARNING: Do not set this too high, otherwise your traffic will become overwhelmed with traffic!";
             GlobalIntensity.tooltip = tooltipText;
             GlobalIntensityLabel.tooltip = tooltipText;
+        }
+
+        private void UpdateGlobalOutsideToOutsideMaxPerc()
+        {
+            if (m_currBuildingId == 0 || m_inputMode != InputMode.GLOBAL)
+            {
+                return;
+            }
+
+            GlobalOutsideToOutsideMaxPerc.text = Constraints.GlobalOutsideToOutsidePerc().ToString();
+
+            var tooltipText = "Max percentage of traffic allowed for dummy outside to outside cargo transfers, between 0 and 100";
+            GlobalOutsideToOutsideMaxPerc.tooltip = tooltipText;
+            GlobalOutsideToOutsideMaxPercLabel.tooltip = tooltipText;
         }
 
         #region Helper methods

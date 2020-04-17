@@ -54,9 +54,14 @@ namespace EnhancedDistrictServices
         private static readonly List<int>[] m_supplyDestinations = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
-        /// Betweeen 0 and 100 inclusive, this controls how much incoming/outgoing traffic comes into the game.
+        /// Betweeen 0 and 1000 inclusive, this controls how much incoming/outgoing traffic comes into the game.
         /// </summary>
         private static int m_globalOutsideConnectionIntensity = 15;
+
+        /// <summary>
+        /// Betweeen 0 and 100 inclusive, this controls the max percentage of traffic that can be outside-to-outside traffic.
+        /// </summary>
+        private static int m_globalOutsideToOutsideMaxPerc = 50;
 
         /// <summary>
         /// Static constructor.
@@ -81,7 +86,7 @@ namespace EnhancedDistrictServices
         /// Load data from given object.
         /// </summary>
         /// <param name="data"></param>
-        public static void LoadData(Serialization.Datav3 data)
+        public static void LoadData(Serialization.Datav4 data)
         {
             Logger.Log($"Constraints::LoadData: version {data.Id}");
             Clear();
@@ -146,6 +151,7 @@ namespace EnhancedDistrictServices
                 }
 
                 m_globalOutsideConnectionIntensity = data.GlobalOutsideConnectionIntensity;
+                m_globalOutsideToOutsideMaxPerc = data.GlobalOutsideToOutsideMaxPerc;
 
                 Logger.Log("");
             }
@@ -155,9 +161,9 @@ namespace EnhancedDistrictServices
         /// Saves a copy of the data in this object, for serialization.
         /// </summary>
         /// <returns></returns>
-        public static Serialization.Datav3 SaveData()
+        public static Serialization.Datav4 SaveData()
         {
-            return new Serialization.Datav3
+            return new Serialization.Datav4
             {
                 InputBuildingToAllLocalAreas = m_inputBuildingToAllLocalAreas.ToArray(),
                 InputBuildingToOutsideConnections = m_inputBuildingToOutsideConnections.ToArray(),
@@ -173,7 +179,8 @@ namespace EnhancedDistrictServices
 
                 BuildingToInternalSupplyBuffer = m_buildingToInternalSupplyBuffer.ToArray(),
                 BuildingToBuildingServiced = m_supplyDestinations.ToArray(),
-                GlobalOutsideConnectionIntensity = m_globalOutsideConnectionIntensity
+                GlobalOutsideConnectionIntensity = m_globalOutsideConnectionIntensity,
+                GlobalOutsideToOutsideMaxPerc = m_globalOutsideToOutsideMaxPerc
             };
         }
 
@@ -378,6 +385,15 @@ namespace EnhancedDistrictServices
         }
 
 
+        /// <summary>
+        /// Between 0 and 100 inclusive, controls the max percentage of traffic that can be outside-to-outside traffic.
+        /// </summary>
+        /// <returns></returns>
+        public static int GlobalOutsideToOutsidePerc()
+        {
+            return m_globalOutsideToOutsideMaxPerc;
+        }
+
         #endregion
 
         #region Local Areas and Outside Connections methods
@@ -444,7 +460,17 @@ namespace EnhancedDistrictServices
         public static void SetGlobalOutsideConnectionIntensity(int amount)
         {
             Logger.LogVerbose($"Constraints::SetGlobalOutsideConnectionIntensity: {amount} ...");
-            m_globalOutsideConnectionIntensity = COMath.Clamp(amount, 0, 100);
+            m_globalOutsideConnectionIntensity = COMath.Clamp(amount, 0, 1000);
+        }
+
+        /// <summary>
+        /// Set the max percentage of traffic that can be outside-to-outside traffic.
+        /// </summary>
+        /// <param name="amount"></param>
+        public static void SetGlobalOutsideToOutsideMaxPerc(int amount)
+        {
+            Logger.LogVerbose($"Constraints::SetGlobalOutsideToOutsideMaxPerc: {amount} ...");
+            m_globalOutsideToOutsideMaxPerc = COMath.Clamp(amount, 0, 100);
         }
 
         #endregion

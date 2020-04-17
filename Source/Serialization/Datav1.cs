@@ -30,13 +30,13 @@ namespace EnhancedDistrictServices.Serialization
             }
         }
 
-        public static bool TryLoadData(EnhancedDistrictServicesSerializableData loader, out Datav3 data)
+        public static bool TryLoadData(EnhancedDistrictServicesSerializableData loader, out Datav4 data)
         {
             if (loader.TryLoadData(m_id, new Datav1Binder(), out Datav1 target))
             {
                 if (target != null)
                 {
-                    data = target.Upgrade().Upgrade();
+                    data = target.Upgrade().Upgrade().Upgrade();
                     return true;
                 }
                 else

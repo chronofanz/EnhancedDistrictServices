@@ -54,12 +54,18 @@ namespace EnhancedDistrictServices
 
                 var concurrentOrderCount = list.Count;
 
+                var concurrentOrderCountToOutsideConnection = 0;
                 var concurrentOrderCountToResponseBuilding = 0;
                 for (int i = 0; i < list.Count; i++)
                 {
                     if (list[i].ResponseBuilding == responseBuilding)
                     {
                         concurrentOrderCountToResponseBuilding++;
+                    }
+
+                    if (TransferManagerInfo.IsOutsideBuilding(list[i].ResponseBuilding))
+                    {
+                        concurrentOrderCountToOutsideConnection++;
                     }
                 }
 
@@ -69,12 +75,14 @@ namespace EnhancedDistrictServices
                     maxConcurrentOrderCount *= 4;
                 }
 
-                var maxConcurrentOrderCountToResponseBuilding = Math.Ceiling(Constraints.GlobalOutsideConnectionIntensity() / 20.0);
+                var maxConcurrentOrderCountToResponseBuilding = Math.Ceiling(maxConcurrentOrderCount / 2.0);
+                var maxConcurrentOrderCountToOutsideConnection = Math.Ceiling(maxConcurrentOrderCount * Constraints.GlobalOutsideToOutsidePerc() / 100.0);
 
                 bool isRestrictedConcurrent = concurrentOrderCount >= maxConcurrentOrderCount;
                 bool isRestrictedConcurrentToBuilding = concurrentOrderCountToResponseBuilding >= maxConcurrentOrderCountToResponseBuilding;
+                bool isRestrictedConcurrentToOutsideConnection = isRequestBuildingOutside && isResponseBuildingOutside && concurrentOrderCountToOutsideConnection >= maxConcurrentOrderCountToOutsideConnection;
 
-                return isRestrictedConcurrent || isRestrictedConcurrentToBuilding;
+                return isRestrictedConcurrent || isRestrictedConcurrentToBuilding || isRestrictedConcurrentToOutsideConnection;
             }
 
             public void PurgeOldEvents()

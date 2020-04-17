@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace EnhancedDistrictServices.Serialization
 {
@@ -20,6 +21,14 @@ namespace EnhancedDistrictServices.Serialization
 
         private static readonly string m_id = "EnhancedDistrictServices_v3";
 
+        private class Datav3Binder : SerializationBinder
+        {
+            public override Type BindToType(string assemblyName, string typeName)
+            {
+                return typeof(Datav3);
+            }
+        }
+
         public string Id
         {
             get
@@ -28,18 +37,46 @@ namespace EnhancedDistrictServices.Serialization
             }
         }
 
-        public static bool TryLoadData(EnhancedDistrictServicesSerializableData loader, out Datav3 data)
+        public static bool TryLoadData(EnhancedDistrictServicesSerializableData loader, out Datav4 data)
         {
-            if (loader.TryLoadData(m_id, null, out Datav3 target))
+            if (loader.TryLoadData(m_id, new Datav3Binder(), out Datav3 target))
             {
-                data = target;
-                return true;
+                if (target != null)
+                {
+                    data = target.Upgrade();
+                    return true;
+                }
+                else
+                {
+                    data = null;
+                    return false;
+                }
             }
             else
             {
                 data = null;
                 return false;
             }
+        }
+
+        public Datav4 Upgrade()
+        {
+            Logger.Log("Datav3::Upgrade");
+
+            return new Datav4
+            {
+                InputBuildingToAllLocalAreas = this.InputBuildingToAllLocalAreas,
+                InputBuildingToOutsideConnections = this.InputBuildingToOutsideConnections,
+                InputBuildingToDistrictServiced = this.InputBuildingToDistrictServiced,
+
+                OutputBuildingToAllLocalAreas = this.OutputBuildingToAllLocalAreas,
+                OutputBuildingToOutsideConnections = this.OutputBuildingToOutsideConnections,
+                OutputBuildingToDistrictServiced = this.OutputBuildingToDistrictServiced,
+
+                BuildingToInternalSupplyBuffer = this.BuildingToInternalSupplyBuffer,
+                BuildingToBuildingServiced = this.BuildingToBuildingServiced,
+                GlobalOutsideConnectionIntensity = this.GlobalOutsideConnectionIntensity
+            };
         }
     }
 }
