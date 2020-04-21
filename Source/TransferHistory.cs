@@ -69,6 +69,8 @@ namespace EnhancedDistrictServices
                     }
                 }
 
+                var vehicleCount = TransferManagerInfo.GetCargoVehicleCount(requestBuilding, material);
+
                 var maxConcurrentOrderCount = Math.Ceiling(Constraints.GlobalOutsideConnectionIntensity() / 10.0);
                 if (isRequestBuildingOutside && TransferManagerInfo.IsOutsideRoadConnection(requestBuilding))
                 {
@@ -78,11 +80,14 @@ namespace EnhancedDistrictServices
                 var maxConcurrentOrderCountToResponseBuilding = Math.Ceiling(maxConcurrentOrderCount / 2.0);
                 var maxConcurrentOrderCountToOutsideConnection = Math.Ceiling(maxConcurrentOrderCount * Constraints.GlobalOutsideToOutsidePerc() / 100.0);
 
+                var maxVehicleCount = Math.Ceiling(maxConcurrentOrderCount / 2.0);
+
                 bool isRestrictedConcurrent = concurrentOrderCount >= maxConcurrentOrderCount;
                 bool isRestrictedConcurrentToBuilding = concurrentOrderCountToResponseBuilding >= maxConcurrentOrderCountToResponseBuilding;
                 bool isRestrictedConcurrentToOutsideConnection = isRequestBuildingOutside && isResponseBuildingOutside && concurrentOrderCountToOutsideConnection >= maxConcurrentOrderCountToOutsideConnection;
+                bool isVehicleConstrained = vehicleCount >= maxVehicleCount;
 
-                return isRestrictedConcurrent || isRestrictedConcurrentToBuilding || isRestrictedConcurrentToOutsideConnection;
+                return isRestrictedConcurrent || isRestrictedConcurrentToBuilding || isRestrictedConcurrentToOutsideConnection || isVehicleConstrained;
             }
 
             public void PurgeOldEvents()
