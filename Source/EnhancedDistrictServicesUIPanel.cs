@@ -23,6 +23,8 @@ namespace EnhancedDistrictServices
         /// Mapping of dropdown index to DistrictPark. 
         /// </summary>
         private readonly List<DistrictPark> m_districtParkMapping = new List<DistrictPark>(capacity: DistrictPark.MAX_DISTRICT_PARK_COUNT);
+        
+        private readonly List<int> m_listIndexToConnectionId = new List<int>();
 
         /// <summary>
         /// Mapping of dropdown index to prefab index to vehicle info.
@@ -264,14 +266,15 @@ namespace EnhancedDistrictServices
 
                     UpdateUISupplyChain();
                     UpdateUIDistrictsSummary();
+                    UpdateUIOutsideConnectionsSummary();
                 });
             };
 
             UIAllOutsideConnectionsCheckBox.eventCheckChanged += (c, t) =>
             {
                 if (m_currBuildingId == 0 ||
-                    (m_inputMode == InputMode.INCOMING && t == Constraints.InputOutsideConnections(m_currBuildingId)) ||
-                    (m_inputMode == InputMode.OUTGOING && t == Constraints.OutputOutsideConnections(m_currBuildingId)))
+                    (m_inputMode == InputMode.INCOMING && t == Constraints.AllInputOutsideConnections(m_currBuildingId)) ||
+                    (m_inputMode == InputMode.OUTGOING && t == Constraints.AllOutputOutsideConnections(m_currBuildingId)))
                 {
                     return;
                 }
@@ -289,8 +292,11 @@ namespace EnhancedDistrictServices
                         Constraints.SetAllOutputOutsideConnections(m_currBuildingId, t);
                     }
 
+                    UpdateUIAllOutsideConnectionsCheckBox();
+
                     UpdateUISupplyChain();
                     UpdateUIDistrictsSummary();
+                    UpdateUIOutsideConnectionsSummary();
                 });
             };
 
@@ -454,6 +460,66 @@ namespace EnhancedDistrictServices
                 });
             };
 
+            UIConnectionsDropDown.eventCheckedChanged += (c, t) =>
+            {
+                if ((m_currBuildingId == 0) || (m_listIndexToConnectionId == null))
+                {
+                    return;
+                }
+
+                if (m_inputMode == InputMode.INCOMING && UIConnectionsDropDown.GetChecked(t) == Constraints.InputOutsideConnectionIds(m_currBuildingId)?.Contains(m_listIndexToConnectionId[t]))
+                {
+                    return;
+                }
+
+                if (m_inputMode == InputMode.OUTGOING && UIConnectionsDropDown.GetChecked(t) == Constraints.OutputOutsideConnectionIds(m_currBuildingId)?.Contains(m_listIndexToConnectionId[t]))
+                {
+                    return;
+                }
+                
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    try
+                    {
+                        var on = UIConnectionsDropDown.GetChecked(t);
+
+                        List<int> ids;
+                        void ModifyIds()
+                        {
+                            if (on)
+                                ids.Add(m_listIndexToConnectionId[t]);
+                            else
+                            {
+                                ids.Remove(m_listIndexToConnectionId[t]);
+                                if (ids.Count == 0) ids = null;
+                            }
+                        }
+
+                        if (m_inputMode == InputMode.INCOMING)
+                        {
+                            ids = Constraints.InputOutsideConnectionIds(m_currBuildingId) ?? new List<int>();
+                            ModifyIds();
+                            Constraints.SetInputOutsideConnectionIds(m_currBuildingId, ids);
+                        }
+
+                        if (m_inputMode == InputMode.OUTGOING)
+                        {
+                            ids = Constraints.OutputOutsideConnectionIds(m_currBuildingId) ?? new List<int>();
+                            ModifyIds();
+                            Constraints.SetOutputOutsideConnectionIds(m_currBuildingId, ids);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogException(ex);
+                    }
+                    finally
+                    {
+                        UpdateUIOutsideConnectionsSummary();
+                    }
+                });
+            };
+
             UIVehicleDefaultsCheckBox.eventCheckChanged += (c, t) =>
             {
                 if (m_currBuildingId == 0 || m_inputMode != InputMode.VEHICLES)
@@ -579,7 +645,7 @@ namespace EnhancedDistrictServices
 
         public override void OnEnable()
         {
-            if (UIDistrictsDropDown == null || UIVehiclesDropDown == null)
+            if ((UIConnectionsDropDown == null) || (UIDistrictsDropDown == null) || (UIVehiclesDropDown == null))
             {
                 return;
             }
@@ -589,6 +655,7 @@ namespace EnhancedDistrictServices
             Singleton<SimulationManager>.instance.AddAction(() =>
             {
                 UpdateUIDistrictsDropdownDistrictItems();
+                UpdateUIConnectionsDropdownItems();
                 SetBuilding(0);
             });
         }
@@ -769,6 +836,10 @@ namespace EnhancedDistrictServices
                     AddTabContainerRow();
                     AddElementToTabContainerRow(UIDistrictsSummary);
                     AddElementToTabContainerRow(UIDistrictsDropDown);
+                    
+                    AddTabContainerRow();
+                    AddElementToTabContainerRow(UIConnectionsSummary);
+                    AddElementToTabContainerRow(UIConnectionsDropDown);
 
                     ShowComponent(UIVehicleDefaultsCheckBox, false);
                     ShowComponent(UIVehiclesSummary, false);
@@ -794,6 +865,10 @@ namespace EnhancedDistrictServices
                     AddTabContainerRow();
                     AddElementToTabContainerRow(UIDistrictsSummary);
                     AddElementToTabContainerRow(UIDistrictsDropDown);
+                    
+                    AddTabContainerRow();
+                    AddElementToTabContainerRow(UIConnectionsSummary);
+                    AddElementToTabContainerRow(UIConnectionsDropDown);
 
                     ShowComponent(UIVehicleDefaultsCheckBox, false);
                     ShowComponent(UIVehiclesSummary, false);
@@ -814,6 +889,8 @@ namespace EnhancedDistrictServices
                     ShowComponent(UISupplyChainLabel, false);
                     ShowComponent(UIDistrictsSummary, false);
                     ShowComponent(UIDistrictsDropDown, false);
+                    ShowComponent(UIConnectionsSummary, false);
+                    ShowComponent(UIConnectionsDropDown, false);
 
                     AddTabContainerRow();
                     AddElementToTabContainerRow(UIVehicleDefaultsCheckBox);
@@ -838,6 +915,8 @@ namespace EnhancedDistrictServices
                     ShowComponent(UISupplyChainLabel, false);
                     ShowComponent(UIDistrictsSummary, false);
                     ShowComponent(UIDistrictsDropDown, false);
+                    ShowComponent(UIConnectionsSummary, false);
+                    ShowComponent(UIConnectionsDropDown, false);
                     ShowComponent(UIVehicleDefaultsCheckBox, false);
                     ShowComponent(UIVehiclesSummary, false);
                     ShowComponent(UIVehiclesDropDown, false);
@@ -859,7 +938,9 @@ namespace EnhancedDistrictServices
             UpdateUISupplyReserve();
             UpdateUISupplyChain();
             UpdateUIDistrictsDropdown();
+            UpdateUIOutsideConnectionsDropdown();
             UpdateUIDistrictsSummary();
+            UpdateUIOutsideConnectionsSummary();
             UpdateUIVehicleDefaultsCheckBox();
             UpdateUIVehiclesDropdown();
             UpdateUIVehiclesSummary();
@@ -935,13 +1016,17 @@ namespace EnhancedDistrictServices
 
             if (m_inputMode == InputMode.INCOMING)
             {
-                UIAllOutsideConnectionsCheckBox.isChecked = Constraints.InputOutsideConnections(m_currBuildingId);
+                UIAllOutsideConnectionsCheckBox.isChecked = Constraints.AllInputOutsideConnections(m_currBuildingId);
             }
 
             if (m_inputMode == InputMode.OUTGOING)
             {
-                UIAllOutsideConnectionsCheckBox.isChecked = Constraints.OutputOutsideConnections(m_currBuildingId);
+                UIAllOutsideConnectionsCheckBox.isChecked = Constraints.AllOutputOutsideConnections(m_currBuildingId);
             }
+
+            
+            ShowComponent(UIConnectionsSummary, !UIAllOutsideConnectionsCheckBox.isChecked);
+            ShowComponent(UIConnectionsDropDown, !UIAllOutsideConnectionsCheckBox.isChecked);
 
             UIAllOutsideConnectionsCheckBox.tooltip = "If enabled, serves all outside connections.";
             UIAllOutsideConnectionsCheckBox.label.text = "All Outside Connections: ";
@@ -1010,6 +1095,19 @@ namespace EnhancedDistrictServices
             }
         }
 
+        private void UpdateUIConnectionsDropdownItems()
+        {
+            UIConnectionsDropDown.Clear();
+            m_listIndexToConnectionId.Clear();
+
+            var buildings = FindOutsideConnections();
+            foreach (var b in buildings)
+            {
+                UIConnectionsDropDown.AddItem($"{TransferManagerInfo.GetServiceTypeText(b)} ({b})", isChecked: false);
+                m_listIndexToConnectionId.Add(b);
+            }
+        }
+
         private void UpdateUIDistrictsDropdownDistrictItems()
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIDistrictsDropdownDistrictItems Update");
@@ -1042,6 +1140,48 @@ namespace EnhancedDistrictServices
             Logger.LogVerbose($"EnhancedDistrictServicedUIPanel::UIDistrictsDropdownDistrictItems Found {m_districtParkMapping.Count} districts.");
         }
 
+        private void UpdateUIOutsideConnectionsDropdown()
+        {
+            if (m_currBuildingId == 0 || !(m_inputMode == InputMode.INCOMING || m_inputMode == InputMode.OUTGOING))
+            {
+                return;
+            }
+
+            List<int> connectionIds = null;
+            if (m_inputMode == InputMode.INCOMING)
+            {
+                connectionIds = Constraints.InputOutsideConnectionIds(m_currBuildingId);
+            }
+            if (m_inputMode == InputMode.OUTGOING)
+            {
+                connectionIds = Constraints.OutputOutsideConnectionIds(m_currBuildingId);
+            }
+
+            void SetChecked(int i, bool ischecked)
+            {
+                if (UIConnectionsDropDown.GetChecked(i) != ischecked)
+                {
+                    UIConnectionsDropDown.SetChecked(i, ischecked);
+                }
+            }
+
+            if (connectionIds != null)
+            {
+                // Do not used UICheckboxDropDown::SetChecked(bool[] isChecked) because it replaces the underlying array.
+                for (int i = 0; i < m_listIndexToConnectionId.Count; i++)
+                {
+                    SetChecked(i, connectionIds.Contains(m_listIndexToConnectionId[i]));
+                }
+            }
+            else
+            {
+                // Do not used UICheckboxDropDown::SetChecked(bool[] isChecked) because it replaces the underlying array.
+                for (int i = 0; i < m_listIndexToConnectionId.Count; i++)
+                {
+                    SetChecked(i, false);
+                }
+            }
+        }
         private void UpdateUIDistrictsDropdown()
         {
             Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIDistrictsDropdown Update");
@@ -1084,6 +1224,31 @@ namespace EnhancedDistrictServices
                 {
                     SetChecked(i, false);
                 }
+            }
+        }
+
+        private void UpdateUIOutsideConnectionsSummary()
+        {
+            UIConnectionsDropDown.triggerButton.tooltip = string.Empty;
+            if (m_currBuildingId == 0 || !(m_inputMode == InputMode.INCOMING || m_inputMode == InputMode.OUTGOING))
+            {
+                UIConnectionsSummary.text = string.Empty;
+                return;
+            }
+            
+            List<int> ids;
+            if (m_inputMode == InputMode.INCOMING)
+                ids = Constraints.InputOutsideConnectionIds(m_currBuildingId);
+            else if (m_inputMode == InputMode.OUTGOING) 
+                ids = Constraints.OutputOutsideConnectionIds(m_currBuildingId);
+            else return;
+            if (ids == null || ids.Count == 0)
+                UIConnectionsSummary.text = "Shipments from connections: None";
+            else
+            {
+
+                UIConnectionsSummary.text = string.Join(", ",
+                    ids.Select(b => $"{TransferManagerInfo.GetServiceTypeText((ushort) b)} ({b})").ToArray());
             }
         }
 
@@ -1363,6 +1528,26 @@ namespace EnhancedDistrictServices
             {
                 Logger.LogException(ex);
                 return 0;
+            }
+        }
+
+        private static List<int> FindOutsideConnections()
+        {
+            try
+            {
+                var list = new List<int>();
+
+                for (int buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
+                {
+                    if (BuildingManager.instance.m_buildings.m_buffer[buildingId].Info?.GetAI()?.GetType() == typeof(OutsideConnectionAI))
+                        list.Add(buildingId);
+                }
+                return list;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex);
+                return new List<int>();
             }
         }
 

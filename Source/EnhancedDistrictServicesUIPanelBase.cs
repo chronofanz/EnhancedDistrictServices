@@ -133,6 +133,9 @@ namespace EnhancedDistrictServices
         public UILabel UIDistrictsSummary;
         public UICheckboxDropDown UIDistrictsDropDown;
 
+        public UILabel UIConnectionsSummary;
+        public UICheckboxDropDown UIConnectionsDropDown;
+
         public UICheckBox UIVehicleDefaultsCheckBox;
         public UILabel UIVehiclesSummary;
         public UICheckboxDropDown UIVehiclesDropDown;
@@ -152,7 +155,7 @@ namespace EnhancedDistrictServices
 
             name = GetType().Name;
             backgroundSprite = "MenuPanel2";
-            size = new Vector2(m_componentWidth + 2 * m_componentPadding, 200);
+            size = new Vector2(m_componentWidth + 2 * m_componentPadding, 230);
 
             UITitle = AttachUILabelTo(this, 3, 3, height: 25);
             UITitle.textAlignment = UIHorizontalAlignment.Center;
@@ -187,6 +190,12 @@ namespace EnhancedDistrictServices
             UIDistrictsDropDown = AttachUICheckboxDropDownTo(this, 3, 148 + 3);
             UIDistrictsDropDown.eventDropdownOpen += UIEventDropdownOpen;
             UIDistrictsDropDown.eventDropdownClose += UIEventDropdownClose;
+
+            UIConnectionsSummary = AttachUILabelTo(this, 3, 148);
+            UIConnectionsSummary.zOrder = 0;
+            UIConnectionsDropDown = AttachUICheckboxDropDownTo(this, 3, 148 + 3);
+            UIConnectionsDropDown.eventDropdownOpen += UIEventDropdownOpen;
+            UIConnectionsDropDown.eventDropdownClose += UIEventDropdownClose;
 
             UIVehicleDefaultsCheckBox = AttachUICheckBoxTo(this, 141, 88);
             UIVehicleDefaultsCheckBox.label = AttachUILabelTo(UIVehicleDefaultsCheckBox, -138, 0);

@@ -9,7 +9,7 @@ namespace EnhancedDistrictServices
 {
     public static class TransferManagerMod
     {
-        private static readonly Randomizer m_randomizer = new Randomizer(0);
+        private static Randomizer m_randomizer = new Randomizer(0);
 
         private static readonly TransferManager.TransferOffer[] m_outgoingOffers;
         private static readonly TransferManager.TransferOffer[] m_incomingOffers;
@@ -763,7 +763,7 @@ namespace EnhancedDistrictServices
                         material);
                     return true;
                 }
-                else if (Constraints.OutputOutsideConnections(responseBuilding))
+                else if (Constraints.OutputOutsideConnections(responseBuilding, requestBuilding))
                 {
                     Logger.LogMaterial(
                         $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, matched inside to outside offer",
@@ -783,7 +783,7 @@ namespace EnhancedDistrictServices
             if (TransferManagerInfo.IsOutsideBuilding(responseBuilding))
             {
                 // Don't be so aggressive in trying to serve low priority orders with outside connections.
-                if (requestPriority > 1 && Constraints.InputOutsideConnections(requestBuilding))
+                if (requestPriority > 1 && Constraints.InputOutsideConnections(requestBuilding, responseBuilding))
                 {
                     Logger.LogMaterial(
                         $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, matched outside to inside offer",

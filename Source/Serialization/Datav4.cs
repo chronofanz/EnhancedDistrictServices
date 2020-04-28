@@ -18,7 +18,7 @@ namespace EnhancedDistrictServices.Serialization
         public List<int>[] BuildingToBuildingServiced = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
         public int GlobalOutsideConnectionIntensity = 15;
         public int GlobalOutsideToOutsideMaxPerc = 10;
-
+        
         private static readonly string m_id = "EnhancedDistrictServices_v4";
 
         public string Id
@@ -28,6 +28,9 @@ namespace EnhancedDistrictServices.Serialization
                 return m_id;
             }
         }
+
+        public List<int>[] InputBuildingToOutsideConnectionsIds = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
+        public List<int>[] OutputBuildingToOutsideConnectionsIds = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
         public static bool TryLoadData(EnhancedDistrictServicesSerializableData loader, out Datav4 data)
         {
