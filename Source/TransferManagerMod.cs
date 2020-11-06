@@ -567,6 +567,16 @@ namespace EnhancedDistrictServices
                 }
             }
 
+            // Don't match outside connections that are too close to each other.
+            if (TransferManagerInfo.IsOutsideBuilding(requestHomeBuilding) && TransferManagerInfo.IsOutsideBuilding(responseHomeBuilding))
+            {
+                var requestPosition = BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_position;
+                var responsePosition = BuildingManager.instance.m_buildings.m_buffer[responseHomeBuilding].m_position;
+
+                var distanceSquared = Vector3.SqrMagnitude(responsePosition - requestPosition);
+                return distanceSquared <= 100000;
+            }
+
             return false;
         }
 

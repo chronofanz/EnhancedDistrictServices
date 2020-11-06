@@ -56,7 +56,7 @@ namespace EnhancedDistrictServices
         /// <summary>
         /// Betweeen 0 and 1000 inclusive, this controls how much incoming/outgoing traffic comes into the game.
         /// </summary>
-        private static int m_globalOutsideConnectionIntensity = 15;
+        private static int m_globalOutsideConnectionIntensity = 600;
 
         /// <summary>
         /// Betweeen 0 and 100 inclusive, this controls the max percentage of traffic that can be outside-to-outside traffic.

@@ -69,23 +69,24 @@ namespace EnhancedDistrictServices
                     }
                 }
 
-                var vehicleCount = TransferManagerInfo.GetCargoVehicleCount(requestBuilding, material);
+                var vehicleCount1 = TransferManagerInfo.GetCargoVehicleCount(requestBuilding, material);
+                var vehicleCount2 = TransferManagerInfo.GetCargoVehicleCount(responseBuilding, material);
 
-                var maxConcurrentOrderCount = Math.Ceiling(Constraints.GlobalOutsideConnectionIntensity() / 10.0);
+                var maxConcurrentOrderCount = Math.Ceiling(Constraints.GlobalOutsideConnectionIntensity() / 10.0); // 500 setting = 50 count
                 if (isRequestBuildingOutside && TransferManagerInfo.IsOutsideRoadConnection(requestBuilding))
                 {
                     maxConcurrentOrderCount *= 4;
                 }
 
                 var maxConcurrentOrderCountToResponseBuilding = Math.Ceiling(maxConcurrentOrderCount / 2.0);
-                var maxConcurrentOrderCountToOutsideConnection = Math.Ceiling(maxConcurrentOrderCount * Constraints.GlobalOutsideToOutsidePerc() / 100.0);
+                var maxConcurrentOrderCountToOutsideConnection = Math.Ceiling(0.25 * maxConcurrentOrderCount * Constraints.GlobalOutsideToOutsidePerc() / 100.0);
 
                 var maxVehicleCount = Math.Ceiling(maxConcurrentOrderCount / 2.0);
 
                 bool isRestrictedConcurrent = concurrentOrderCount >= maxConcurrentOrderCount;
                 bool isRestrictedConcurrentToBuilding = concurrentOrderCountToResponseBuilding >= maxConcurrentOrderCountToResponseBuilding;
                 bool isRestrictedConcurrentToOutsideConnection = isRequestBuildingOutside && isResponseBuildingOutside && concurrentOrderCountToOutsideConnection >= maxConcurrentOrderCountToOutsideConnection;
-                bool isVehicleConstrained = vehicleCount >= maxVehicleCount;
+                bool isVehicleConstrained = vehicleCount1 >= maxVehicleCount || vehicleCount2 >= maxVehicleCount;
 
                 return isRestrictedConcurrent || isRestrictedConcurrentToBuilding || isRestrictedConcurrentToOutsideConnection || isVehicleConstrained;
             }
