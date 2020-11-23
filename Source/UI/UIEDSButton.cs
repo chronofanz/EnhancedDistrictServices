@@ -80,7 +80,7 @@ namespace EnhancedDistrictServices
 
                     Utils.DisplayMessage(
                         str1: "Enhanced District Services",
-                        str2: $"Please check the EDS mod page for latest updates.  Fixed bug where we did not limit amount of cargo planes, ships and trains for high global outside connection intensity setting.",
+                        str2: $"Please check the EDS mod page for latest updates.  Fix cargo truck count bug.  Add support for boilers for Snowfall.  Also fix a bug where restrictions on recycled goods from Recycling Centers were not being honored.",
                         str3: "IconMessage");
                 }
 
