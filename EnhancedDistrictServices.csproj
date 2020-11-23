@@ -66,6 +66,7 @@
     <Compile Include="Source\Constraints.cs" />
     <Compile Include="Source\EnhancedDistrictServicesLoadingExtension.cs" />
     <Compile Include="Source\Patches\CableCarStationAICreateVehiclePatch.cs" />
+    <Compile Include="Source\Patches\CarAIPatch.cs" />
     <Compile Include="Source\Patches\CarAIPathfindFailurePatch.cs" />
     <Compile Include="Source\Patches\CargoTruckAIChangeVehicleTypePatch.cs" />
     <Compile Include="Source\Patches\DistrictManagerReleaseDistrictPatch.cs" />

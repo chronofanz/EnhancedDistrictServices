@@ -751,10 +751,28 @@ namespace EnhancedDistrictServices
             // should not apply to these materials.
             if (responseBuilding != 0 && BuildingManager.instance.m_buildings.m_buffer[responseBuilding].Info.GetAI() is LandfillSiteAI)
             {
-                Logger.LogMaterial(
-                    $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, allow recycling centers",
-                    material);
-                return true;
+                if (TransferManagerInfo.IsOutsideOffer(ref requestOffer))
+                {
+                    Logger.LogMaterial(
+                        $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, allow recycling centers",
+                        material);
+                    return true;
+                }
+
+                // Only allow if there are no restrictions on the request, OR if recycling center resides in an allowed district.
+                var requestDistrictParksServed = Constraints.InputDistrictParkServiced(requestBuilding);
+                var responseDistrictPark = TransferManagerInfo.GetDistrictPark(responseBuilding);
+                if (Constraints.InputAllLocalAreas(requestBuilding) || responseDistrictPark.IsServedBy(requestDistrictParksServed))
+                {
+                    Logger.LogMaterial(
+                        $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, allow recycling centers",
+                        material);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             // See if the request is from an outside connection ...
