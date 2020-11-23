@@ -66,6 +66,7 @@
     <Compile Include="Source\Constraints.cs" />
     <Compile Include="Source\EnhancedDistrictServicesLoadingExtension.cs" />
     <Compile Include="Source\Patches\CableCarStationAICreateVehiclePatch.cs" />
+    <Compile Include="Source\Patches\CarAIPatch.cs" />
     <Compile Include="Source\Patches\CarAIPathfindFailurePatch.cs" />
     <Compile Include="Source\Patches\CargoTruckAIChangeVehicleTypePatch.cs" />
     <Compile Include="Source\Patches\DistrictManagerReleaseDistrictPatch.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="Source\Serialization\TransferHistoryv1.cs" />
     <Compile Include="Source\Serialization\Vehiclesv1.cs" />
     <Compile Include="Source\TransferHistory.cs" />
+    <Compile Include="Source\OutsideConnectionInfo.cs" />
     <Compile Include="Source\UI\InputType.cs" />
     <Compile Include="Source\UI\CopyPaste.cs" />
     <Compile Include="Source\UI\ResourceLoader.cs" />

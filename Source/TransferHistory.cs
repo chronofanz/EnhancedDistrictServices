@@ -58,14 +58,14 @@ namespace EnhancedDistrictServices
                 var concurrentOrderCountToResponseBuilding = 0;
                 for (int i = 0; i < list.Count; i++)
                 {
-                    if (list[i].ResponseBuilding == responseBuilding)
-                    {
-                        concurrentOrderCountToResponseBuilding++;
-                    }
-
                     if (TransferManagerInfo.IsOutsideBuilding(list[i].ResponseBuilding))
                     {
                         concurrentOrderCountToOutsideConnection++;
+                    }
+
+                    if (list[i].ResponseBuilding == responseBuilding)
+                    {
+                        concurrentOrderCountToResponseBuilding++;
                     }
                 }
 
@@ -77,11 +77,17 @@ namespace EnhancedDistrictServices
                 {
                     maxConcurrentOrderCount *= 4;
                 }
+                else
+                {
+                    maxConcurrentOrderCount *= 2;
+                }
 
                 var maxConcurrentOrderCountToResponseBuilding = Math.Ceiling(maxConcurrentOrderCount / 2.0);
                 var maxConcurrentOrderCountToOutsideConnection = Math.Ceiling(0.25 * maxConcurrentOrderCount * Constraints.GlobalOutsideToOutsidePerc() / 100.0);
 
-                var maxVehicleCount = Math.Ceiling(maxConcurrentOrderCount / 2.0);
+                var maxVehicleCount = Math.Ceiling(maxConcurrentOrderCount / 4.0);
+
+                // Logger.LogVerbose($"TransferHistory::IsRestricted: request={requestBuilding}, response={responseBuilding}, concurrentOrderCount = {concurrentOrderCount}, maxConcurrentOrderCount={maxConcurrentOrderCount}, concurrentOrderCountToOutsideConnection={concurrentOrderCountToOutsideConnection}, maxConcurrentOrderCountToOutsideConnection={maxConcurrentOrderCountToOutsideConnection}, vehicleCount1={vehicleCount1}, vehicleCount2={vehicleCount2}, maxVehicleCount={maxVehicleCount}");
 
                 bool isRestrictedConcurrent = concurrentOrderCount >= maxConcurrentOrderCount;
                 bool isRestrictedConcurrentToBuilding = concurrentOrderCountToResponseBuilding >= maxConcurrentOrderCountToResponseBuilding;
@@ -121,6 +127,9 @@ namespace EnhancedDistrictServices
         public static void Clear()
         {
             m_data.Clear();
+
+            // Somewhat hacky, sticking this call in here ...
+            OutsideConnectionInfo.Reload();
         }
 
         /// <summary>
@@ -134,7 +143,7 @@ namespace EnhancedDistrictServices
 
             foreach (var e in data.TransferEvents)
             {
-                Logger.Log($"TransferHistory::LoadData: B{e.RequestBuilding} to B{e.ResponseBuilding}, {e.Material}, {e.TimeStamp}");
+                // Logger.Log($"TransferHistory::LoadData: B{e.RequestBuilding} to B{e.ResponseBuilding}, {e.Material}, {e.TimeStamp}");
                 Add(e.RequestBuilding, e.ResponseBuilding, e.Material, e.TimeStamp);
             }
         }

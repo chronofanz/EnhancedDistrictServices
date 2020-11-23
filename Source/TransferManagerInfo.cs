@@ -60,11 +60,12 @@ namespace EnhancedDistrictServices
 
             var result = InputType.NONE;
 
-            // The only building type for which we will not show an outgoing tab is coal power plants.
+            // The only building type for which we will not show an outgoing tab is coal and heating power plants.
             var info = BuildingManager.instance.m_buildings.m_buffer[building].Info;
             if (TransferManagerInfo.IsDistrictServicesBuilding(building))
             {
                 if ((info?.GetService() == ItemClass.Service.Electricity && info?.GetAI() is PowerPlantAI) ||
+                    (info?.GetService() == ItemClass.Service.Water && info?.GetAI() is HeatingPlantAI) ||
                     (info?.GetService() == ItemClass.Service.Monument && info?.gameObject?.name == "ChirpX Launch Control Center"))
                 {
                 }
@@ -223,16 +224,19 @@ namespace EnhancedDistrictServices
 
                 if (vehiclePrefabAI.GetType() == typeof(CargoPlaneAI) || vehiclePrefabAI.GetType() == typeof(CargoShipAI) || vehiclePrefabAI.GetType() == typeof(CargoTrainAI))
                 {
-                    count += 4;
+                    count += 5;
                 }
                 else if (vehicleMaterial == material)
                 {
                     if ((instance.m_vehicles.m_buffer[(int)vehicleID].m_flags & (Vehicle.Flags.Importing | Vehicle.Flags.Exporting)) != ~(Vehicle.Flags.Created | Vehicle.Flags.Deleted | Vehicle.Flags.Spawned | Vehicle.Flags.Inverted | Vehicle.Flags.TransferToTarget | Vehicle.Flags.TransferToSource | Vehicle.Flags.Emergency1 | Vehicle.Flags.Emergency2 | Vehicle.Flags.WaitingPath | Vehicle.Flags.Stopped | Vehicle.Flags.Leaving | Vehicle.Flags.Arriving | Vehicle.Flags.Reversed | Vehicle.Flags.TakingOff | Vehicle.Flags.Flying | Vehicle.Flags.Landing | Vehicle.Flags.WaitingSpace | Vehicle.Flags.WaitingCargo | Vehicle.Flags.GoingBack | Vehicle.Flags.WaitingTarget | Vehicle.Flags.Importing | Vehicle.Flags.Exporting | Vehicle.Flags.Parking | Vehicle.Flags.CustomName | Vehicle.Flags.OnGravel | Vehicle.Flags.WaitingLoading | Vehicle.Flags.Congestion | Vehicle.Flags.DummyTraffic | Vehicle.Flags.Underground | Vehicle.Flags.Transition | Vehicle.Flags.InsideBuilding | Vehicle.Flags.LeftHandDrive))
+                    {
+                        // Logger.LogVerbose($"TransferManagerInfo::GetCargeVehicleCount: {building}, {vehicleID}, {material}, {instance.m_vehicles.m_buffer[(int)vehicleID].m_leadingVehicle}, {instance.m_vehicles.m_buffer[(int)vehicleID].m_trailingVehicle}, {count}");
                         ++count;
+                    }
                 }
 
                 vehicleID = instance.m_vehicles.m_buffer[(int)vehicleID].m_nextOwnVehicle;
-                if (++count > 16384)
+                if (count > 16384)
                 {
                     CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
                     break;
@@ -724,6 +728,12 @@ namespace EnhancedDistrictServices
                         return (
                             info.GetAI() is PowerPlantAI);
 
+                    case ItemClass.Service.Fishing:
+                        return (
+                            info.GetAI() is FishFarmAI ||
+                            info.GetAI() is FishingHarborAI ||
+                            info.GetAI() is ProcessingFacilityAI);
+
                     case ItemClass.Service.Monument:
                         return (info?.gameObject?.name == "ChirpX Launch Control Center");
 
@@ -732,12 +742,6 @@ namespace EnhancedDistrictServices
                             info.GetSubService() == ItemClass.SubService.PlayerEducationLiberalArts ||
                             info.GetSubService() == ItemClass.SubService.PlayerEducationTradeSchool ||
                             info.GetSubService() == ItemClass.SubService.PlayerEducationUniversity);
-
-                    case ItemClass.Service.Fishing:
-                        return (
-                            info.GetAI() is FishFarmAI ||
-                            info.GetAI() is FishingHarborAI ||
-                            info.GetAI() is ProcessingFacilityAI);
 
                     case ItemClass.Service.PlayerIndustry:
                         return !(
@@ -759,8 +763,8 @@ namespace EnhancedDistrictServices
 
                     case ItemClass.Service.Water:
                         return (
-                            info.GetAI() is WaterFacilityAI waterFacilityAI &&
-                            waterFacilityAI.m_pumpingVehicles > 0);
+                            (info.GetAI() is WaterFacilityAI waterFacilityAI && waterFacilityAI.m_pumpingVehicles > 0) ||
+                            (info.GetAI() is HeatingPlantAI));
 
                     default:
                         return false;
@@ -841,6 +845,10 @@ namespace EnhancedDistrictServices
                         return (
                             info.GetAI() is OutsideConnectionAI);
 
+                    case ItemClass.Service.Water:
+                        return (
+                            info.GetAI() is HeatingPlantAI);
+
                     default:
                         return false;
                 }
@@ -860,7 +868,9 @@ namespace EnhancedDistrictServices
             var info = BuildingManager.instance.m_buildings.m_buffer[destination].Info;
             if (info?.GetService() == ItemClass.Service.Electricity && info?.GetAI() is PowerPlantAI)
             {
-                return sourceMaterial == TransferManager.TransferReason.Coal;
+                return 
+                    sourceMaterial == TransferManager.TransferReason.Coal ||
+                    sourceMaterial == TransferManager.TransferReason.Petrol;
             }
 
             if (info?.GetService() == ItemClass.Service.Monument && info?.gameObject?.name == "ChirpX Launch Control Center")
@@ -881,8 +891,12 @@ namespace EnhancedDistrictServices
 
             if (info?.GetService() == ItemClass.Service.PlayerIndustry && info?.GetAI() is WarehouseAI warehouseAI)
             {
-                return
-                    GetSupplyBuildingOutputMaterial(destination) == sourceMaterial;
+                return GetSupplyBuildingOutputMaterial(destination) == sourceMaterial;
+            }
+
+            if (info?.GetService() == ItemClass.Service.Water && info?.GetAI() is HeatingPlantAI)
+            {
+                return sourceMaterial == TransferManager.TransferReason.Petrol;
             }
 
             return false;
