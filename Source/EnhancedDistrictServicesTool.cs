@@ -39,9 +39,12 @@ namespace EnhancedDistrictServices
             BuildingManager.instance.EventBuildingCreated += Constraints.CreateBuilding;
             BuildingManager.instance.EventBuildingCreated += VehicleManagerMod.CreateBuilding;
             BuildingManager.instance.EventBuildingCreated += TaxiMod.RegisterTaxiBuilding;
+            BuildingManager.instance.EventBuildingCreated += OutsideConnectionInfo.RegisterCargoBuilding;
+
             BuildingManager.instance.EventBuildingReleased += Constraints.ReleaseBuilding;
             BuildingManager.instance.EventBuildingReleased += VehicleManagerMod.ReleaseBuilding;
             BuildingManager.instance.EventBuildingReleased += TaxiMod.DeregisterTaxiBuilding;
+            BuildingManager.instance.EventBuildingReleased += OutsideConnectionInfo.DeregisterCargoBuilding;
         }
 
         protected override void OnDestroy()

@@ -349,7 +349,7 @@ namespace EnhancedDistrictServices
                                     continue;
                                 }
 
-                                if (IsSameLocation(ref requestOffer,ref responseOffer))
+                                if (IsSameLocation(ref requestOffer, ref responseOffer))
                                 {
                                     continue;
                                 }

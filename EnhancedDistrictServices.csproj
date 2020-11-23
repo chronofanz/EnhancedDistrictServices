@@ -28,7 +28,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;VERBOSE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -88,6 +88,7 @@
     <Compile Include="Source\Serialization\TransferHistoryv1.cs" />
     <Compile Include="Source\Serialization\Vehiclesv1.cs" />
     <Compile Include="Source\TransferHistory.cs" />
+    <Compile Include="Source\OutsideConnectionInfo.cs" />
     <Compile Include="Source\UI\InputType.cs" />
     <Compile Include="Source\UI\CopyPaste.cs" />
     <Compile Include="Source\UI\ResourceLoader.cs" />

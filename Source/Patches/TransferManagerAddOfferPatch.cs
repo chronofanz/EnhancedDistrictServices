@@ -12,6 +12,13 @@ namespace EnhancedDistrictServices
         {
             Logger.LogMaterial($"TransferManager::AddIncomingOffer: {Utils.ToString(ref offer, material)}!", material);
 
+            // Inactive outside connections should not be adding offers ...
+            if (OutsideConnectionInfo.IsInvalidIncomingOutsideConnection(offer.Building))
+            {
+                Logger.LogMaterial($"TransferManager::AddIncomingOffer: Disallowing outside connection B{offer.Building} because of missing cargo buildings!", material);
+                return false;
+            }
+
             if (!(TransferManagerInfo.IsDistrictOffer(material) || TransferManagerInfo.IsSupplyChainOffer(material)))
             {
                 // Fix for certain assets that have sub buildings that should not be making offers ...
@@ -57,6 +64,13 @@ namespace EnhancedDistrictServices
         public static bool Prefix(ref TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)        
         {
             Logger.LogMaterial($"TransferManager::AddOutgoingOffer: {Utils.ToString(ref offer, material)}!", material);
+
+            // Inactive outside connections should not be adding offers ...
+            if (OutsideConnectionInfo.IsInvalidOutgoingOutsideConnection(offer.Building))
+            {
+                Logger.LogMaterial($"TransferManager::AddOutgoingOffer: Disallowing outside connection B{offer.Building} because of missing cargo buildings!", material);
+                return false;
+            }
 
             // Change these offers ... a bug in the base game.  Citizens should not offer health care services.
             if ((material == TransferManager.TransferReason.ElderCare || material == TransferManager.TransferReason.ChildCare) && offer.Citizen != 0)
