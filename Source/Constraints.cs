@@ -1,6 +1,7 @@
 ﻿using ColossalFramework;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 
 namespace EnhancedDistrictServices
 {
@@ -19,6 +20,16 @@ namespace EnhancedDistrictServices
         /// Map of building id to bool indicating whether outside connections are serviced by the building.
         /// </summary>
         private static readonly bool[] m_inputBuildingToOutsideConnections = new bool[BuildingManager.MAX_BUILDING_COUNT];
+
+        /// <summary>
+        /// Map of building id to bool indicating which outside connections are serviced by the building.
+        /// </summary>
+        private static readonly List<int>[] m_inputBuildingToOutsideConnectionIds = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
+        
+        /// <summary>
+        /// Map of building id to bool indicating which outside connections are serviced by the building.
+        /// </summary>
+        private static readonly List<int>[] m_outputBuildingToOutsideConnectionIds = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
         /// Map of building id to list of districts or parks served by the building.
@@ -107,6 +118,9 @@ namespace EnhancedDistrictServices
 
                 var restrictions2 = data.InputBuildingToOutsideConnections[building];
                 SetAllInputOutsideConnections(building, restrictions2);
+                
+                SetInputOutsideConnectionIds(building, data.InputBuildingToOutsideConnectionsIds?[building]);
+                SetOutputOutsideConnectionIds(building, data.OutputBuildingToOutsideConnectionsIds?[building]);
 
                 var restrictions3 = data.InputBuildingToDistrictServiced[building];
                 if (restrictions3 != null)
@@ -167,12 +181,14 @@ namespace EnhancedDistrictServices
             {
                 InputBuildingToAllLocalAreas = m_inputBuildingToAllLocalAreas.ToArray(),
                 InputBuildingToOutsideConnections = m_inputBuildingToOutsideConnections.ToArray(),
+                InputBuildingToOutsideConnectionsIds = m_inputBuildingToOutsideConnectionIds.ToArray(),
                 InputBuildingToDistrictServiced = m_inputBuildingToDistrictParkServiced
                     .Select(list => list?.Select(districtPark => districtPark.ToSerializedInt()).ToList())
                     .ToArray(),
 
                 OutputBuildingToAllLocalAreas = m_outputBuildingToAllLocalAreas.ToArray(),
                 OutputBuildingToOutsideConnections = m_outputBuildingToOutsideConnections.ToArray(),
+                OutputBuildingToOutsideConnectionsIds = m_outputBuildingToOutsideConnectionIds.ToArray(),
                 OutputBuildingToDistrictServiced = m_outputBuildingToDistrictParkServiced
                     .Select(list => list?.Select(districtPark => districtPark.ToSerializedInt()).ToList())
                     .ToArray(),
@@ -212,6 +228,8 @@ namespace EnhancedDistrictServices
             // Set default input settings.
             SetAllInputLocalAreas(buildingId, true);
             SetAllInputOutsideConnections(buildingId, true);
+            SetInputOutsideConnectionIds(buildingId, null);
+            SetOutputOutsideConnectionIds(buildingId, null);
             m_inputBuildingToDistrictParkServiced[buildingId] = null;
 
             // Do not set the home district for these types of buildings.
@@ -245,10 +263,12 @@ namespace EnhancedDistrictServices
         {
             m_inputBuildingToAllLocalAreas[buildingId] = true;
             m_inputBuildingToOutsideConnections[buildingId] = true;
+            m_inputBuildingToOutsideConnectionIds[buildingId] = null;
             m_inputBuildingToDistrictParkServiced[buildingId] = null;
 
             m_outputBuildingToAllLocalAreas[buildingId] = true;
             m_outputBuildingToOutsideConnections[buildingId] = true;
+            m_outputBuildingToOutsideConnectionIds[buildingId] = null;
             m_outputBuildingToDistrictParkServiced[buildingId] = null;
 
             m_buildingToInternalSupplyBuffer[buildingId] = 100;
@@ -289,9 +309,20 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="buildingId"></param>
         /// <returns></returns>
-        public static bool InputOutsideConnections(ushort buildingId)
+        public static bool InputOutsideConnections(ushort buildingId, ushort outsideBuildingId)
+        {
+            return m_inputBuildingToOutsideConnections[buildingId] || (m_inputBuildingToOutsideConnectionIds[buildingId]?.Contains(outsideBuildingId) ?? false);
+        }
+
+        public static bool AllInputOutsideConnections(ushort buildingId)
         {
             return m_inputBuildingToOutsideConnections[buildingId];
+        }
+
+        [CanBeNull]
+        public static List<int> InputOutsideConnectionIds(ushort buildingId)
+        {
+            return m_inputBuildingToOutsideConnectionIds[buildingId];
         }
 
         /// <summary>
@@ -320,11 +351,21 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="buildingId"></param>
         /// <returns></returns>
-        public static bool OutputOutsideConnections(ushort buildingId)
+        public static bool OutputOutsideConnections(ushort buildingId, ushort outsideBuildingId)
+        {
+            return m_outputBuildingToOutsideConnections[buildingId] || (m_outputBuildingToOutsideConnectionIds[buildingId]?.Contains(outsideBuildingId) ?? false);
+        }
+
+        public static bool AllOutputOutsideConnections(ushort buildingId)
         {
             return m_outputBuildingToOutsideConnections[buildingId];
         }
 
+        [CanBeNull]
+        public static List<int> OutputOutsideConnectionIds(ushort buildingId)
+        {
+            return m_outputBuildingToOutsideConnectionIds[buildingId];
+        }
         /// <summary>
         /// Returns the list of districts or parks served by the building.
         /// TODO: Replace with IReadOnlyList.  Can't do it with older version of .NET.
@@ -412,6 +453,16 @@ namespace EnhancedDistrictServices
             Logger.LogVerbose($"Constraints::SetAllInputOutsideConnections: {buildingName} ({buildingId}) => {status} ...");
 
             SetArrayStatus(m_inputBuildingToOutsideConnections, buildingId, status);
+        }
+
+        public static void SetInputOutsideConnectionIds(int buildingId, [CanBeNull] IList<int> ids)
+        {
+            m_inputBuildingToOutsideConnectionIds[buildingId] = ids?.ToList();
+        }
+        
+        public static void SetOutputOutsideConnectionIds(int buildingId, [CanBeNull] IList<int> ids)
+        {
+            m_outputBuildingToOutsideConnectionIds[buildingId] = ids?.ToList();
         }
 
         public static void SetAllOutputLocalAreas(int buildingId, bool status)

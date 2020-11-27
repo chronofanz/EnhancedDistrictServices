@@ -329,6 +329,23 @@ namespace EnhancedDistrictServices
             }
         }
 
+        public static string GetServiceTypeText(int building)
+        {
+            if (building == 0) return string.Empty;
+
+            var buildingInfo = BuildingManager.instance.m_buildings.m_buffer[building].Info;
+            var service = buildingInfo.GetService();
+            var subService = buildingInfo.GetSubService();
+            if (buildingInfo.GetAI() is OutsideConnectionAI)
+            {
+                if (buildingInfo.GetService() == ItemClass.Service.Road) return $"Road";
+
+                return $"{subService}";
+            }
+
+            return $"{service}";
+        }
+
         /// <summary>
         /// Returns a descriptive text indicating the supply chain destination buildings that the given building
         /// will ship to.
@@ -350,7 +367,7 @@ namespace EnhancedDistrictServices
                 txtItems.Add($"All local areas");
             }
 
-            if (Constraints.OutputOutsideConnections(building))
+            if (Constraints.AllOutputOutsideConnections(building))
             {
                 txtItems.Add($"All outside connections");
             }
@@ -419,7 +436,7 @@ namespace EnhancedDistrictServices
                 txtItems.Add($"All local areas");
             }
 
-            if (Constraints.InputOutsideConnections(building))
+            if (Constraints.AllInputOutsideConnections(building))
             {
                 txtItems.Add($"All outside connections");
             }
@@ -486,8 +503,9 @@ namespace EnhancedDistrictServices
                     return true;
                 }
 
+                // TODO handle connection ids
                 // Assume for now that the outside connection can supply the building with the materials it needs.
-                if (Constraints.InputOutsideConnections(building))
+                if (Constraints.AllInputOutsideConnections(building))
                 {
                     return true;
                 }

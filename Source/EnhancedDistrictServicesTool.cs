@@ -78,6 +78,7 @@ namespace EnhancedDistrictServices
         {
             base.OnDisable();
             EnhancedDistrictServicesUIPanel.Instance?.UIDistrictsDropDown?.ClosePopup();
+            EnhancedDistrictServicesUIPanel.Instance?.UIConnectionsDropDown?.ClosePopup();
             EnhancedDistrictServicesUIPanel.Instance?.UIVehiclesDropDown?.ClosePopup();
             EnhancedDistrictServicesUIPanel.Instance?.Hide();
 

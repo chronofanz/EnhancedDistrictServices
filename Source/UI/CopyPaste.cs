@@ -13,8 +13,10 @@
             Constraints.SetAllInputLocalAreas(building, Constraints.InputAllLocalAreas(BuildingTemplate));
             Constraints.SetAllOutputLocalAreas(building, Constraints.OutputAllLocalAreas(BuildingTemplate));
 
-            Constraints.SetAllInputOutsideConnections(building, Constraints.InputOutsideConnections(BuildingTemplate));
-            Constraints.SetAllOutputOutsideConnections(building, Constraints.OutputOutsideConnections(BuildingTemplate));
+            Constraints.SetAllInputOutsideConnections(building, Constraints.AllInputOutsideConnections(BuildingTemplate));
+            Constraints.SetInputOutsideConnectionIds(building, Constraints.InputOutsideConnectionIds(BuildingTemplate));
+            Constraints.SetAllOutputOutsideConnections(building, Constraints.AllOutputOutsideConnections(BuildingTemplate));
+            Constraints.SetOutputOutsideConnectionIds(building, Constraints.OutputOutsideConnectionIds(BuildingTemplate));
 
             var inputDistrictsServed = Constraints.InputDistrictParkServiced(BuildingTemplate);
             if (inputDistrictsServed != null)
