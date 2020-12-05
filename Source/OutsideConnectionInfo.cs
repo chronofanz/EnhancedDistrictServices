@@ -122,8 +122,6 @@ namespace EnhancedDistrictServices
 
         public static void DeregisterCargoBuilding(ushort buildingId)
         {
-            Logger.Log($"OutsideConnectionInfo: Deregistering B{buildingId} as cargo building");
-
             if (m_planeCargoBuildings.Contains(buildingId))
             {
                 m_planeCargoBuildings.Remove(buildingId);
@@ -138,6 +136,8 @@ namespace EnhancedDistrictServices
             {
                 m_trainCargoBuildings.Remove(buildingId);
             }
+
+            Logger.Log($"OutsideConnectionInfo: Deregistering B{buildingId} as cargo building, planeCargoBuildingCount={m_planeCargoBuildings.Count}, shipCargoBuildingCount={m_shipCargoBuildings.Count}, trainCargoBuildingCount={m_trainCargoBuildings.Count}");
         }
 
         private static void RegisterCargoBuilding(ushort buildingId, ItemClass.SubService subService)
@@ -147,8 +147,8 @@ namespace EnhancedDistrictServices
                 case ItemClass.SubService.PublicTransportPlane:
                     if (!m_planeCargoBuildings.Contains(buildingId))
                     {
-                        Logger.Log($"OutsideConnectionInfo: Registering B{buildingId} as plane cargo building");
                         m_planeCargoBuildings.Add(buildingId);
+                        Logger.Log($"OutsideConnectionInfo: Registering B{buildingId} as plane cargo building, count={m_planeCargoBuildings.Count}");
                     }
 
                     break;
@@ -156,8 +156,8 @@ namespace EnhancedDistrictServices
                 case ItemClass.SubService.PublicTransportShip:
                     if (!m_shipCargoBuildings.Contains(buildingId))
                     {
-                        Logger.Log($"OutsideConnectionInfo: Registering B{buildingId} as ship cargo building");
                         m_shipCargoBuildings.Add(buildingId);
+                        Logger.Log($"OutsideConnectionInfo: Registering B{buildingId} as ship cargo building, count={m_shipCargoBuildings.Count}");
                     }
 
                     break;
@@ -165,8 +165,8 @@ namespace EnhancedDistrictServices
                 case ItemClass.SubService.PublicTransportTrain:
                     if (!m_trainCargoBuildings.Contains(buildingId))
                     {
-                        Logger.Log($"OutsideConnectionInfo: Registering B{buildingId} as train cargo building");
                         m_trainCargoBuildings.Add(buildingId);
+                        Logger.Log($"OutsideConnectionInfo: Registering B{buildingId} as train cargo building, count={m_trainCargoBuildings.Count}");
                     }
 
                     break;

@@ -1,9 +1,6 @@
 ﻿using ColossalFramework;
 using Harmony;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace EnhancedDistrictServices
 {
@@ -12,7 +9,7 @@ namespace EnhancedDistrictServices
     /// </summary>
     [HarmonyPatch(typeof(CarAI))]
     [HarmonyPatch(nameof(CarAI.CreateVehicle))]
-    public class CarAIPatchCreateVehicle
+    public class CarAICreateVehiclePatch
     {
         /// <summary>
         /// Purpose: Prevent overloading network with vehicles ...

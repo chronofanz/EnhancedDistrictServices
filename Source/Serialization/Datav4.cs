@@ -16,8 +16,8 @@ namespace EnhancedDistrictServices.Serialization
 
         public int[] BuildingToInternalSupplyBuffer = new int[BuildingManager.MAX_BUILDING_COUNT];
         public List<int>[] BuildingToBuildingServiced = new List<int>[BuildingManager.MAX_BUILDING_COUNT];
-        public int GlobalOutsideConnectionIntensity = 15;
-        public int GlobalOutsideToOutsideMaxPerc = 10;
+        public int GlobalOutsideConnectionIntensity = 600;
+        public int GlobalOutsideToOutsideMaxPerc = 50;
 
         private static readonly string m_id = "EnhancedDistrictServices_v4";
 

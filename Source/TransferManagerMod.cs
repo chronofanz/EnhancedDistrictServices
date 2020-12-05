@@ -693,6 +693,14 @@ namespace EnhancedDistrictServices
                 }
             }
 
+            if (!Constraints.InputOutsideConnections(requestBuilding) && TransferManagerInfo.IsOutsideOffer(ref responseOffer))
+            {
+                Logger.LogMaterial(
+                    $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, request is constrained not to accept outside offers!",
+                    material);
+                return false;
+            }
+
             if (Constraints.OutputAllLocalAreas(responseBuilding))
             {
                 Logger.LogMaterial(

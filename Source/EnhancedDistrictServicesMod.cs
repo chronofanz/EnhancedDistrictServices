@@ -13,9 +13,10 @@ namespace EnhancedDistrictServices
     /// </summary>
     public class EnhancedDistrictServicesMod : IUserMod, ILoadingExtension
     {
-        public const string version = "1.0.23";
+        public const string version = "1.0.24";
         public string Name => $"Enhanced District Services {version}";
         public string Description => "Enhanced District Services mod for Cities Skylines, which allows more granular control of services and supply chains.";
+        public HarmonyInstance Harmony { get; private set; }
 
         public EnhancedDistrictServicesMod()
         {
@@ -35,8 +36,14 @@ namespace EnhancedDistrictServices
 
         public void OnCreated(ILoading loading)
         {
-            var harmony = HarmonyInstance.Create("com.pachang.enhanceddistrictservices");
-            harmony.PatchAll(Assembly.GetExecutingAssembly());
+            Harmony = HarmonyInstance.Create("com.pachang.enhanceddistrictservices");
+            Harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+            if (Settings.disableVehicleCollisionCheck)
+            {
+                Logger.Log("EnhancedDistrictServicesMod::OnCreated: Disabling vehicle collision check near outside connections ...");
+                CarAIDisableCollectionCheckPatch.Enable(Harmony);
+            }
         }
 
         public void OnLevelLoaded(LoadMode mode)
@@ -76,6 +83,12 @@ namespace EnhancedDistrictServices
             {
                 UIHelper uiHelper = helper.AddGroup(this.Name) as UIHelper;
                 UIPanel self = uiHelper.self as UIPanel;
+
+                ((UIComponent)uiHelper.AddCheckbox(
+                    "Disable vehicle collision check near outside connections",
+                    Settings.disableVehicleCollisionCheck,
+                    b => Settings.disableVehicleCollisionCheck.value = b))
+                    .tooltip = "Disable vehicle collision check to unclog traffic jams near outside connections.";
 
                 ((UIComponent)uiHelper.AddCheckbox(
                     "Enable custom vehicles",

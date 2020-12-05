@@ -11,6 +11,7 @@ namespace EnhancedDistrictServices
         public static readonly SavedInputKey keyCopy = new SavedInputKey(nameof(keyCopy), FileName, SavedInputKey.Encode(KeyCode.C, true, false, false), true);
         public static readonly SavedInputKey keyPaste = new SavedInputKey(nameof(keyPaste), FileName, SavedInputKey.Encode(KeyCode.V, true, false, false), true);
 
+        public static readonly SavedBool disableVehicleCollisionCheck = new SavedBool(nameof(disableVehicleCollisionCheck), FileName, false, true);
         public static readonly SavedBool enableCustomVehicles = new SavedBool(nameof(enableCustomVehicles), FileName, true, true);
         public static readonly SavedBool enableDummyCargoTraffic = new SavedBool(nameof(enableDummyCargoTraffic), FileName, true, true);
         public static readonly SavedBool enableIndustriesControl = new SavedBool(nameof(enableIndustriesControl), FileName, true, true);
