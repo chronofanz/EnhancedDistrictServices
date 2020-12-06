@@ -1,6 +1,9 @@
 ﻿using ColossalFramework;
+using ColossalFramework.Math;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace EnhancedDistrictServices
 {
@@ -14,12 +17,37 @@ namespace EnhancedDistrictServices
         private static HashSet<ushort> m_shipCargoBuildings = new HashSet<ushort>();
         private static HashSet<ushort> m_trainCargoBuildings = new HashSet<ushort>();
 
+        private static List<ushort> m_outsideRoadConnections = new List<ushort>();
+        private static List<Vector3> m_outsideRoadConnectionPositions = new List<Vector3>();
+
         /// <summary>
         /// Static constructor.
         /// </summary>
         static OutsideConnectionInfo()
         {
             Reload();
+        }
+
+        public static ushort FindNearestOutsideRoadConnection(ref Segment3 segment)
+        {
+            var a = segment.a;
+            var b = segment.b;
+
+            if (Math.Abs(a.x) <= 8525 && Math.Abs(a.z) <= 8525 && Math.Abs(b.x) <= 8525 && Math.Abs(b.z) <= 8525)
+            {
+                return 0;
+            }
+
+            for (int i = 0; i < m_outsideRoadConnectionPositions.Count; i++)
+            {
+                var p = m_outsideRoadConnectionPositions[i];
+                if (Vector3.SqrMagnitude(a - p) < 100.0 || (Vector3.SqrMagnitude(b - p) < 100.0))
+                {
+                    return m_outsideRoadConnections[i];
+                }
+            }
+
+            return 0;
         }
 
         public static bool IsInvalidIncomingOutsideConnection(ushort buildingId)
@@ -99,9 +127,21 @@ namespace EnhancedDistrictServices
             m_shipCargoBuildings.Clear();
             m_trainCargoBuildings.Clear();
 
+            m_outsideRoadConnections.Clear();
+            m_outsideRoadConnectionPositions.Clear();
+
             for (ushort buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
             {
                 RegisterCargoBuilding(buildingId);
+
+                var info = Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingId].Info;
+                if (info.m_buildingAI is OutsideConnectionAI outsideConnectionAI && outsideConnectionAI.m_transportInfo?.m_vehicleType == VehicleInfo.VehicleType.Car)
+                {
+                    Logger.Log($"OutsideConnectionInfo: Registering B{buildingId} as outside road connection @ {BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position}");
+
+                    m_outsideRoadConnections.Add(buildingId);
+                    m_outsideRoadConnectionPositions.Add(BuildingManager.instance.m_buildings.m_buffer[buildingId].m_position);
+                }
             }
         }
 

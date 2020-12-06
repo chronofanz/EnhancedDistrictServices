@@ -34,7 +34,8 @@ namespace EnhancedDistrictServices
             // Coords near the edge of map have x or z > 8000 in abs value.
             var a = vehicleData.m_segment.a;
             var b = vehicleData.m_segment.b;
-            if (Math.Abs(a.x) > 8500 || Math.Abs(a.z) > 8500 || Math.Abs(b.x) > 8500 || Math.Abs(b.z) > 8500)
+            if ((Math.Abs(a.x) < 8625 && Math.Abs(a.z) < 8625 && Math.Abs(b.x) < 8625 && Math.Abs(b.z) < 8625) &&
+                (Math.Abs(a.x) > 8525 || Math.Abs(a.z) > 8525 || Math.Abs(b.x) > 8525 || Math.Abs(b.z) > 8525))
             {
                 __result = true;
             }

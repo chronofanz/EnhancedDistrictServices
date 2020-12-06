@@ -41,8 +41,9 @@ namespace EnhancedDistrictServices
 
             if (Settings.disableVehicleCollisionCheck)
             {
-                Logger.Log("EnhancedDistrictServicesMod::OnCreated: Disabling vehicle collision check near outside connections ...");
+                Logger.Log("EnhancedDistrictServicesMod::OnCreated: Enabling new algorithm for unclogging traffic jams near outside connections ...");
                 CarAIDisableCollectionCheckPatch.Enable(Harmony);
+                CarAITrySpawnPatch.Enable(Harmony);
             }
         }
 
@@ -85,10 +86,10 @@ namespace EnhancedDistrictServices
                 UIPanel self = uiHelper.self as UIPanel;
 
                 ((UIComponent)uiHelper.AddCheckbox(
-                    "Disable vehicle collision check near outside connections",
+                    "Enable new algorithm for unclogging traffic jams near outside connections",
                     Settings.disableVehicleCollisionCheck,
                     b => Settings.disableVehicleCollisionCheck.value = b))
-                    .tooltip = "Disable vehicle collision check to unclog traffic jams near outside connections.";
+                    .tooltip = "Enable new algorithm for unclogging traffic jams near outside connections.";
 
                 ((UIComponent)uiHelper.AddCheckbox(
                     "Enable custom vehicles",
