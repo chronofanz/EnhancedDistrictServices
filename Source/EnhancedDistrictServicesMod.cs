@@ -13,9 +13,10 @@ namespace EnhancedDistrictServices
     /// </summary>
     public class EnhancedDistrictServicesMod : IUserMod, ILoadingExtension
     {
-        public const string version = "1.0.23";
+        public const string version = "1.0.24";
         public string Name => $"Enhanced District Services {version}";
         public string Description => "Enhanced District Services mod for Cities Skylines, which allows more granular control of services and supply chains.";
+        public HarmonyInstance Harmony { get; private set; }
 
         public EnhancedDistrictServicesMod()
         {
@@ -35,8 +36,15 @@ namespace EnhancedDistrictServices
 
         public void OnCreated(ILoading loading)
         {
-            var harmony = HarmonyInstance.Create("com.pachang.enhanceddistrictservices");
-            harmony.PatchAll(Assembly.GetExecutingAssembly());
+            Harmony = HarmonyInstance.Create("com.pachang.enhanceddistrictservices");
+            Harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+            if (Settings.disableVehicleCollisionCheck)
+            {
+                Logger.Log("EnhancedDistrictServicesMod::OnCreated: Enabling new algorithm for unclogging traffic jams near outside connections ...");
+                CarAIDisableCollectionCheckPatch.Enable(Harmony);
+                CarAITrySpawnPatch.Enable(Harmony);
+            }
         }
 
         public void OnLevelLoaded(LoadMode mode)
@@ -76,6 +84,12 @@ namespace EnhancedDistrictServices
             {
                 UIHelper uiHelper = helper.AddGroup(this.Name) as UIHelper;
                 UIPanel self = uiHelper.self as UIPanel;
+
+                ((UIComponent)uiHelper.AddCheckbox(
+                    "Enable new algorithm for unclogging traffic jams near outside connections",
+                    Settings.disableVehicleCollisionCheck,
+                    b => Settings.disableVehicleCollisionCheck.value = b))
+                    .tooltip = "Enable new algorithm for unclogging traffic jams near outside connections.";
 
                 ((UIComponent)uiHelper.AddCheckbox(
                     "Enable custom vehicles",
@@ -118,6 +132,12 @@ namespace EnhancedDistrictServices
                     Settings.showParkDistricts, 
                     b => Settings.showParkDistricts.value = b))
                     .tooltip = "Disable this option if you do not wish to be able to see park districts in the dropdown menu.";
+
+                ((UIComponent)uiHelper.AddCheckbox(
+                    "Show warning message about low global outside intensity",
+                    Settings.showWarnLowOutsideCapMessage,
+                    b => Settings.showWarnLowOutsideCapMessage.value = b))
+                    .tooltip = "If a city's global outside intensity setting is too low, display a warning message prompting the user to increase this setting.";
 
                 ((UIComponent)uiHelper.AddCheckbox(
                     "Show welcome message",

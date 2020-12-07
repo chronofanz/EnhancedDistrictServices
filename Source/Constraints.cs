@@ -376,7 +376,7 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
-        /// Between 0 and 100 inclusive, controls the intensity of traffic gonig to outside connections.
+        /// Between 0 and 1000 inclusive, controls the intensity of traffic gonig to outside connections.
         /// </summary>
         /// <returns></returns>
         public static int GlobalOutsideConnectionIntensity()
