@@ -134,6 +134,12 @@ namespace EnhancedDistrictServices
                     .tooltip = "Disable this option if you do not wish to be able to see park districts in the dropdown menu.";
 
                 ((UIComponent)uiHelper.AddCheckbox(
+                    "Show warning message about low global outside intensity",
+                    Settings.showWarnLowOutsideCapMessage,
+                    b => Settings.showWarnLowOutsideCapMessage.value = b))
+                    .tooltip = "If a city's global outside intensity setting is too low, display a warning message prompting the user to increase this setting.";
+
+                ((UIComponent)uiHelper.AddCheckbox(
                     "Show welcome message",
                     Settings.showWelcomeMessage,
                     b => Settings.showWelcomeMessage.value = b))

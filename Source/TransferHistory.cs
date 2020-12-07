@@ -179,7 +179,7 @@ namespace EnhancedDistrictServices
 
             if (isRestricted)
             {
-                Logger.LogMaterial($"{material} match disallowed: B{requestBuilding} to B{responseBuilding}", material);
+                Logger.LogMaterial($"TransferHistory::IsRestricted: {material} match disallowed: B{requestBuilding} to B{responseBuilding}", material);
             }
 
             return isRestricted;
