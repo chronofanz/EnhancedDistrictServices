@@ -132,6 +132,11 @@ namespace EnhancedDistrictServices
 
             for (ushort buildingId = 0; buildingId < BuildingManager.MAX_BUILDING_COUNT; buildingId++)
             {
+                if ((BuildingManager.instance.m_buildings.m_buffer[buildingId].m_flags & Building.Flags.Created) == Building.Flags.None)
+                {
+                    continue;
+                }
+
                 RegisterCargoBuilding(buildingId);
 
                 var info = Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingId].Info;
