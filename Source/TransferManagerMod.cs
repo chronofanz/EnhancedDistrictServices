@@ -854,11 +854,6 @@ namespace EnhancedDistrictServices
         {
             try
             {
-                if (offerIn.Building != 0 && TransferManagerInfo.IsCustomVehiclesBuilding(offerIn.Building))
-                {
-                    VehicleManagerMod.CurrentSourceBuilding = offerIn.Building;
-                }
-
                 bool active1 = offerIn.Active;
                 bool active2 = offerOut.Active;
                 if (active1 && offerIn.Vehicle != 0)
@@ -934,7 +929,6 @@ namespace EnhancedDistrictServices
             }
             finally
             {
-                VehicleManagerMod.CurrentSourceBuilding = 0;
             }
         }
 

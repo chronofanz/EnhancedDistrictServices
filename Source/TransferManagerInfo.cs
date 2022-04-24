@@ -88,11 +88,6 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            if (TransferManagerInfo.IsCustomVehiclesBuilding(building))
-            {
-                result |= InputType.VEHICLES;
-            }
-
             return result;
         }
 
@@ -160,32 +155,6 @@ namespace EnhancedDistrictServices
             else
             {
                 return new DistrictPark();
-            }
-        }
-
-        public static string GetCustomVehiclesText(ushort building)
-        {
-            if (building == 0)
-            {
-                return string.Empty;
-            }
-
-            if (!VehicleManagerMod.BuildingUseDefaultVehicles[building] && VehicleManagerMod.BuildingToVehicles[building] != null)
-            {
-                var txtItems = new List<string>();
-                txtItems.Add($"<<Custom Vehicles>>");
-
-                foreach (var prefabIndex in VehicleManagerMod.BuildingToVehicles[building])
-                {
-                    var name = ColossalFramework.Globalization.Locale.Get("VEHICLE_TITLE", PrefabCollection<VehicleInfo>.PrefabName((uint)prefabIndex));
-                    txtItems.Add(name);
-                }
-
-                return string.Join("\n", txtItems.ToArray());
-            }
-            else 
-            {
-                return string.Empty;
             }
         }
 
@@ -622,73 +591,6 @@ namespace EnhancedDistrictServices
                 default:
                     return TransferManager.TransferReason.None;
             }
-        }
-
-        /// <summary>
-        /// Returns true if the building's vehicles are customizable.
-        /// </summary>
-        /// <param name="building"></param>
-        /// <returns></returns>
-        public static bool IsCustomVehiclesBuilding(int building)
-        {
-            if (building == 0)
-            {
-                return false;
-            }
-
-            var instance = Singleton<BuildingManager>.instance;
-
-            if ((instance.m_buildings.m_buffer[building].m_flags & Building.Flags.Created) != Building.Flags.None)
-            {
-                var info = instance.m_buildings.m_buffer[building].Info;
-                switch (info?.GetService())
-                {
-                    case ItemClass.Service.Beautification:
-                        return info.GetAI() is MaintenanceDepotAI;
-
-                    case ItemClass.Service.Disaster:
-                    case ItemClass.Service.FireDepartment:
-                    case ItemClass.Service.Garbage:
-                    case ItemClass.Service.HealthCare:
-                    case ItemClass.Service.PoliceDepartment:
-                        return !(
-                            info.GetAI() is ChildcareAI ||
-                            info.GetAI() is DummyBuildingAI ||
-                            info.GetAI() is EldercareAI ||
-                            info.GetAI() is SaunaAI);
-
-                    case ItemClass.Service.PlayerIndustry:
-                        return !(
-                            info.GetAI() is AuxiliaryBuildingAI ||
-                            info.GetAI() is DummyBuildingAI ||
-                            info.GetAI() is MainIndustryBuildingAI);
-
-                    case ItemClass.Service.PublicTransport:
-                        return (
-                            (Settings.enableSelectOutsideConnection && info.GetAI() is OutsideConnectionAI) ||
-                            (info.GetAI() is CargoStationAI) ||
-                            info.GetSubService() == ItemClass.SubService.PublicTransportCableCar ||
-                            info.GetSubService() == ItemClass.SubService.PublicTransportPlane ||
-                            info.GetSubService() == ItemClass.SubService.PublicTransportPost ||
-                            info.GetSubService() == ItemClass.SubService.PublicTransportTaxi);
-
-                    case ItemClass.Service.Road:
-                        return (
-                            info.GetAI() is MaintenanceDepotAI ||
-                            info.GetAI() is OutsideConnectionAI ||
-                            info.GetAI() is SnowDumpAI);
-
-                    case ItemClass.Service.Water:
-                        return (
-                            info.GetAI() is WaterFacilityAI waterFacilityAI &&
-                            waterFacilityAI.m_pumpingVehicles > 0);
-
-                    default:
-                        return false;
-                }
-            }
-
-            return false;
         }
 
         /// <summary>

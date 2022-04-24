@@ -31,19 +31,7 @@ namespace EnhancedDistrictServices
             var infoTo = instance3.m_buildings.m_buffer[(int)cargoStation2].Info;
             var cargoStationId = (infoFrom?.m_buildingAI is OutsideConnectionAI && infoFrom?.m_class?.m_subService == infoTo?.m_class?.m_subService) ? cargoStation2 : cargoStation1;
 
-            VehicleManagerMod.CurrentSourceBuilding = cargoStationId;
-
             return true;
-        }
-
-        public static void Postfix(
-            VehicleInfo vehicleInfo,
-            ushort vehicleID,
-            ref Vehicle vehicleData,
-            PathUnit.Position pathPos,
-            uint laneID)
-        {
-            VehicleManagerMod.CurrentSourceBuilding = 0;
         }
 
         private static ushort FindCargoStation(

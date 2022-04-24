@@ -37,12 +37,10 @@ namespace EnhancedDistrictServices
              EnhancedDistrictServicesUIPanel.Create();
 
             BuildingManager.instance.EventBuildingCreated += Constraints.CreateBuilding;
-            BuildingManager.instance.EventBuildingCreated += VehicleManagerMod.CreateBuilding;
             BuildingManager.instance.EventBuildingCreated += TaxiMod.RegisterTaxiBuilding;
             BuildingManager.instance.EventBuildingCreated += OutsideConnectionInfo.RegisterCargoBuilding;
 
             BuildingManager.instance.EventBuildingReleased += Constraints.ReleaseBuilding;
-            BuildingManager.instance.EventBuildingReleased += VehicleManagerMod.ReleaseBuilding;
             BuildingManager.instance.EventBuildingReleased += TaxiMod.DeregisterTaxiBuilding;
             BuildingManager.instance.EventBuildingReleased += OutsideConnectionInfo.DeregisterCargoBuilding;
         }
@@ -60,10 +58,8 @@ namespace EnhancedDistrictServices
             EnhancedDistrictServicesUIPanel.Destroy();
 
             BuildingManager.instance.EventBuildingCreated -= Constraints.CreateBuilding;
-            BuildingManager.instance.EventBuildingCreated -= VehicleManagerMod.CreateBuilding;
             BuildingManager.instance.EventBuildingCreated -= TaxiMod.RegisterTaxiBuilding;
             BuildingManager.instance.EventBuildingReleased -= Constraints.ReleaseBuilding;
-            BuildingManager.instance.EventBuildingReleased -= VehicleManagerMod.ReleaseBuilding;
             BuildingManager.instance.EventBuildingReleased -= TaxiMod.DeregisterTaxiBuilding;
         }
 
@@ -78,7 +74,6 @@ namespace EnhancedDistrictServices
         {
             base.OnDisable();
             EnhancedDistrictServicesUIPanel.Instance?.UIDistrictsDropDown?.ClosePopup();
-            EnhancedDistrictServicesUIPanel.Instance?.UIVehiclesDropDown?.ClosePopup();
             EnhancedDistrictServicesUIPanel.Instance?.Hide();
 
             ToolCursor = null;
@@ -150,7 +145,7 @@ namespace EnhancedDistrictServices
                 return;
             }
 
-            if (TransferManagerInfo.IsDistrictServicesBuilding(building) || TransferManagerInfo.IsCustomVehiclesBuilding(building))
+            if (TransferManagerInfo.IsDistrictServicesBuilding(building))
             {
                 var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
                 var txt = GetBuildingInfoText(building);
@@ -171,7 +166,7 @@ namespace EnhancedDistrictServices
                 {
                     if (building == 0 || 
                         BuildingManager.instance.m_buildings.m_buffer[building].Info.GetAI() is DummyBuildingAI ||
-                        !(TransferManagerInfo.IsDistrictServicesBuilding(building) || TransferManagerInfo.IsCustomVehiclesBuilding(building)))
+                        !TransferManagerInfo.IsDistrictServicesBuilding(building))
                     {
                         Utils.DisplayMessage(
                             str1: "Enhanced District Services",
@@ -196,7 +191,7 @@ namespace EnhancedDistrictServices
 
                     if (building == 0 ||
                         BuildingManager.instance.m_buildings.m_buffer[building].Info.GetAI() is DummyBuildingAI ||
-                        !(TransferManagerInfo.IsDistrictServicesBuilding(building) || TransferManagerInfo.IsCustomVehiclesBuilding(building)))
+                        !TransferManagerInfo.IsDistrictServicesBuilding(building))
                     {
                         Utils.DisplayMessage(
                             str1: "Enhanced District Services",
@@ -234,7 +229,7 @@ namespace EnhancedDistrictServices
 
                 if (!m_toolController.IsInsideUI && e.type == UnityEngine.EventType.MouseDown && e.button == 0)
                 {
-                    if (!(TransferManagerInfo.IsDistrictServicesBuilding(building) || TransferManagerInfo.IsCustomVehiclesBuilding(building)))
+                    if (!TransferManagerInfo.IsDistrictServicesBuilding(building))
                     {
                         return;
                     }
@@ -288,7 +283,7 @@ namespace EnhancedDistrictServices
             txtItems.Add(TransferManagerInfo.GetDistrictParkText(building));
 
             // Early return.  Rest of info pertains to building types that we deal with in the mod.
-            if (!(TransferManagerInfo.IsDistrictServicesBuilding(building) || TransferManagerInfo.IsCustomVehiclesBuilding(building)))
+            if (!TransferManagerInfo.IsDistrictServicesBuilding(building))
             {
                 return string.Join("\n", txtItems.ToArray());
             }
@@ -302,15 +297,6 @@ namespace EnhancedDistrictServices
                 {
                     txtItems.Add("");
                     txtItems.Add(TransferManagerInfo.GetOutputDistrictsServedText(building));
-                }
-
-                if (Settings.enableCustomVehicles && 
-                    !VehicleManagerMod.BuildingUseDefaultVehicles[building] &&
-                    VehicleManagerMod.BuildingToVehicles[building] != null &&
-                    (inputType & InputType.VEHICLES) != InputType.NONE)
-                {
-                    txtItems.Add("");
-                    txtItems.Add(TransferManagerInfo.GetCustomVehiclesText(building));
                 }
 
                 return string.Join("\n", txtItems.ToArray());
@@ -331,15 +317,6 @@ namespace EnhancedDistrictServices
                 {
                     txtItems.Add("");
                     txtItems.Add(TransferManagerInfo.GetSupplyBuildingDestinationsText(building));
-                }
-
-                if (Settings.enableCustomVehicles &&
-                    !VehicleManagerMod.BuildingUseDefaultVehicles[building] &&
-                    VehicleManagerMod.BuildingToVehicles[building] != null &&
-                    (inputType & InputType.VEHICLES) != InputType.NONE)
-                {
-                    txtItems.Add("");
-                    txtItems.Add(TransferManagerInfo.GetCustomVehiclesText(building));
                 }
 
                 var problemText = TransferManagerInfo.GetSupplyBuildingProblemsText(building);
