@@ -13,7 +13,7 @@ namespace EnhancedDistrictServices
     /// </summary>
     public class EnhancedDistrictServicesMod : IUserMod, ILoadingExtension
     {
-        public const string version = "1.0.26";
+        public const string version = "1.0.27";
         public string Name => $"Enhanced District Services {version}";
         public string Description => "Enhanced District Services mod for Cities Skylines, which allows more granular control of services and supply chains.";
         public HarmonyInstance Harmony { get; private set; }

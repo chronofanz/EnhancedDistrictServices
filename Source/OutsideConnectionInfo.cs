@@ -118,6 +118,19 @@ namespace EnhancedDistrictServices
             }
         }
 
+        public static bool IsOutsideRoadConnection(ushort buildingId)
+        {
+            for (int i = 0; i < m_outsideRoadConnections.Count; i++)
+            {
+                if (m_outsideRoadConnections[i] == buildingId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Reset all data structures.
         /// </summary>

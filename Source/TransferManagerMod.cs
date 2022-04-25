@@ -235,8 +235,19 @@ namespace EnhancedDistrictServices
                         requestCount: m_incomingCount, requestOffers: m_incomingOffers,
                         requestPriorityMax: 0, requestPriorityMin: 0,
                         responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
-                        responsePriorityMax: 7, responsePriorityMin: 0,
+                        responsePriorityMax: 7, responsePriorityMin: 1,
                         matchFilter: IsValidLowPriorityOffer);
+
+                    if (m_randomizer.Int32(0, 10) < 5)
+                    {
+                        MatchOffersClosest(
+                            material,
+                            requestCount: m_incomingCount, requestOffers: m_incomingOffers,
+                            requestPriorityMax: 0, requestPriorityMin: 0,
+                            responseCount: m_outgoingCount, responseOffers: m_outgoingOffers,
+                            responsePriorityMax: 0, responsePriorityMin: 0,
+                            matchFilter: IsValidLowPriorityOffer);
+                    }
 
                     Clear(material);
                     return true;
