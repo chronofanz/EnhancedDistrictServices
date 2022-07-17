@@ -1,5 +1,5 @@
 ﻿using ColossalFramework;
-using Harmony;
+using HarmonyLib;
 using System;
 
 namespace EnhancedDistrictServices
@@ -12,7 +12,7 @@ namespace EnhancedDistrictServices
     //[HarmonyPatch("DisableCollisionCheck")]
     public class CarAIDisableCollectionCheckPatch
     {
-        public static void Enable(HarmonyInstance harmony)
+        public static void Enable(Harmony harmony)
         {
             var original = typeof(CarAI).GetMethod("DisableCollisionCheck", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             if (original == null)

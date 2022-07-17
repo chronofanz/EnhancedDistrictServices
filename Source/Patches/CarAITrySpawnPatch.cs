@@ -1,6 +1,6 @@
 ﻿using ColossalFramework;
 using ColossalFramework.Math;
-using Harmony;
+using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,7 +12,7 @@ namespace EnhancedDistrictServices
     /// </summary>
     public class CarAITrySpawnPatch
     {
-        public static void Enable(HarmonyInstance harmony)
+        public static void Enable(Harmony harmony)
         {
             var original = typeof(CarAI).GetMethod("TrySpawn");
             if (original == null)
