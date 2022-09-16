@@ -13,7 +13,7 @@ namespace EnhancedDistrictServices
     /// </summary>
     public class EnhancedDistrictServicesMod : IUserMod, ILoadingExtension
     {
-        public const string version = "1.0.28";
+        public const string version = "1.0.29";
         public string Name => $"Enhanced District Services {version}";
         public string Description => "Enhanced District Services mod for Cities Skylines, which allows more granular control of services and supply chains.";
         public Harmony Harmony { get; private set; }
@@ -42,7 +42,7 @@ namespace EnhancedDistrictServices
             if (Settings.disableVehicleCollisionCheck)
             {
                 Logger.Log("EnhancedDistrictServicesMod::OnCreated: Enabling new algorithm for unclogging traffic jams near outside connections ...");
-                CarAIDisableCollectionCheckPatch.Enable(Harmony);
+                CarAIDisableCollisionCheckPatch.Enable(Harmony);
                 CarAITrySpawnPatch.Enable(Harmony);
             }
         }

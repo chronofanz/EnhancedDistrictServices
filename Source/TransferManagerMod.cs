@@ -349,6 +349,12 @@ namespace EnhancedDistrictServices
                                     }
                                 }
 
+                                // Pedestrian areas
+                                if (requestOffer.m_isLocalPark != responseOffer.m_isLocalPark)
+                                {
+                                    continue;
+                                }
+
                                 // Not sure how this could happen, but ...
                                 if (responseOffer.Amount == 0)
                                 {
@@ -670,7 +676,7 @@ namespace EnhancedDistrictServices
             {
                 for (int i = 0; i < responseSupplyDestinations.Count; i++)
                 {
-                    if (responseSupplyDestinations[i] == (int)requestBuilding)
+                    if (responseSupplyDestinations[i] == requestBuilding)
                     {
                         Logger.LogMaterial(
                             $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, supply link allowed",
@@ -867,6 +873,12 @@ namespace EnhancedDistrictServices
             {
                 bool active1 = offerIn.Active;
                 bool active2 = offerOut.Active;
+                ushort buildingID1;
+                if (offerOut.Park != 0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[offerOut.Park].TryGetRandomServicePoint(material, out buildingID1))
+                    offerOut.Building = buildingID1;
+                ushort buildingID2;
+                if (offerIn.Park != 0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[offerIn.Park].TryGetRandomServicePoint(material, out buildingID2))
+                    offerIn.Building = buildingID2;
                 if (active1 && offerIn.Vehicle != 0)
                 {
                     Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
@@ -883,7 +895,7 @@ namespace EnhancedDistrictServices
                     offerIn.Amount = delta;
                     info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerIn);
                 }
-                else if (active1 && (int)offerIn.Citizen != 0)
+                else if (active1 && offerIn.Citizen != 0U)
                 {
                     Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
                     uint citizen = offerIn.Citizen;
@@ -900,7 +912,7 @@ namespace EnhancedDistrictServices
 
                     citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerOut);
                 }
-                else if (active2 && (int)offerOut.Citizen != 0)
+                else if (active2 && offerOut.Citizen != 0U)
                 {
                     Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
                     uint citizen = offerOut.Citizen;
@@ -920,20 +932,34 @@ namespace EnhancedDistrictServices
                 else if (active2 && offerOut.Building != 0)
                 {
                     Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
-                    ushort building = offerOut.Building;
-                    BuildingInfo info = buildings.m_buffer[building].Info;
-                    offerIn.Amount = delta;
-                    info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerIn);
+                    if (offerOut.m_isLocalPark != 0 && offerOut.m_isLocalPark == offerIn.m_isLocalPark)
+                    {
+                        StartDistrictTransfer(material, offerOut, offerIn);
+                    }
+                    else
+                    {
+                        ushort building = offerOut.Building;
+                        BuildingInfo info = buildings.m_buffer[building].Info;
+                        offerIn.Amount = delta;
+                        info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerIn);
+                    }
                 }
                 else
                 {
                     if (!active1 || offerIn.Building == 0)
                         return false;
-                    Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
-                    ushort building = offerIn.Building;
-                    BuildingInfo info = buildings.m_buffer[building].Info;
-                    offerOut.Amount = delta;
-                    info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerOut);
+                    if (offerIn.m_isLocalPark != 0 && offerIn.m_isLocalPark == offerOut.m_isLocalPark)
+                    {
+                        StartDistrictTransfer(material, offerOut, offerIn);
+                    }
+                    else
+                    {
+                        Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
+                        ushort building = offerIn.Building;
+                        BuildingInfo info = buildings.m_buffer[building].Info;
+                        offerOut.Amount = delta;
+                        info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerOut);
+                    }
                 }
 
                 return true;
@@ -941,6 +967,31 @@ namespace EnhancedDistrictServices
             finally
             {
             }
+        }
+
+        private static void StartDistrictTransfer(
+            TransferManager.TransferReason material,
+            TransferManager.TransferOffer offerOut,
+            TransferManager.TransferOffer offerIn)
+        {
+            Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
+            ushort building1 = offerOut.Building;
+            ushort building2 = offerIn.Building;
+            BuildingInfo info1 = buildings.m_buffer[(int)building1].Info;
+            BuildingInfo info2 = buildings.m_buffer[(int)building2].Info;
+            int amount1;
+            int max1;
+            info1.m_buildingAI.GetMaterialAmount(building1, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[(int)building1], material, out amount1, out max1);
+            int amount2;
+            int max2;
+            info2.m_buildingAI.GetMaterialAmount(building2, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[(int)building2], material, out amount2, out max2);
+            int num = Math.Min(amount1, max2 - amount2);
+            if (num <= 0)
+                return;
+            int amountDelta1 = -num;
+            int amountDelta2 = num;
+            info1.m_buildingAI.ModifyMaterialBuffer(building1, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[(int)building1], material, ref amountDelta1);
+            info2.m_buildingAI.ModifyMaterialBuffer(building2, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[(int)building2], material, ref amountDelta2);
         }
 
         #endregion

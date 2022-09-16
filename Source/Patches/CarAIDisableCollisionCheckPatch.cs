@@ -10,7 +10,7 @@ namespace EnhancedDistrictServices
     /// </summary>
     //[HarmonyPatch(typeof(CarAI))]
     //[HarmonyPatch("DisableCollisionCheck")]
-    public class CarAIDisableCollectionCheckPatch
+    public class CarAIDisableCollisionCheckPatch
     {
         public static void Enable(Harmony harmony)
         {
@@ -20,10 +20,10 @@ namespace EnhancedDistrictServices
                 throw new InvalidOperationException("Could not find CarAI::DisableCollisionCheck!");
             }
 
-            var postfix = typeof(CarAIDisableCollectionCheckPatch).GetMethod("Postfix");
+            var postfix = typeof(CarAIDisableCollisionCheckPatch).GetMethod("Postfix");
             if (postfix == null)
             {
-                throw new InvalidOperationException("Could not find CarAIPatchDisableCollectionCheck::Postfix!");
+                throw new InvalidOperationException("Could not find CarAIPatchDisableCollisionCheck::Postfix!");
             }
 
             harmony.Patch(original, postfix: new HarmonyMethod(postfix));

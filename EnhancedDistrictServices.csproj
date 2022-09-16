@@ -70,13 +70,12 @@
     <Compile Include="Source\EnhancedDistrictServicesLoadingExtension.cs" />
     <Compile Include="Source\OfferTracker.cs" />
     <Compile Include="Source\Patches\CarAICreateVehiclePatch.cs" />
-    <Compile Include="Source\Patches\CarAIDisableCollectionCheckPatch.cs" />
+    <Compile Include="Source\Patches\CarAIDisableCollisionCheckPatch.cs" />
+    <Compile Include="Source\Patches\AirportBuildingAIHandleCrimePatch.cs" />
     <Compile Include="Source\Patches\CarAITrySpawnPatch.cs" />
     <Compile Include="Source\Patches\CarAIPathfindFailurePatch.cs" />
     <Compile Include="Source\Patches\CargoTruckAIArriveAtSourcePatch.cs" />
-    <Compile Include="Source\Patches\CargoTruckAIChangeVehicleTypePatch.cs" />
     <Compile Include="Source\Patches\DistrictManagerReleaseDistrictPatch.cs" />
-    <Compile Include="Source\Patches\HumanAIStartMovingPatch.cs" />
     <Compile Include="Source\Serialization\Datav4.cs" />
     <Compile Include="Source\Serialization\Datav3.cs" />
     <Compile Include="Source\Serialization\Datav2.cs" />
