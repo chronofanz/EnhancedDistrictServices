@@ -123,16 +123,16 @@ namespace EnhancedDistrictServices
         /// Should return 0 if the offer does not originate from a district.
         /// </summary>
         /// <returns></returns>
-        public static DistrictPark GetDistrictPark(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
+        public static EDSDistrictPark GetDistrictPark(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
             if (offer.NetSegment != 0)
             {
                 var position = NetManager.instance.m_segments.m_buffer[offer.NetSegment].m_middlePosition;
-                return DistrictPark.FromPosition(position);
+                return EDSDistrictPark.FromPosition(position);
             }
             else if ((material == TransferManager.TransferReason.Sick || material == TransferManager.TransferReason.Taxi) && offer.Citizen != 0)
             {
-                return DistrictPark.FromPosition(offer.Position);
+                return EDSDistrictPark.FromPosition(offer.Position);
             }
             else
             {
@@ -145,16 +145,16 @@ namespace EnhancedDistrictServices
         /// Should return 0 if the building is not in a district and/or park.
         /// </summary>
         /// <returns></returns>
-        public static DistrictPark GetDistrictPark(int building)
+        public static EDSDistrictPark GetDistrictPark(int building)
         {
             if (building != 0)
             {
                 var position = BuildingManager.instance.m_buildings.m_buffer[building].m_position;
-                return DistrictPark.FromPosition(position);
+                return EDSDistrictPark.FromPosition(position);
             }
             else
             {
-                return new DistrictPark();
+                return new EDSDistrictPark();
             }
         }
 

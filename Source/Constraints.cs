@@ -23,7 +23,7 @@ namespace EnhancedDistrictServices
         /// <summary>
         /// Map of building id to list of districts or parks served by the building.
         /// </summary>
-        private static readonly List<DistrictPark>[] m_inputBuildingToDistrictParkServiced = new List<DistrictPark>[BuildingManager.MAX_BUILDING_COUNT];
+        private static readonly List<EDSDistrictPark>[] m_inputBuildingToDistrictParkServiced = new List<EDSDistrictPark>[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
         /// Map of building id to bool indicating whether all local areas are serviced by the building.
@@ -38,7 +38,7 @@ namespace EnhancedDistrictServices
         /// <summary>
         /// Map of building id to list of districts or parks served by the building.
         /// </summary>
-        private static readonly List<DistrictPark>[] m_outputBuildingToDistrictParkServiced = new List<DistrictPark>[BuildingManager.MAX_BUILDING_COUNT];
+        private static readonly List<EDSDistrictPark>[] m_outputBuildingToDistrictParkServiced = new List<EDSDistrictPark>[BuildingManager.MAX_BUILDING_COUNT];
 
         /// <summary>
         /// Map of building id to the specified supply goods buffer, below which all good sent from this building will
@@ -113,7 +113,7 @@ namespace EnhancedDistrictServices
                 {
                     foreach (var districtPark in restrictions3)
                     {
-                        AddInputDistrictParkServiced(building, DistrictPark.FromSerializedInt(districtPark));
+                        AddInputDistrictParkServiced(building, EDSDistrictPark.FromSerializedInt(districtPark));
                     }
                 }
 
@@ -128,7 +128,7 @@ namespace EnhancedDistrictServices
                 {
                     foreach (var districtPark in restrictions6)
                     {
-                        AddOutputDistrictParkServiced(building, DistrictPark.FromSerializedInt(districtPark));
+                        AddOutputDistrictParkServiced(building, EDSDistrictPark.FromSerializedInt(districtPark));
                     }
                 }
                 
@@ -228,12 +228,12 @@ namespace EnhancedDistrictServices
 
             if (homeDistrict != 0)
             {
-                AddOutputDistrictParkServiced(buildingId, DistrictPark.FromDistrict(homeDistrict));
+                AddOutputDistrictParkServiced(buildingId, EDSDistrictPark.FromDistrict(homeDistrict));
             }
 
             if (homePark != 0)
             {
-                AddOutputDistrictParkServiced(buildingId, DistrictPark.FromPark(homePark));
+                AddOutputDistrictParkServiced(buildingId, EDSDistrictPark.FromPark(homePark));
             }
         }
 
@@ -261,7 +261,7 @@ namespace EnhancedDistrictServices
         /// Called when a district or park is removed.
         /// </summary>
         /// <param name="districtPark"></param>
-        public static void ReleaseDistrictPark(DistrictPark districtPark)
+        public static void ReleaseDistrictPark(EDSDistrictPark districtPark)
         {
             Logger.Log($"Constraints::ReleaseDistrictPark: {districtPark.Name}");
 
@@ -300,7 +300,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="buildingId"></param>
         /// <returns></returns>
-        public static List<DistrictPark> InputDistrictParkServiced(ushort buildingId)
+        public static List<EDSDistrictPark> InputDistrictParkServiced(ushort buildingId)
         {
             return m_inputBuildingToDistrictParkServiced[buildingId];
         }
@@ -331,7 +331,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="buildingId"></param>
         /// <returns></returns>
-        public static List<DistrictPark> OutputDistrictParkServiced(ushort buildingId)
+        public static List<EDSDistrictPark> OutputDistrictParkServiced(ushort buildingId)
         {
             return m_outputBuildingToDistrictParkServiced[buildingId];
         }
@@ -376,7 +376,7 @@ namespace EnhancedDistrictServices
         }
 
         /// <summary>
-        /// Between 0 and 1000 inclusive, controls the intensity of traffic gonig to outside connections.
+        /// Between 0 and 1000 inclusive, controls the intensity of traffic going to outside connections.
         /// </summary>
         /// <returns></returns>
         public static int GlobalOutsideConnectionIntensity()
@@ -482,7 +482,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="buildingId"></param>
         /// <param name="districtPark"></param>
-        public static void AddInputDistrictParkServiced(int buildingId, DistrictPark districtPark)
+        public static void AddInputDistrictParkServiced(int buildingId, EDSDistrictPark districtPark)
         {
             if (AddDistrictParkServiced(m_inputBuildingToDistrictParkServiced, buildingId, districtPark))
             {
@@ -496,7 +496,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="buildingId"></param>
         /// <param name="districtPark"></param>
-        public static void AddOutputDistrictParkServiced(int buildingId, DistrictPark districtPark)
+        public static void AddOutputDistrictParkServiced(int buildingId, EDSDistrictPark districtPark)
         {
             if (AddDistrictParkServiced(m_outputBuildingToDistrictParkServiced, buildingId, districtPark))
             {
@@ -505,7 +505,7 @@ namespace EnhancedDistrictServices
             }
         }
 
-        private static bool AddDistrictParkServiced(List<DistrictPark>[] array, int buildingId, DistrictPark districtPark)
+        private static bool AddDistrictParkServiced(List<EDSDistrictPark>[] array, int buildingId, EDSDistrictPark districtPark)
         {
             if (!TransferManagerInfo.IsDistrictServicesBuilding(buildingId))
             {
@@ -522,7 +522,7 @@ namespace EnhancedDistrictServices
 
             if (array[buildingId] == null)
             {
-                array[buildingId] = new List<DistrictPark>();
+                array[buildingId] = new List<EDSDistrictPark>();
             }
 
             if (!array[buildingId].Contains(districtPark))
@@ -538,7 +538,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="buildingId"></param>
         /// <param name="districtPark"></param>
-        public static void RemoveInputDistrictParkServiced(int buildingId, DistrictPark districtPark)
+        public static void RemoveInputDistrictParkServiced(int buildingId, EDSDistrictPark districtPark)
         {
             RemoveDistrictParkServiced(m_inputBuildingToDistrictParkServiced, buildingId, districtPark);
         }
@@ -548,12 +548,12 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="buildingId"></param>
         /// <param name="districtPark"></param>
-        public static void RemoveOutputDistrictParkServiced(int buildingId, DistrictPark districtPark)
+        public static void RemoveOutputDistrictParkServiced(int buildingId, EDSDistrictPark districtPark)
         {
             RemoveDistrictParkServiced(m_outputBuildingToDistrictParkServiced, buildingId, districtPark);
         }
 
-        private static void RemoveDistrictParkServiced(List<DistrictPark>[] array, int buildingId, DistrictPark districtPark)
+        private static void RemoveDistrictParkServiced(List<EDSDistrictPark>[] array, int buildingId, EDSDistrictPark districtPark)
         {
             if (array[buildingId] == null)
             {

@@ -1,70 +1,123 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Diagnostics;
+using System.IO;
+using UnityEngine;
+using static TransferManager;
 
 namespace EnhancedDistrictServices
 {
-    public class OfferTracker
+    public static class OfferTracker
     {
-        private struct Offer : IComparable<Offer>
+        /// <summary>
+        /// The private inner class that writes logs that are output by this mod, as well as the game itself, to the 
+        /// log file.
+        /// </summary>
+        private class MyLogger : MonoBehaviour
         {
-            public ushort Building;
-            public float Distance;
-            public int SubIndex;
+            private static readonly string m_logFilename = Path.Combine(Application.dataPath, "EDSOfferTracker.csv");
+            private readonly StreamWriter m_logFile = null;
 
-            public int CompareTo(Offer other)
+            public MyLogger()
             {
-                if (Distance != other.Distance)
-                {
-                    return Distance.CompareTo(other.Distance);
-                }
+                m_logFile = File.CreateText(m_logFilename);
+                m_logFile.AutoFlush = true;
+            }
 
-                return SubIndex.CompareTo(other.SubIndex);
+            public void WriteHeader(params string[] args)
+            {
+                lock (m_logFile)
+                {
+                    m_logFile.WriteLine(string.Join(",", args));
+                }
+            }
+
+            public void WriteRecord(
+                string @event,
+                string offerID,
+                InstanceType instanceType,
+                byte isLocalPark,
+                bool outside,
+                int amount,
+                TransferManager.TransferReason material,
+                int priority,
+                bool exclude,
+                bool active)
+            {
+                var now = DateTime.Now;
+                lock (m_logFile)
+                {
+                    m_logFile.WriteLine($"{now},{@event},{offerID},{instanceType},{isLocalPark},{outside},{amount},{material},{priority},{exclude},{active}");
+                }
             }
         }
 
-        private readonly List<Offer> m_offers = new List<Offer>();
+        /// <summary>
+        /// Singleton instance of MyLogger.
+        /// </summary>
+        private static readonly MyLogger m_instance;
 
-        public int Count => m_offers.Count;
-
-        public int RoadConnectionCount
+        static OfferTracker()
         {
-            get
-            {
-                int count = 0;
-                for (int offerIndex = 0; offerIndex < m_offers.Count; offerIndex++)
-                {
-                    if (OutsideConnectionInfo.IsOutsideRoadConnection(m_offers[offerIndex].Building))
-                    {
-                        count++;
-                    }
-                }
+            m_instance = new MyLogger();
+            m_instance.WriteHeader("DateTime", "Event", "OfferID", "InstanceType", "IsLocalPark", "Outside", "Amount", "Material", "Priority", "Exclude", "Active");
+        }
 
-                return count;
+        /// <summary>
+        /// Logs outgoing offer
+        /// </summary>
+        /// <param name="msg"></param>
+        [Conditional("VERBOSE")]
+        public static void LogEvent(string @event, ref TransferManager.TransferOffer offer, TransferManager.TransferReason material)
+        {
+            var offerID = GetOfferID(ref offer);
+            var instanceType = offer.m_object.Type;
+            var isLocalPark = offer.m_isLocalPark;
+            var outside = TransferManagerInfo.IsOutsideOffer(ref offer);
+
+            var amount = offer.Amount;
+            //var material = material;
+            var priority = offer.Priority;
+            var exclude = offer.Exclude;
+            var active = offer.Active;
+
+            m_instance.WriteRecord(
+                @event: @event,
+                offerID: offerID,
+                instanceType: instanceType,
+                isLocalPark: isLocalPark,
+                outside: outside,
+
+                amount: amount,
+                material: material,
+                priority: priority,
+                exclude: exclude,
+                active: active);
+        }
+
+        private static string GetOfferID(ref TransferManager.TransferOffer offer)
+        {
+
+            if (offer.NetSegment != 0)
+            {
+                return $"S{offer.NetSegment}";
             }
-        }
 
-        public void AddOffer(ushort building, float distance, int subIndex)
-        {
-            m_offers.Add(new Offer
+            if (offer.Vehicle != 0)
             {
-                Building = building,
-                Distance = distance,
-                SubIndex = subIndex
-            });
+                return $"V{offer.Vehicle}";
+            }
 
-            m_offers.Sort();
-        }
+            if (offer.Citizen != 0)
+            {
+                return $"C{offer.Citizen}";
+            }
 
-        public void Clear()
-        {
-            m_offers.Clear();
-        }
+            if (offer.Building != 0)
+            {
+                return $"B{offer.Building}";
+            }
 
-        public int GetSubIndex(int offerIndex)
-        {
-            return m_offers[offerIndex].SubIndex;
+            return $"NULL";
         }
     }
 }

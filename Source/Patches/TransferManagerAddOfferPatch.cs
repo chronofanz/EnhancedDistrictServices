@@ -10,12 +10,10 @@ namespace EnhancedDistrictServices
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
-            Logger.LogMaterial($"TransferManager::AddIncomingOffer: {Utils.ToString(ref offer, material)}!", material);
-
             // Inactive outside connections should not be adding offers ...
             if (OutsideConnectionInfo.IsInvalidIncomingOutsideConnection(offer.Building))
             {
-                Logger.LogMaterial($"TransferManager::AddIncomingOffer: Disallowing outside connection B{offer.Building} because of missing cargo buildings!", material);
+                OfferTracker.LogEvent("AddIncomingDisallowInactiveOutside", ref offer, material);
                 return false;
             }
 
@@ -26,12 +24,10 @@ namespace EnhancedDistrictServices
                 {
                     if (material == TransferManager.TransferReason.ParkMaintenance)
                     {
-                        Logger.LogMaterial($"TransferManager::AddIncomingOffer: Filtering out subBuilding {Utils.ToString(ref offer, material)}!", material);
+                        OfferTracker.LogEvent("AddIncomingDisallowSubBuilding", ref offer, material);
                         return false;
                     }
                 }
-
-                return true;
             }
 
             if (material == TransferManager.TransferReason.Taxi && offer.Citizen != 0)
@@ -42,7 +38,7 @@ namespace EnhancedDistrictServices
 
                 if (!TaxiMod.CanUseTaxis(offer.Position, targetPosition))
                 {
-                    Logger.LogMaterial($"TransferManager::AddIncomingOffer: Filtering out {Utils.ToString(ref offer, material)}!", material);
+                    OfferTracker.LogEvent("AddIncomingDisallowTaxis", ref offer, material);
                     var instanceId = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen].m_instance;
                     CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags &= ~CitizenInstance.Flags.WaitingTaxi;
                     CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags |= CitizenInstance.Flags.BoredOfWaiting;
@@ -53,7 +49,38 @@ namespace EnhancedDistrictServices
             }
 
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
-            return true;
+
+            if (offer.Building != (ushort)0)
+            {
+                byte park = Singleton<DistrictManager>.instance.GetPark(offer.Position);
+                Building[] buffer = Singleton<BuildingManager>.instance.m_buildings.m_buffer;
+                DistrictPark.PedestrianZoneTransferReason reason;
+                if (park != (byte)0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].IsPedestrianZone && buffer[(int)offer.Building].Info.m_buildingAI.GetUseServicePoint(offer.Building, ref buffer[(int)offer.Building]) && DistrictPark.TryGetPedestrianReason(material, out reason))
+                {
+                    bool flag = false;
+                    if ((Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].m_parkPolicies & DistrictPolicies.Park.ForceServicePoint) != DistrictPolicies.Park.None)
+                        flag = true;
+                    if (!flag)
+                    {
+                        ushort accessSegment = buffer[(int)offer.Building].m_accessSegment;
+                        if (accessSegment == (ushort)0 && (buffer[(int)offer.Building].m_problems & new Notification.ProblemStruct(Notification.Problem1.RoadNotConnected, Notification.Problem2.NotInPedestrianZone)).IsNone)
+                        {
+                            buffer[(int)offer.Building].Info.m_buildingAI.CheckRoadAccess(offer.Building, ref buffer[(int)offer.Building]);
+                            accessSegment = buffer[(int)offer.Building].m_accessSegment;
+                        }
+                        if (accessSegment != (ushort)0 && (Singleton<NetManager>.instance.m_segments.m_buffer[(int)accessSegment].Info.m_vehicleCategories & reason.m_vehicleCategory) == VehicleInfo.VehicleCategory.None)
+                            flag = true;
+                    }
+                    if (flag)
+                    {
+                        offer.m_isLocalPark = park;
+                        Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].AddMaterialRequest(offer.Building, material);
+                    }
+                }
+            }
+
+            TransferManagerMod.AddIncomingOffer(material, offer);
+            return false;
         }
     }
 
@@ -63,20 +90,10 @@ namespace EnhancedDistrictServices
     {
         public static bool Prefix(ref TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)        
         {
-            Logger.LogMaterial($"TransferManager::AddOutgoingOffer: {Utils.ToString(ref offer, material)}!", material);
-
             // Inactive outside connections should not be adding offers ...
             if (OutsideConnectionInfo.IsInvalidOutgoingOutsideConnection(offer.Building))
             {
-                Logger.LogMaterial($"TransferManager::AddOutgoingOffer: Disallowing outside connection B{offer.Building} because of missing cargo buildings!", material);
-                return false;
-            }
-
-            // Change these offers ... a bug in the base game.  Citizens should not offer health care services.
-            if ((material == TransferManager.TransferReason.ElderCare || material == TransferManager.TransferReason.ChildCare) && offer.Citizen != 0)
-            {
-                offer.Active = true;
-                TransferManager.instance.AddIncomingOffer(material, offer);
+                OfferTracker.LogEvent("AddOutgoingDisallowInactiveOutside", ref offer, material);
                 return false;
             }
 
@@ -96,16 +113,45 @@ namespace EnhancedDistrictServices
                 {
                     if (material == TransferManager.TransferReason.ParkMaintenance)
                     {
-                        Logger.LogMaterial($"TransferManager::AddOutgoingOffer: Filtering out subBuilding {Utils.ToString(ref offer, material)}!", material);
+                        OfferTracker.LogEvent("AddOutgoingDisallowSubBuilding", ref offer, material);
                         return false;
                     }
                 }
-
-                return true;
             }
 
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
-            return true;
+
+            if (offer.Building != (ushort)0)
+            {
+                byte park = Singleton<DistrictManager>.instance.GetPark(offer.Position);
+                Building[] buffer = Singleton<BuildingManager>.instance.m_buildings.m_buffer;
+                DistrictPark.PedestrianZoneTransferReason reason;
+                if (park != (byte)0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].IsPedestrianZone && buffer[(int)offer.Building].Info.m_buildingAI.GetUseServicePoint(offer.Building, ref buffer[(int)offer.Building]) && DistrictPark.TryGetPedestrianReason(material, out reason))
+                {
+                    bool flag = false;
+                    if ((Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].m_parkPolicies & DistrictPolicies.Park.ForceServicePoint) != DistrictPolicies.Park.None)
+                        flag = true;
+                    if (!flag)
+                    {
+                        ushort accessSegment = buffer[(int)offer.Building].m_accessSegment;
+                        if (accessSegment == (ushort)0 && (buffer[(int)offer.Building].m_problems & new Notification.ProblemStruct(Notification.Problem1.RoadNotConnected, Notification.Problem2.NotInPedestrianZone)).IsNone)
+                        {
+                            buffer[(int)offer.Building].Info.m_buildingAI.CheckRoadAccess(offer.Building, ref buffer[(int)offer.Building]);
+                            accessSegment = buffer[(int)offer.Building].m_accessSegment;
+                        }
+                        if (accessSegment != (ushort)0 && (Singleton<NetManager>.instance.m_segments.m_buffer[(int)accessSegment].Info.m_vehicleCategories & reason.m_vehicleCategory) == VehicleInfo.VehicleCategory.None)
+                            flag = true;
+                    }
+                    if (flag)
+                    {
+                        offer.m_isLocalPark = park;
+                        Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].AddMaterialSuggestion(offer.Building, material);
+                    }
+                }
+            }
+
+            TransferManagerMod.AddOutgoingOffer(material, offer);
+            return false;
         }
     }
 

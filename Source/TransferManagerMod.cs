@@ -84,7 +84,12 @@ namespace EnhancedDistrictServices
         /// <param name="offer"></param>
         public static void AddIncomingOffer(TransferManager.TransferReason material, TransferManager.TransferOffer offer)
         {
-            AddOffer(material, offer, m_incomingAmount, m_incomingCount, m_incomingOffers);
+            OfferTracker.LogEvent("AddIncoming", ref offer, material);
+
+            if (!AddOffer(material, offer, m_incomingAmount, m_incomingCount, m_incomingOffers))
+            {
+                OfferTracker.LogEvent("AddIncomingFail", ref offer, material);
+            }
         }
 
         /// <summary>
@@ -94,7 +99,12 @@ namespace EnhancedDistrictServices
         /// <param name="offer"></param>
         public static void AddOutgoingOffer(TransferManager.TransferReason material, TransferManager.TransferOffer offer)
         {
-            AddOffer(material, offer, m_outgoingAmount, m_outgoingCount, m_outgoingOffers);
+            OfferTracker.LogEvent("AddOutgoing", ref offer, material);
+
+            if (!AddOffer(material, offer, m_outgoingAmount, m_outgoingCount, m_outgoingOffers))
+            {
+                OfferTracker.LogEvent("AddOutgoingFail", ref offer, material);
+            }
         }
 
         /// <summary>
@@ -105,13 +115,14 @@ namespace EnhancedDistrictServices
         /// <param name="amounts"></param>
         /// <param name="count"></param>
         /// <param name="offers"></param>
-        private static void AddOffer(TransferManager.TransferReason material, TransferManager.TransferOffer offer, int[] amount, ushort[] count, TransferManager.TransferOffer[] offers)
+        private static bool AddOffer(TransferManager.TransferReason material, TransferManager.TransferOffer offer, int[] amount, ushort[] count, TransferManager.TransferOffer[] offers)
         {
             for (int priority = offer.Priority; priority >= 0; --priority)
             {
                 int index1 = (int)material * 8 + priority;
                 int num = count[index1];
 
+                /*
                 for (int index2 = 0; index2 < num; index2++)
                 {
                     int index3 = index1 * 256 + index2;
@@ -121,6 +132,7 @@ namespace EnhancedDistrictServices
                         return;
                     }
                 }
+                */
 
                 // If we reached here, we need to add a new offer.
                 if (num < 256)
@@ -128,9 +140,11 @@ namespace EnhancedDistrictServices
                     offers[index1 * 256 + num] = offer;
                     count[index1] = (ushort)(num + 1);
                     amount[(int)material] += offer.Amount;
-                    return;
+                    return true;
                 }
             }
+
+            return false;
         }
 
         public delegate bool MatchFilter(
@@ -314,9 +328,7 @@ namespace EnhancedDistrictServices
                         continue;
                     }
 
-                    Logger.LogMaterial(
-                        $"TransferManager::MatchOffersClosest: Searching for match for request={Utils.ToString(ref requestOffer, material)}",
-                        material);
+                    OfferTracker.LogEvent("MatchRequest", ref requestOffer, material);
 
                     m_currentBuildingExclusions.Clear();
 
@@ -340,6 +352,7 @@ namespace EnhancedDistrictServices
                             for (int responseSubIndex = 0; responseSubIndex < responseSubCount; ++responseSubIndex)
                             {
                                 var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
+                                OfferTracker.LogEvent("MatchConsider", ref responseOffer, material);
 
                                 if (requestPriority == 0 || responsePriority == 0)
                                 {
@@ -458,9 +471,7 @@ namespace EnhancedDistrictServices
                             var responseOffer = responseOffers[responseCountIndex * 256 + bestResponseSubIndex];
                             int responseAmount = responseOffer.Amount;
 
-                            Logger.LogMaterial(
-                                $"TransferManager::MatchOffersClosest: Matched {Utils.ToString(ref requestOffer, material)} to {Utils.ToString(ref responseOffer, material)}!",
-                                material);
+                            OfferTracker.LogEvent("MatchSuccess", ref responseOffer, material);
 
                             int delta = Mathf.Min(requestAmount, responseAmount);
                             if (delta != 0)
@@ -468,7 +479,7 @@ namespace EnhancedDistrictServices
                                 var success = StartTransfer(material, requestOffer, responseOffer, delta);
                                 if (!success)
                                 {
-                                    Logger.LogWarning($"TransferManager::MatchOffersClosest: Matched {Utils.ToString(ref requestOffer, material)} to {Utils.ToString(ref responseOffer, material)}, but was unable to start the transfer!!");
+                                    OfferTracker.LogEvent("MatchSuccessFail", ref responseOffer, material);
                                     m_currentBuildingExclusions.Add(responseOffer.Building);
                                     continue;
                                 }
@@ -505,15 +516,14 @@ namespace EnhancedDistrictServices
                         }
                         else
                         {
+                            OfferTracker.LogEvent("MatchRequestFail", ref requestOffer, material);
                             break;
                         }
                     }                   
 
                     if (requestPriority > 0 && !matched)
                     {
-                        Logger.LogMaterial(
-                            $"TransferManager::MatchOffersClosest: Failed to match {Utils.ToString(ref requestOffer, material)}",
-                            material);
+                        OfferTracker.LogEvent("MatchRequestFail", ref requestOffer, material);
                         matchesMissed++;
                     }
                 }

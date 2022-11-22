@@ -30,8 +30,8 @@ namespace EnhancedDistrictServices
 
         public static bool CanUseTaxis(Vector3 startPosition, Vector3 endPosition)
         {
-            var startDistrictPark = DistrictPark.FromPosition(startPosition);
-            var endDistrictPark = DistrictPark.FromPosition(endPosition);
+            var startDistrictPark = EDSDistrictPark.FromPosition(startPosition);
+            var endDistrictPark = EDSDistrictPark.FromPosition(endPosition);
 
             // Now see whether any taxi buildings serve this position.
             for (int i = 0; i < m_taxiBuildings.Count; i++)

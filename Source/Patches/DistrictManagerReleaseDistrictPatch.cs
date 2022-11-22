@@ -8,7 +8,7 @@ namespace EnhancedDistrictServices
     {
         public static bool Prefix(byte district, ref District data)
         {
-            var districtPark = DistrictPark.FromDistrict(district);
+            var districtPark = EDSDistrictPark.FromDistrict(district);
             if (districtPark.Name != string.Empty)
             {
                 Constraints.ReleaseDistrictPark(districtPark);

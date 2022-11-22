@@ -6,9 +6,9 @@ namespace EnhancedDistrictServices
     [HarmonyPatch("ReleaseParkImplementation")]
     public class DistrictManagerReleaseParkPatch
     {
-        public static bool Prefix(byte park, ref DistrictPark data)
+        public static bool Prefix(byte park, ref EDSDistrictPark data)
         {
-            var districtPark = DistrictPark.FromPark(park);
+            var districtPark = EDSDistrictPark.FromPark(park);
             if (districtPark.Name != string.Empty)
             {
                 Constraints.ReleaseDistrictPark(districtPark);

@@ -7,7 +7,7 @@ namespace EnhancedDistrictServices
     /// <summary>
     /// Each building/citizen/segment may simultaneously belong to a district and/or a park.
     /// </summary>
-    public struct DistrictPark : IComparable<DistrictPark>
+    public struct EDSDistrictPark : IComparable<EDSDistrictPark>
     {
         /// <summary>
         /// Max number of districts + parks.
@@ -22,9 +22,9 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="district"></param>
         /// <returns></returns>
-        public static DistrictPark FromDistrict(byte district)
+        public static EDSDistrictPark FromDistrict(byte district)
         {
-            return new DistrictPark
+            return new EDSDistrictPark
             {
                 District = district
             };
@@ -35,9 +35,9 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="park"></param>
         /// <returns></returns>
-        public static DistrictPark FromPark(byte park)
+        public static EDSDistrictPark FromPark(byte park)
         {
-            return new DistrictPark
+            return new EDSDistrictPark
             {
                 Park = park
             };
@@ -48,9 +48,9 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="position"></param>
         /// <returns></returns>
-        public static DistrictPark FromPosition(Vector3 position)
+        public static EDSDistrictPark FromPosition(Vector3 position)
         {
-            return new DistrictPark
+            return new EDSDistrictPark
             {
                 District = DistrictManager.instance.GetDistrict(position),
                 Park = DistrictManager.instance.GetPark(position)
@@ -61,15 +61,15 @@ namespace EnhancedDistrictServices
         /// Lists all current districts and parks, sorted by alphabetical order.
         /// </summary>
         /// <returns></returns>
-        public static List<DistrictPark> GetAllDistrictParks()
+        public static List<EDSDistrictPark> GetAllDistrictParks()
         {
-            var dps = new List<DistrictPark>();
+            var dps = new List<EDSDistrictPark>();
 
             for (byte district = 1; district < DistrictManager.MAX_DISTRICT_COUNT; district++)
             {
                 if ((DistrictManager.instance.m_districts.m_buffer[district].m_flags & global::District.Flags.Created) != 0)
                 {
-                    dps.Add(new DistrictPark
+                    dps.Add(new EDSDistrictPark
                     {
                         District = district
                     });
@@ -80,7 +80,7 @@ namespace EnhancedDistrictServices
             {
                 if ((DistrictManager.instance.m_parks.m_buffer[park].m_flags & global::DistrictPark.Flags.Created) != 0)
                 {
-                    dps.Add(new DistrictPark
+                    dps.Add(new EDSDistrictPark
                     {
                         Park = park
                     });
@@ -239,7 +239,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool IsServedBy(DistrictPark other)
+        public bool IsServedBy(EDSDistrictPark other)
         {
             if (IsEmpty && other.IsEmpty)
             {
@@ -256,7 +256,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="districtParks"></param>
         /// <returns></returns>
-        public bool IsServedBy(List<DistrictPark> districtParks)
+        public bool IsServedBy(List<EDSDistrictPark> districtParks)
         {
             if (districtParks == null)
             {
@@ -281,7 +281,7 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public int CompareTo(DistrictPark other)
+        public int CompareTo(EDSDistrictPark other)
         {
             return Name.CompareTo(other.Name);
         }
@@ -293,7 +293,7 @@ namespace EnhancedDistrictServices
         /// <returns></returns>
         public override bool Equals(object obj)
         {
-            if (obj is DistrictPark other)
+            if (obj is EDSDistrictPark other)
             {
                 return District == other.District && Park == other.Park;
             }
@@ -321,9 +321,9 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="districtPark"></param>
         /// <returns></returns>
-        public static DistrictPark FromSerializedInt(int districtPark)
+        public static EDSDistrictPark FromSerializedInt(int districtPark)
         {
-            return new DistrictPark
+            return new EDSDistrictPark
             {
                 District = (byte)(districtPark & 255),
                 Park = (byte)(districtPark >> 8)

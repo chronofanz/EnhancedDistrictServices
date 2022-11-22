@@ -21,7 +21,7 @@ namespace EnhancedDistrictServices
         /// <summary>
         /// Mapping of dropdown index to DistrictPark. 
         /// </summary>
-        private readonly List<DistrictPark> m_districtParkMapping = new List<DistrictPark>(capacity: DistrictPark.MAX_DISTRICT_PARK_COUNT);
+        private readonly List<EDSDistrictPark> m_districtParkMapping = new List<EDSDistrictPark>(capacity: EDSDistrictPark.MAX_DISTRICT_PARK_COUNT);
 
         /// <summary>
         /// Mapping of dropdown index to prefab index to vehicle info.
@@ -911,7 +911,7 @@ namespace EnhancedDistrictServices
             UIDistrictsDropDown.Clear();
             m_districtParkMapping.Clear();
 
-            var districtParks = DistrictPark.GetAllDistrictParks();
+            var districtParks = EDSDistrictPark.GetAllDistrictParks();
             foreach (var districtPark in districtParks)
             {
                 if (!Settings.showCampusDistricts.value && districtPark.IsCampus)
@@ -945,7 +945,7 @@ namespace EnhancedDistrictServices
                 return;
             }
 
-            List<DistrictPark> districtParkServed = null;
+            List<EDSDistrictPark> districtParkServed = null;
             if (m_inputMode == InputMode.INCOMING)
             {
                 districtParkServed = Constraints.InputDistrictParkServiced(m_currBuildingId);
