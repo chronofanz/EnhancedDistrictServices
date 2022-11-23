@@ -117,6 +117,11 @@ namespace EnhancedDistrictServices
                 return $"B{offer.Building}";
             }
 
+            if (offer.Park != 0)
+            {
+                return $"P{offer.Park}";
+            }
+
             return $"NULL";
         }
     }

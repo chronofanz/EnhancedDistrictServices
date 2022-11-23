@@ -88,6 +88,8 @@ namespace EnhancedDistrictServices
     [HarmonyPatch("AddOutgoingOffer")]
     public class TransferManagerAddOutgoingOfferPatch
     {
+        private readonly static MyRandomizer m_randomizer = new MyRandomizer(1);
+
         public static bool Prefix(ref TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)        
         {
             // Inactive outside connections should not be adding offers ...
@@ -100,7 +102,7 @@ namespace EnhancedDistrictServices
             // Too many requests for helicopters ... 
             if (material == TransferManager.TransferReason.Sick2)
             {
-                if (Singleton<SimulationManager>.instance.m_randomizer.Int32(10U) != 0)
+                if (m_randomizer.Int32(10U) != 0)
                 {
                     material = TransferManager.TransferReason.Sick;
                 }                

@@ -9,7 +9,7 @@ namespace EnhancedDistrictServices
 {
     public static class TransferManagerMod
     {
-        private static readonly Randomizer m_randomizer = new Randomizer(0);
+        private static readonly MyRandomizer m_randomizer = new MyRandomizer(1);
 
         private static readonly TransferManager.TransferOffer[] m_outgoingOffers;
         private static readonly TransferManager.TransferOffer[] m_incomingOffers;
@@ -211,6 +211,15 @@ namespace EnhancedDistrictServices
                     Clear(material);
                     return true;
                 }
+                else if (material == TransferManager.TransferReason.Student3)
+                {
+                    MatchOffersRandom(
+                        material,
+                        requestCount: m_outgoingCount, requestOffers: m_outgoingOffers,
+                        requestPriorityMax: 7, requestPriorityMin: 1,
+                        responseCount: m_incomingCount, responseOffers: m_incomingOffers,
+                        responsePriorityMax: 7, responsePriorityMin: 1);
+                }
                 else if (TransferManagerInfo.IsDistrictOffer(material))
                 {
                     MatchOffersClosest(
@@ -252,7 +261,7 @@ namespace EnhancedDistrictServices
                         responsePriorityMax: 7, responsePriorityMin: 1,
                         matchFilter: IsValidLowPriorityOffer);
 
-                    if (m_randomizer.Int32(0, 10) < 5)
+                    if (m_randomizer.Int32(10) < 5)
                     {
                         MatchOffersClosest(
                             material,
@@ -306,11 +315,15 @@ namespace EnhancedDistrictServices
                 int requestCountIndex = (int)material * 8 + requestPriority;
                 int requestSubCount = requestCount[requestCountIndex];
 
+                if (requestSubCount == 0)
+                {
+                    continue;
+                }
+
                 // Start searching at a random index!
-                int requestSubIndex = m_randomizer.Int32(0, requestSubCount - 1);
+                int requestSubIndex = m_randomizer.Int32((uint)requestSubCount - 1);
 
                 // Search request offers in decreasing priority only.  This is appropriate for services where the citizens are the ones calling for help.
-                bool matched = false;
                 for (int iter = 0; iter < requestSubCount; iter++)
                 {
                     requestSubIndex++;
@@ -352,6 +365,11 @@ namespace EnhancedDistrictServices
                             for (int responseSubIndex = 0; responseSubIndex < responseSubCount; ++responseSubIndex)
                             {
                                 var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
+                                if (responseOffer.Amount == 0)
+                                {
+                                    continue;
+                                }
+
                                 OfferTracker.LogEvent("MatchConsider", ref responseOffer, material);
 
                                 if (requestPriority == 0 || responsePriority == 0)
@@ -362,17 +380,13 @@ namespace EnhancedDistrictServices
                                     }
                                 }
 
+                                /*
                                 // Pedestrian areas
                                 if (requestOffer.m_isLocalPark != responseOffer.m_isLocalPark)
                                 {
                                     continue;
                                 }
-
-                                // Not sure how this could happen, but ...
-                                if (responseOffer.Amount == 0)
-                                {
-                                    continue;
-                                }
+                                */
 
                                 if (responseOffer.Building != 0 && m_currentBuildingExclusions.Contains(responseOffer.Building))
                                 {
@@ -484,7 +498,6 @@ namespace EnhancedDistrictServices
                                     continue;
                                 }
 
-                                matched = true;
                                 if (requestPriority == 0 || bestResponsePriority == 0)
                                 {
                                     // Only record matches to outside connections for now ...
@@ -521,7 +534,7 @@ namespace EnhancedDistrictServices
                         }
                     }                   
 
-                    if (requestPriority > 0 && !matched)
+                    if (requestPriority > 0 && requestAmount > 0)
                     {
                         OfferTracker.LogEvent("MatchRequestFail", ref requestOffer, material);
                         matchesMissed++;
@@ -533,6 +546,152 @@ namespace EnhancedDistrictServices
                     Logger.LogMaterial(
                         $"TransferManager::MatchOffersClosest: material={material}, request_priority={requestPriority}, outside_matches={matchesOutside}, inside_matches={matchesInside}, missed_matches={matchesMissed}",
                         material);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tries to match the request and response offers, where we do the search in decreasing priority.
+        /// </summary>
+        /// <param name="material"></param>
+        /// <param name="requestCount"></param>
+        /// <param name="requestOffers"></param>
+        /// <param name="responseCount"></param>
+        /// <param name="responseOffers"></param>
+        private static void MatchOffersRandom(
+            TransferManager.TransferReason material,
+            ushort[] requestCount, TransferManager.TransferOffer[] requestOffers,
+            int requestPriorityMax, int requestPriorityMin,
+            ushort[] responseCount, TransferManager.TransferOffer[] responseOffers,
+            int responsePriorityMax, int responsePriorityMin)
+        {
+            TransferHistory.PurgeOldEvents(material);
+
+            // We already previously patched the offers so that priority >= 1 correspond to local offers and priority == 0 correspond to outside offers.
+            for (int requestPriority = requestPriorityMax; requestPriority >= requestPriorityMin; --requestPriority)
+            {
+                int requestCountIndex = (int)material * 8 + requestPriority;
+                int requestSubCount = requestCount[requestCountIndex];
+
+                if (requestSubCount == 0)
+                {
+                    continue;
+                }
+
+                // Start searching at a random index!
+                int requestSubIndex = m_randomizer.Int32((uint)requestSubCount - 1);
+
+                // Search request offers in decreasing priority only.  This is appropriate for services where the citizens are the ones calling for help.
+                for (int iter = 0; iter < requestSubCount; iter++)
+                {
+                    requestSubIndex++;
+                    if (requestSubIndex >= requestSubCount)
+                    {
+                        requestSubIndex = 0;
+                    }
+
+                    var requestOffer = requestOffers[requestCountIndex * 256 + requestSubIndex];
+                    int requestAmount = requestOffer.Amount;
+
+                    if (requestAmount == 0)
+                    {
+                        continue;
+                    }
+
+                    OfferTracker.LogEvent("MatchRequest", ref requestOffer, material);
+
+                    m_currentBuildingExclusions.Clear();
+
+                    uint totalResponseCount = 0;
+                    for (int responsePriority = responsePriorityMax; responsePriority >= responsePriorityMin; --responsePriority)
+                    {
+                        int responseCountIndex = (int)material * 8 + responsePriority;
+                        int responseSubCount = responseCount[responseCountIndex];
+
+                        for (int responseSubIndex = 0; responseSubIndex < responseSubCount; ++responseSubIndex)
+                        {
+                            var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
+                            if (responseOffer.Amount > 0)
+                            {
+                                ++totalResponseCount;
+                            }
+                        }
+                    }
+
+                    if (totalResponseCount == 0)
+                    {
+                        OfferTracker.LogEvent("MatchRequestFail", ref requestOffer, material);
+                        continue;
+                    }
+
+                    int selectedResponseIndex = m_randomizer.Int32(totalResponseCount - 1);
+                    int currentResponseIndex = 0;
+                    for (int responsePriority = responsePriorityMax; responsePriority >= responsePriorityMin; --responsePriority)
+                    {
+                        if (requestAmount == 0)
+                        {
+                            break;
+                        }
+
+                        int responseCountIndex = (int)material * 8 + responsePriority;
+                        int responseSubCount = responseCount[responseCountIndex];
+
+                        for (int responseSubIndex = 0; responseSubIndex < responseSubCount; ++responseSubIndex)
+                        {
+                            if (requestAmount == 0)
+                            {
+                                break;
+                            }
+
+                            var responseOffer = responseOffers[responseCountIndex * 256 + responseSubIndex];
+                            if (responseOffer.Amount == 0)
+                            {
+                                continue;
+                            }
+
+                            if (currentResponseIndex >= selectedResponseIndex)
+                            {
+                                int responseAmount = responseOffer.Amount;
+                                OfferTracker.LogEvent("MatchSuccess", ref responseOffer, material);
+
+                                int delta = Mathf.Min(requestAmount, responseAmount);
+                                if (delta != 0)
+                                {
+                                    var success = StartTransfer(material, requestOffer, responseOffer, delta);
+                                    if (!success)
+                                    {
+                                        OfferTracker.LogEvent("MatchSuccessFail", ref responseOffer, material);
+                                        m_currentBuildingExclusions.Add(responseOffer.Building);
+                                        continue;
+                                    }
+                                }
+
+                                requestAmount -= delta;
+                                responseAmount -= delta;
+                                if (responseAmount == 0)
+                                {
+                                    responseSubCount = responseCount[responseCountIndex] - 1;
+                                    responseCount[responseCountIndex] = (ushort)responseSubCount;
+                                    responseOffers[responseCountIndex * 256 + responseSubIndex] = responseOffers[responseCountIndex * 256 + responseSubCount];
+                                }
+                                else
+                                {
+                                    responseOffer.Amount = responseAmount;
+                                    responseOffers[responseCountIndex * 256 + responseSubIndex].Amount = responseAmount;
+                                }
+
+                                requestOffer.Amount = requestAmount;
+                                requestOffers[requestCountIndex * 256 + requestSubIndex].Amount = requestAmount;
+                            }
+
+                            ++currentResponseIndex;
+                        }
+                    }
+
+                    if (requestAmount > 0)
+                    {
+                        OfferTracker.LogEvent("MatchRequestFail", ref requestOffer, material);
+                    }
                 }
             }
         }
