@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ColossalFramework;
+using System;
 using System.Diagnostics;
 using System.IO;
 using UnityEngine;
@@ -35,6 +36,7 @@ namespace EnhancedDistrictServices
                 string @event,
                 string offerID,
                 InstanceType instanceType,
+                string homeID,
                 byte isLocalPark,
                 bool outside,
                 int amount,
@@ -46,7 +48,7 @@ namespace EnhancedDistrictServices
                 var now = DateTime.Now;
                 lock (m_logFile)
                 {
-                    m_logFile.WriteLine($"{now},{@event},{offerID},{instanceType},{isLocalPark},{outside},{amount},{material},{priority},{exclude},{active}");
+                    m_logFile.WriteLine($"{now},{@event},{offerID},{instanceType},{homeID},{isLocalPark},{outside},{amount},{material},{priority},{exclude},{active}");
                 }
             }
         }
@@ -59,18 +61,19 @@ namespace EnhancedDistrictServices
         static OfferTracker()
         {
             m_instance = new MyLogger();
-            m_instance.WriteHeader("DateTime", "Event", "OfferID", "InstanceType", "IsLocalPark", "Outside", "Amount", "Material", "Priority", "Exclude", "Active");
+            m_instance.WriteHeader("DateTime", "Event", "OfferID", "InstanceType", "HomeID", "IsLocalPark", "Outside", "Amount", "Material", "Priority", "Exclude", "Active");
         }
 
         /// <summary>
         /// Logs outgoing offer
         /// </summary>
         /// <param name="msg"></param>
-        [Conditional("VERBOSE")]
+        /// [Conditional("VERBOSE")]
         public static void LogEvent(string @event, ref TransferManager.TransferOffer offer, TransferManager.TransferReason material)
         {
             var offerID = GetOfferID(ref offer);
             var instanceType = offer.m_object.Type;
+            var homeID = GetHomeID(ref offer);
             var isLocalPark = offer.m_isLocalPark;
             var outside = TransferManagerInfo.IsOutsideOffer(ref offer);
 
@@ -84,6 +87,7 @@ namespace EnhancedDistrictServices
                 @event: @event,
                 offerID: offerID,
                 instanceType: instanceType,
+                homeID: homeID,
                 isLocalPark: isLocalPark,
                 outside: outside,
 
@@ -120,6 +124,24 @@ namespace EnhancedDistrictServices
             if (offer.Park != 0)
             {
                 return $"P{offer.Park}";
+            }
+
+            return $"NULL";
+        }
+
+        private static string GetHomeID(ref TransferManager.TransferOffer offer)
+        {
+
+            if (offer.Vehicle != 0)
+            {
+                var homeBuildingId = VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle].m_sourceBuilding;
+                return $"B{homeBuildingId}";
+            }
+
+            if (offer.Citizen != 0)
+            {
+                var homeBuildingId = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen].m_homeBuilding;
+                return $"B{homeBuildingId}";
             }
 
             return $"NULL";

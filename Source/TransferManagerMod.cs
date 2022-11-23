@@ -529,7 +529,6 @@ namespace EnhancedDistrictServices
                         }
                         else
                         {
-                            OfferTracker.LogEvent("MatchRequestFail", ref requestOffer, material);
                             break;
                         }
                     }                   
