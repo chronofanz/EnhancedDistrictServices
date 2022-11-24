@@ -68,7 +68,7 @@ namespace EnhancedDistrictServices
         /// Logs outgoing offer
         /// </summary>
         /// <param name="msg"></param>
-        /// [Conditional("VERBOSE")]
+        [Conditional("VERBOSE")]
         public static void LogEvent(string @event, ref TransferManager.TransferOffer offer, TransferManager.TransferReason material)
         {
             var offerID = GetOfferID(ref offer);

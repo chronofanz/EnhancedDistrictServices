@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.IO;
 using UnityEngine;
-using static TransferManager;
 
 namespace EnhancedDistrictServices
 {

@@ -70,6 +70,7 @@
     <Compile Include="Source\EnhancedDistrictServicesLoadingExtension.cs" />
     <Compile Include="Source\MyRandomizer.cs" />
     <Compile Include="Source\OfferTracker.cs" />
+    <Compile Include="Source\Patches\ResidentAIUpdateHealthPatch.cs" />
     <Compile Include="Source\Patches\CarAICreateVehiclePatch.cs" />
     <Compile Include="Source\Patches\CarAIDisableCollisionCheckPatch.cs" />
     <Compile Include="Source\Patches\AirportBuildingAIHandleCrimePatch.cs" />

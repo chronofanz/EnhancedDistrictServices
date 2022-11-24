@@ -88,7 +88,7 @@ namespace EnhancedDistrictServices
     [HarmonyPatch("AddOutgoingOffer")]
     public class TransferManagerAddOutgoingOfferPatch
     {
-        private readonly static MyRandomizer m_randomizer = new MyRandomizer(1);
+        private static readonly MyRandomizer m_randomizer = new MyRandomizer(1);
 
         public static bool Prefix(ref TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)        
         {
