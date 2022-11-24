@@ -174,7 +174,7 @@ namespace EnhancedDistrictServices
         /// <param name="offer"></param>
         public static void ModifyOffer(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
         {
-            var isOutsideOffer = TransferManagerInfo.IsOutsideOffer(ref offer);
+            var isOutsideOffer = TransferManagerInfo.IsOutsideOffer(ref offer, material);
             if (isOutsideOffer)
             {
                 offer.Priority = 0;
@@ -186,7 +186,7 @@ namespace EnhancedDistrictServices
 
             if (offer.Vehicle != 0)
             {
-                offer.Priority = 7;
+                offer.Priority = 6;
             }
         }
     }

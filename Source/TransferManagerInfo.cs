@@ -681,9 +681,31 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="building"></param>
         /// <returns></returns>
-        public static bool IsOutsideBuilding(int building)
+        public static bool IsOutsideBuilding(int building, TransferManager.TransferReason material)
         {
-            return building != 0 && Singleton<BuildingManager>.instance.m_buildings.m_buffer[building].Info.m_buildingAI is OutsideConnectionAI;
+            if (building == 0)
+            {
+                return false;
+            }
+
+            if (Singleton<BuildingManager>.instance.m_buildings.m_buffer[building].Info.m_buildingAI is OutsideConnectionAI)
+            {
+                return true;
+            }
+
+            if (Singleton<BuildingManager>.instance.m_buildings.m_buffer[building].Info.m_buildingAI is SpaceElevatorAI)
+            {
+                return (material == TransferManager.TransferReason.Single0 ||
+                        material == TransferManager.TransferReason.Single1 ||
+                        material == TransferManager.TransferReason.Single2 ||
+                        material == TransferManager.TransferReason.Single3 ||
+                        material == TransferManager.TransferReason.Single0B ||
+                        material == TransferManager.TransferReason.Single1B ||
+                        material == TransferManager.TransferReason.Single2B ||
+                        material == TransferManager.TransferReason.Single3B);
+            }
+
+            return false;
         }
 
         public static bool IsOutsideRoadConnection(int building)
@@ -889,9 +911,9 @@ namespace EnhancedDistrictServices
         /// </summary>
         /// <param name="offer"></param>
         /// <returns></returns>
-        public static bool IsOutsideOffer(ref TransferManager.TransferOffer offer)
+        public static bool IsOutsideOffer(ref TransferManager.TransferOffer offer, TransferManager.TransferReason material)
         {
-            return IsOutsideBuilding(GetHomeBuilding(ref offer));
+            return IsOutsideBuilding(GetHomeBuilding(ref offer), material);
         }
     }
 }

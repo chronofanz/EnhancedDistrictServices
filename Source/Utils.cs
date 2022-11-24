@@ -108,7 +108,7 @@ namespace EnhancedDistrictServices
         /// <returns></returns>
         public static string ToString(ref TransferManager.TransferOffer offer, TransferManager.TransferReason material)
         {
-            var outsideOfferText = TransferManagerInfo.IsOutsideOffer(ref offer) ? "(O)" : "";
+            var outsideOfferText = TransferManagerInfo.IsOutsideOffer(ref offer, material) ? "(O)" : "";
 
             if (offer.NetSegment != 0)
             {

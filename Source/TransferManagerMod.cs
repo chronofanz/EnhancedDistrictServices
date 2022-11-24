@@ -220,6 +220,31 @@ namespace EnhancedDistrictServices
                         responseCount: m_incomingCount, responseOffers: m_incomingOffers,
                         responsePriorityMax: 7, responsePriorityMin: 1);
                 }
+                else if (material == TransferManager.TransferReason.Single0 ||
+                         material == TransferManager.TransferReason.Single1 ||
+                         material == TransferManager.TransferReason.Single2 ||
+                         material == TransferManager.TransferReason.Single3 ||
+                         material == TransferManager.TransferReason.Single0B ||
+                         material == TransferManager.TransferReason.Single1B ||
+                         material == TransferManager.TransferReason.Single2B ||
+                         material == TransferManager.TransferReason.Single3B)
+                {
+                    MatchOffersRandom(
+                        material,
+                        requestCount: m_outgoingCount, requestOffers: m_outgoingOffers,
+                        requestPriorityMax: 7, requestPriorityMin: 0,
+                        responseCount: m_incomingCount, responseOffers: m_incomingOffers,
+                        responsePriorityMax: 7, responsePriorityMin: 1);
+
+                    /*
+                    MatchOffersRandom(
+                        material,
+                        requestCount: m_outgoingCount, requestOffers: m_outgoingOffers,
+                        requestPriorityMax: 7, requestPriorityMin: 1,
+                        responseCount: m_incomingCount, responseOffers: m_incomingOffers,
+                        responsePriorityMax: 0, responsePriorityMin: 0);
+                    */
+                }
                 else if (TransferManagerInfo.IsDistrictOffer(material))
                 {
                     MatchOffersClosest(
@@ -393,7 +418,7 @@ namespace EnhancedDistrictServices
                                     continue;
                                 }
 
-                                if (IsSameLocation(ref requestOffer, ref responseOffer))
+                                if (IsSameLocation(ref requestOffer, ref responseOffer, material))
                                 {
                                     continue;
                                 }
@@ -715,7 +740,8 @@ namespace EnhancedDistrictServices
 
         private static bool IsSameLocation(
             ref TransferManager.TransferOffer requestOffer,
-            ref TransferManager.TransferOffer responseOffer)
+            ref TransferManager.TransferOffer responseOffer,
+            TransferManager.TransferReason material)
         {
             if (requestOffer.m_object == responseOffer.m_object)
             {
@@ -753,7 +779,7 @@ namespace EnhancedDistrictServices
             }
 
             // Don't match outside connections that are too close to each other.
-            if (TransferManagerInfo.IsOutsideBuilding(requestHomeBuilding) && TransferManagerInfo.IsOutsideBuilding(responseHomeBuilding))
+            if (TransferManagerInfo.IsOutsideBuilding(requestHomeBuilding, material) && TransferManagerInfo.IsOutsideBuilding(responseHomeBuilding, material))
             {
                 var requestPosition = BuildingManager.instance.m_buildings.m_buffer[requestHomeBuilding].m_position;
                 var responsePosition = BuildingManager.instance.m_buildings.m_buffer[responseHomeBuilding].m_position;
@@ -878,7 +904,7 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            if (!Constraints.InputOutsideConnections(requestBuilding) && TransferManagerInfo.IsOutsideOffer(ref responseOffer))
+            if (!Constraints.InputOutsideConnections(requestBuilding) && TransferManagerInfo.IsOutsideOffer(ref responseOffer, material))
             {
                 Logger.LogMaterial(
                     $"TransferManager::IsValidSupplyChainOffer: {Utils.ToString(ref responseOffer, material)}, request is constrained not to accept outside offers!",
@@ -944,7 +970,7 @@ namespace EnhancedDistrictServices
             // should not apply to these materials.
             if (responseBuilding != 0 && BuildingManager.instance.m_buildings.m_buffer[responseBuilding].Info.GetAI() is LandfillSiteAI)
             {
-                if (TransferManagerInfo.IsOutsideOffer(ref requestOffer))
+                if (TransferManagerInfo.IsOutsideOffer(ref requestOffer, material))
                 {
                     Logger.LogMaterial(
                         $"TransferManager::IsValidLowPriorityOffer: {Utils.ToString(ref responseOffer, material)}, allow recycling centers",
@@ -969,9 +995,9 @@ namespace EnhancedDistrictServices
             }
 
             // See if the request is from an outside connection ...
-            if (TransferManagerInfo.IsOutsideOffer(ref requestOffer))
+            if (TransferManagerInfo.IsOutsideOffer(ref requestOffer, material))
             {
-                if (TransferManagerInfo.IsOutsideOffer(ref responseOffer))
+                if (TransferManagerInfo.IsOutsideOffer(ref responseOffer, material))
                 {
                     // Prevent matching roads that are too close together ...
                     var distanceSquared = Vector3.SqrMagnitude(responseOffer.Position - requestOffer.Position);
@@ -1001,7 +1027,7 @@ namespace EnhancedDistrictServices
             }
 
             // Here, we are guaranteed that the request is a local offer.
-            if (TransferManagerInfo.IsOutsideBuilding(responseBuilding))
+            if (TransferManagerInfo.IsOutsideBuilding(responseBuilding, material))
             {
                 // Don't be so aggressive in trying to serve low priority orders with outside connections.
                 if (requestPriority > 1 && Constraints.InputOutsideConnections(requestBuilding))

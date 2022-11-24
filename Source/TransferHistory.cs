@@ -44,8 +44,8 @@ namespace EnhancedDistrictServices
                     return false;
                 }
 
-                var isRequestBuildingOutside = TransferManagerInfo.IsOutsideBuilding(requestBuilding);
-                var isResponseBuildingOutside = TransferManagerInfo.IsOutsideBuilding(responseBuilding);
+                var isRequestBuildingOutside = TransferManagerInfo.IsOutsideBuilding(requestBuilding, material);
+                var isResponseBuildingOutside = TransferManagerInfo.IsOutsideBuilding(responseBuilding, material);
 
                 if (!Settings.enableDummyCargoTraffic.value && isRequestBuildingOutside && isResponseBuildingOutside)
                 {
@@ -58,7 +58,7 @@ namespace EnhancedDistrictServices
                 var concurrentOrderCountToResponseBuilding = 0;
                 for (int i = 0; i < list.Count; i++)
                 {
-                    if (TransferManagerInfo.IsOutsideBuilding(list[i].ResponseBuilding))
+                    if (TransferManagerInfo.IsOutsideBuilding(list[i].ResponseBuilding, material))
                     {
                         concurrentOrderCountToOutsideConnection++;
                     }

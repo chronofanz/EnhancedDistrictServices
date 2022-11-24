@@ -70,6 +70,9 @@
     <Compile Include="Source\EnhancedDistrictServicesLoadingExtension.cs" />
     <Compile Include="Source\MyRandomizer.cs" />
     <Compile Include="Source\OfferTracker.cs" />
+    <Compile Include="Source\Patches\OutsideConnectionAIGetProductionRatePatch.cs" />
+    <Compile Include="Source\Patches\ResidentAIFindHospitalPatch.cs" />
+    <Compile Include="Source\Patches\ResidentialBuildingAIGetHomeReasonPatch.cs" />
     <Compile Include="Source\Patches\ResidentAIUpdateHealthPatch.cs" />
     <Compile Include="Source\Patches\CarAICreateVehiclePatch.cs" />
     <Compile Include="Source\Patches\CarAIDisableCollisionCheckPatch.cs" />

@@ -542,7 +542,7 @@ namespace EnhancedDistrictServices
                 m_currBuildingId = 0;
             }
 
-            if (TransferManagerInfo.IsOutsideBuilding(building))
+            if (TransferManagerInfo.IsOutsideBuilding(building, TransferManager.TransferReason.None))
             {
                 // Need to enable this so that the user can roughly determine where the connection is ...
                 Camera.main.GetComponent<CameraController>().m_unlimitedCamera = true;

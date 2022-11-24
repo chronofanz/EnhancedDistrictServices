@@ -75,7 +75,7 @@ namespace EnhancedDistrictServices
             var instanceType = offer.m_object.Type;
             var homeID = GetHomeID(ref offer);
             var isLocalPark = offer.m_isLocalPark;
-            var outside = TransferManagerInfo.IsOutsideOffer(ref offer);
+            var outside = TransferManagerInfo.IsOutsideOffer(ref offer, material);
 
             var amount = offer.Amount;
             //var material = material;
