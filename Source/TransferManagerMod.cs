@@ -236,14 +236,12 @@ namespace EnhancedDistrictServices
                         responseCount: m_incomingCount, responseOffers: m_incomingOffers,
                         responsePriorityMax: 7, responsePriorityMin: 1);
 
-                    /*
                     MatchOffersRandom(
                         material,
                         requestCount: m_outgoingCount, requestOffers: m_outgoingOffers,
                         requestPriorityMax: 7, requestPriorityMin: 1,
                         responseCount: m_incomingCount, responseOffers: m_incomingOffers,
                         responsePriorityMax: 0, responsePriorityMin: 0);
-                    */
                 }
                 else if (TransferManagerInfo.IsDistrictOffer(material))
                 {
@@ -395,26 +393,24 @@ namespace EnhancedDistrictServices
                                     continue;
                                 }
 
-                                OfferTracker.LogEvent("MatchConsider", ref responseOffer, material);
-
                                 if (requestPriority == 0 || responsePriority == 0)
                                 {
                                     if (TransferHistory.IsRestricted(material, requestOffer.Building, responseOffer.Building))
                                     {
+                                        // OfferTracker.LogEvent("MatchRestricted", ref responseOffer, material);
                                         continue;
                                     }
                                 }
 
-                                /*
                                 // Pedestrian areas
                                 if (requestOffer.m_isLocalPark != responseOffer.m_isLocalPark)
                                 {
                                     continue;
                                 }
-                                */
 
                                 if (responseOffer.Building != 0 && m_currentBuildingExclusions.Contains(responseOffer.Building))
                                 {
+                                    OfferTracker.LogEvent("MatchExcluded", ref responseOffer, material);
                                     continue;
                                 }
 
@@ -441,7 +437,8 @@ namespace EnhancedDistrictServices
                                 {
                                     if (ContainsBuildingToBuildingExclusion(requestOffer.Building, responseOffer.Building))
                                     {
-                                        Logger.Log($"TransferManagerMod::MatchOffersClosest: Detected path find failure between {requestOffer.Building} and {responseOffer.Building}, excluding match!");
+                                        OfferTracker.LogEvent("MatchPathFailure", ref responseOffer, material);
+
                                         // Give it a chance to remove the exclusion, in case the user or game fixed the path finding problem.
                                         if (m_randomizer.Int32(10) < 2)
                                         {
@@ -453,7 +450,8 @@ namespace EnhancedDistrictServices
 
                                     if (ContainsBuildingToBuildingExclusion(responseOffer.Building, requestOffer.Building))
                                     {
-                                        Logger.Log($"TransferManagerMod::MatchOffersClosest: Detected path find failure between {requestOffer.Building} and {responseOffer.Building}, excluding match!");
+                                        OfferTracker.LogEvent("MatchPathFailure", ref responseOffer, material);
+
                                         // Give it a chance to remove the exclusion, in case the user or game fixed the path finding problem.
                                         if (m_randomizer.Int32(10) < 2)
                                         {
@@ -1077,17 +1075,15 @@ namespace EnhancedDistrictServices
                 {
                     Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
                     ushort vehicle = offerIn.Vehicle;
-                    VehicleInfo info = vehicles.m_buffer[vehicle].Info;
+                    vehicles.m_buffer[vehicle].Info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerOut);
                     offerOut.Amount = delta;
-                    info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerOut);
                 }
                 else if (active2 && offerOut.Vehicle != 0)
                 {
                     Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
                     ushort vehicle = offerOut.Vehicle;
-                    VehicleInfo info = vehicles.m_buffer[vehicle].Info;
+                    vehicles.m_buffer[vehicle].Info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerIn);
                     offerIn.Amount = delta;
-                    info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerIn);
                 }
                 else if (active1 && offerIn.Citizen != 0U)
                 {
@@ -1096,7 +1092,6 @@ namespace EnhancedDistrictServices
                     CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
                     if (citizenInfo == null)
                         return false;
-                    offerOut.Amount = delta;
 
                     // Workaround a bug in ResidentAI.StartTransfer
                     if (material == TransferManager.TransferReason.ChildCare || material == TransferManager.TransferReason.ElderCare)
@@ -1105,6 +1100,7 @@ namespace EnhancedDistrictServices
                     }
 
                     citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerOut);
+                    offerOut.Amount = delta;
                 }
                 else if (active2 && offerOut.Citizen != 0U)
                 {
@@ -1113,7 +1109,6 @@ namespace EnhancedDistrictServices
                     CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
                     if (citizenInfo == null)
                         return false;
-                    offerIn.Amount = delta;
 
                     // Workaround a bug in ResidentAI.StartTransfer
                     if (material == TransferManager.TransferReason.ChildCare || material == TransferManager.TransferReason.ElderCare)
@@ -1122,6 +1117,7 @@ namespace EnhancedDistrictServices
                     }
 
                     citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerIn);
+                    offerIn.Amount = delta;
                 }
                 else if (active2 && offerOut.Building != 0)
                 {
@@ -1133,9 +1129,8 @@ namespace EnhancedDistrictServices
                     else
                     {
                         ushort building = offerOut.Building;
-                        BuildingInfo info = buildings.m_buffer[building].Info;
+                        buildings.m_buffer[building].Info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerIn);
                         offerIn.Amount = delta;
-                        info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerIn);
                     }
                 }
                 else
@@ -1150,9 +1145,8 @@ namespace EnhancedDistrictServices
                     {
                         Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
                         ushort building = offerIn.Building;
-                        BuildingInfo info = buildings.m_buffer[building].Info;
+                        buildings.m_buffer[building].Info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerOut);
                         offerOut.Amount = delta;
-                        info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerOut);
                     }
                 }
 
@@ -1171,21 +1165,20 @@ namespace EnhancedDistrictServices
             Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
             ushort building1 = offerOut.Building;
             ushort building2 = offerIn.Building;
-            BuildingInfo info1 = buildings.m_buffer[(int)building1].Info;
-            BuildingInfo info2 = buildings.m_buffer[(int)building2].Info;
+            BuildingInfo info1 = buildings.m_buffer[building1].Info;
+            BuildingInfo info2 = buildings.m_buffer[building2].Info;
             int amount1;
-            int max1;
-            info1.m_buildingAI.GetMaterialAmount(building1, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[(int)building1], material, out amount1, out max1);
+            info1.m_buildingAI.GetMaterialAmount(building1, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[building1], material, out amount1, out int _);
             int amount2;
-            int max2;
-            info2.m_buildingAI.GetMaterialAmount(building2, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[(int)building2], material, out amount2, out max2);
-            int num = Math.Min(amount1, max2 - amount2);
+            int max;
+            info2.m_buildingAI.GetMaterialAmount(building2, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[building2], material, out amount2, out max);
+            int num = Math.Min(amount1, max - amount2);
             if (num <= 0)
                 return;
             int amountDelta1 = -num;
             int amountDelta2 = num;
-            info1.m_buildingAI.ModifyMaterialBuffer(building1, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[(int)building1], material, ref amountDelta1);
-            info2.m_buildingAI.ModifyMaterialBuffer(building2, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[(int)building2], material, ref amountDelta2);
+            info1.m_buildingAI.ModifyMaterialBuffer(building1, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[building1], material, ref amountDelta1);
+            info2.m_buildingAI.ModifyMaterialBuffer(building2, ref Singleton<BuildingManager>.instance.m_buildings.m_buffer[building2], material, ref amountDelta2);
         }
 
         #endregion

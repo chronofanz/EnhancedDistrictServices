@@ -173,16 +173,8 @@ namespace EnhancedDistrictServices
                 return false;
             }
 
-            var isRestricted = 
-                materialEvents.IsRestricted(material, requestBuilding, responseBuilding) ||
-                materialEvents.IsRestricted(material, responseBuilding, requestBuilding);
-
-            if (isRestricted)
-            {
-                Logger.LogMaterial($"TransferHistory::IsRestricted: {material} match disallowed: B{requestBuilding} to B{responseBuilding}", material);
-            }
-
-            return isRestricted;
+            return materialEvents.IsRestricted(material, requestBuilding, responseBuilding) ||
+                   materialEvents.IsRestricted(material, responseBuilding, requestBuilding);
         }
 
         public static void PurgeOldEvents(TransferManager.TransferReason material)

@@ -50,6 +50,7 @@ namespace EnhancedDistrictServices
 
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
 
+            // Stock Code
             if (offer.Building != (ushort)0)
             {
                 byte park = Singleton<DistrictManager>.instance.GetPark(offer.Position);
@@ -123,6 +124,7 @@ namespace EnhancedDistrictServices
 
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
 
+            // Stock Code
             if (offer.Building != (ushort)0)
             {
                 byte park = Singleton<DistrictManager>.instance.GetPark(offer.Position);
