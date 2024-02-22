@@ -80,10 +80,7 @@ namespace EnhancedDistrictServices
             ushort vehicleID = BuildingManager.instance.m_buildings.m_buffer[buildingID].m_ownVehicles;
             while (vehicleID != (ushort)0)
             {
-                var prefabAI = instance.m_vehicles.m_buffer[(int)vehicleID].Info.GetAI();
-                var material = (TransferManager.TransferReason)instance.m_vehicles.m_buffer[(int)vehicleID].m_transferType;
                 count++;
-
                 vehicleID = instance.m_vehicles.m_buffer[(int)vehicleID].m_nextOwnVehicle;
             }
 

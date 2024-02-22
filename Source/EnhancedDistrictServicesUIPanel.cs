@@ -24,11 +24,6 @@ namespace EnhancedDistrictServices
         private readonly List<EDSDistrictPark> m_districtParkMapping = new List<EDSDistrictPark>(capacity: EDSDistrictPark.MAX_DISTRICT_PARK_COUNT);
 
         /// <summary>
-        /// Mapping of dropdown index to prefab index to vehicle info.
-        /// </summary>
-        private readonly List<int> m_vehicleMapping = new List<int>();
-
-        /// <summary>
         /// Current input mode
         /// </summary>
         private InputMode m_inputMode = InputMode.OUTGOING;

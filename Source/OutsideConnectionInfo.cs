@@ -13,12 +13,12 @@ namespace EnhancedDistrictServices
     /// </summary>
     public static class OutsideConnectionInfo
     {
-        private static HashSet<ushort> m_planeCargoBuildings = new HashSet<ushort>();
-        private static HashSet<ushort> m_shipCargoBuildings = new HashSet<ushort>();
-        private static HashSet<ushort> m_trainCargoBuildings = new HashSet<ushort>();
+        private static readonly HashSet<ushort> m_planeCargoBuildings = new HashSet<ushort>();
+        private static readonly HashSet<ushort> m_shipCargoBuildings = new HashSet<ushort>();
+        private static readonly HashSet<ushort> m_trainCargoBuildings = new HashSet<ushort>();
 
-        private static List<ushort> m_outsideRoadConnections = new List<ushort>();
-        private static List<Vector3> m_outsideRoadConnectionPositions = new List<Vector3>();
+        private static readonly List<ushort> m_outsideRoadConnections = new List<ushort>();
+        private static readonly List<Vector3> m_outsideRoadConnectionPositions = new List<Vector3>();
 
         /// <summary>
         /// Static constructor.
