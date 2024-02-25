@@ -10,7 +10,7 @@ namespace EnhancedDistrictServices
     public class UIEDSButton : UIButton
     {
         private UIComponent m_component;
-        public UIComponent component
+        public UIComponent Component
         {
             get
             {
@@ -43,7 +43,7 @@ namespace EnhancedDistrictServices
 
             size = new Vector2(48, 38);
 
-            var uiView = component?.GetUIView();
+            var uiView = Component?.GetUIView();
             if (uiView == null)
             {
                 return;
@@ -81,13 +81,6 @@ namespace EnhancedDistrictServices
                     Utils.DisplayMessage(
                         str1: "Enhanced District Services",
                         str2: $"Please check the EDS mod page for latest updates.  Please note that the Global Outside Connection Intensity value is now recommended to be at least 500!  Please change this setting in your games to allow more outside traffic.",
-                        str3: "IconMessage");
-                }
-                else if (Settings.showWarnLowOutsideCapMessage && Constraints.GlobalOutsideConnectionIntensity() <= 100)
-                {
-                    Utils.DisplayMessage(
-                        str1: "Enhanced District Services",
-                        str2: $"Please note your city has a global outside connection intensity that is too low ({Constraints.GlobalOutsideConnectionIntensity()}).  Please readjust value to around 500 or above.  To permanently disable this warning, goto settings page to disable this warning message.",
                         str3: "IconMessage");
                 }
 

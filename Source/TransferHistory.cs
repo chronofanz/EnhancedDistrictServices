@@ -47,11 +47,6 @@ namespace EnhancedDistrictServices
                 var isRequestBuildingOutside = TransferManagerInfo.IsOutsideBuilding(requestBuilding, material);
                 var isResponseBuildingOutside = TransferManagerInfo.IsOutsideBuilding(responseBuilding, material);
 
-                if (!Settings.enableDummyCargoTraffic.value && isRequestBuildingOutside && isResponseBuildingOutside)
-                {
-                    return true;
-                }
-
                 var concurrentOrderCount = list.Count;
 
                 var concurrentOrderCountToOutsideConnection = 0;

@@ -1058,105 +1058,123 @@ namespace EnhancedDistrictServices
 
         /// <summary>
         /// Stock code that transfers people/materials between the buildings/vehicles referenced in the given offers.
+        /// 1.17.1-f4
         /// </summary>
         private static bool StartTransfer(TransferManager.TransferReason material, TransferManager.TransferOffer offerOut, TransferManager.TransferOffer offerIn, int delta)
         {
-            try
+            bool active1 = offerIn.Active;
+            bool active2 = offerOut.Active;
+            if (offerOut.Park != 0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[offerOut.Park].TryGetRandomServicePoint(material, out var buildingID1))
             {
-                bool active1 = offerIn.Active;
-                bool active2 = offerOut.Active;
-                ushort buildingID1;
-                if (offerOut.Park != 0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[offerOut.Park].TryGetRandomServicePoint(material, out buildingID1))
-                    offerOut.Building = buildingID1;
-                ushort buildingID2;
-                if (offerIn.Park != 0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[offerIn.Park].TryGetRandomServicePoint(material, out buildingID2))
-                    offerIn.Building = buildingID2;
-                if (active1 && offerIn.Vehicle != 0)
-                {
-                    Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
-                    ushort vehicle = offerIn.Vehicle;
-                    vehicles.m_buffer[vehicle].Info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerOut);
-                    offerOut.Amount = delta;
-                }
-                else if (active2 && offerOut.Vehicle != 0)
-                {
-                    Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
-                    ushort vehicle = offerOut.Vehicle;
-                    vehicles.m_buffer[vehicle].Info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerIn);
-                    offerIn.Amount = delta;
-                }
-                else if (active1 && offerIn.Citizen != 0U)
-                {
-                    Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
-                    uint citizen = offerIn.Citizen;
-                    CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
-                    if (citizenInfo == null)
-                        return false;
+                offerOut.Building = buildingID1;
+            }
 
-                    // Workaround a bug in ResidentAI.StartTransfer
-                    if (material == TransferManager.TransferReason.ChildCare || material == TransferManager.TransferReason.ElderCare)
-                    {
-                        citizens.m_buffer[citizen].Sick = false;
-                    }
+            if (offerIn.Park != 0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[offerIn.Park].TryGetRandomServicePoint(material, out var buildingID2))
+            {
+                offerIn.Building = buildingID2;
+            }
 
-                    citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerOut);
-                    offerOut.Amount = delta;
-                }
-                else if (active2 && offerOut.Citizen != 0U)
-                {
-                    Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
-                    uint citizen = offerOut.Citizen;
-                    CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
-                    if (citizenInfo == null)
-                        return false;
-
-                    // Workaround a bug in ResidentAI.StartTransfer
-                    if (material == TransferManager.TransferReason.ChildCare || material == TransferManager.TransferReason.ElderCare)
-                    {
-                        citizens.m_buffer[citizen].Sick = false;
-                    }
-
-                    citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerIn);
-                    offerIn.Amount = delta;
-                }
-                else if (active2 && offerOut.Building != 0)
-                {
-                    Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
-                    if (offerOut.m_isLocalPark != 0 && offerOut.m_isLocalPark == offerIn.m_isLocalPark)
-                    {
-                        StartDistrictTransfer(material, offerOut, offerIn);
-                    }
-                    else
-                    {
-                        ushort building = offerOut.Building;
-                        buildings.m_buffer[building].Info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerIn);
-                        offerIn.Amount = delta;
-                    }
-                }
-                else
-                {
-                    if (!active1 || offerIn.Building == 0)
-                        return false;
-                    if (offerIn.m_isLocalPark != 0 && offerIn.m_isLocalPark == offerOut.m_isLocalPark)
-                    {
-                        StartDistrictTransfer(material, offerOut, offerIn);
-                    }
-                    else
-                    {
-                        Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
-                        ushort building = offerIn.Building;
-                        buildings.m_buffer[building].Info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerOut);
-                        offerOut.Amount = delta;
-                    }
-                }
+            if (active1 && offerIn.Vehicle != 0)
+            {
+                Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
+                ushort vehicle = offerIn.Vehicle;
+                VehicleInfo info = vehicles.m_buffer[vehicle].Info;
+                offerOut.Amount = delta;
+                info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerOut);
 
                 return true;
             }
-            finally
+
+            if (active2 && offerOut.Vehicle != 0)
             {
+                Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
+                ushort vehicle = offerOut.Vehicle;
+                VehicleInfo info = vehicles.m_buffer[vehicle].Info;
+                offerIn.Amount = delta;
+                info.m_vehicleAI.StartTransfer(vehicle, ref vehicles.m_buffer[vehicle], material, offerIn);
+
+                return true;
             }
+            
+            if (active1 && offerIn.Citizen != 0)
+            {
+                Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
+                uint citizen = offerIn.Citizen;
+                CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
+                if (citizenInfo == null)
+                    return false;
+
+                // Workaround a bug in ResidentAI.StartTransfer
+                if (material == TransferManager.TransferReason.ChildCare || material == TransferManager.TransferReason.ElderCare)
+                {
+                    citizens.m_buffer[citizen].Sick = false;
+                }
+
+                offerOut.Amount = delta;
+                citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerOut);
+                return true;
+            }
+
+            if (active2 && offerOut.Citizen != 0)
+            {
+                Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
+                uint citizen = offerOut.Citizen;
+                CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
+                if (citizenInfo == null)
+                    return false;
+
+                // Workaround a bug in ResidentAI.StartTransfer
+                if (material == TransferManager.TransferReason.ChildCare || material == TransferManager.TransferReason.ElderCare)
+                {
+                    citizens.m_buffer[citizen].Sick = false;
+                }
+
+                offerIn.Amount = delta;
+                citizenInfo.m_citizenAI.StartTransfer(citizen, ref citizens.m_buffer[citizen], material, offerIn);
+                return true;
+            }
+
+            if (active2 && offerOut.Building != 0)
+            {
+                Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
+                if (offerOut.m_isLocalPark != 0 && offerOut.m_isLocalPark == offerIn.m_isLocalPark)
+                {
+                    StartDistrictTransfer(material, offerOut, offerIn);
+                    return true;
+                }
+
+                ushort building = offerOut.Building;
+                BuildingInfo info = buildings.m_buffer[building].Info;
+                offerIn.Amount = delta;
+                info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerIn);
+
+                return true;
+            }
+
+            if (active1 && offerIn.Building != 0)
+            {
+                if (offerIn.m_isLocalPark != 0 && offerIn.m_isLocalPark == offerOut.m_isLocalPark)
+                {
+                    StartDistrictTransfer(material, offerOut, offerIn);
+                    return true;
+                }
+
+                Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
+                ushort building = offerIn.Building;
+                BuildingInfo info = buildings.m_buffer[building].Info;
+                offerOut.Amount = delta;
+                info.m_buildingAI.StartTransfer(building, ref buildings.m_buffer[building], material, offerOut);
+
+                return true;
+            }
+
+            return false;
         }
 
+        /// <summary>
+        /// StartDistrictTransfer
+        /// 1.17.1-f4
+        /// </summary>
         private static void StartDistrictTransfer(
             TransferManager.TransferReason material,
             TransferManager.TransferOffer offerOut,

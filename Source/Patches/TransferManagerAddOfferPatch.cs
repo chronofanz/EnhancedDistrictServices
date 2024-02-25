@@ -5,7 +5,7 @@ using UnityEngine;
 namespace EnhancedDistrictServices
 {
     [HarmonyPatch(typeof(TransferManager))]
-    [HarmonyPatch("AddIncomingOffer")]
+    [HarmonyPatch(nameof(TransferManager.AddIncomingOffer))]
     public class TransferManagerAddIncomingOfferPatch
     {
         public static bool Prefix(TransferManager.TransferReason material, ref TransferManager.TransferOffer offer)
@@ -30,52 +30,40 @@ namespace EnhancedDistrictServices
                 }
             }
 
-            if (material == TransferManager.TransferReason.Taxi && offer.Citizen != 0)
-            {
-                var instance = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen].m_instance;
-                var targetBuilding = CitizenManager.instance.m_instances.m_buffer[instance].m_targetBuilding;
-                var targetPosition = BuildingManager.instance.m_buildings.m_buffer[targetBuilding].m_position;
-
-                if (!TaxiMod.CanUseTaxis(offer.Position, targetPosition))
-                {
-                    OfferTracker.LogEvent("AddIncomingDisallowTaxis", ref offer, material);
-                    var instanceId = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen].m_instance;
-                    CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags &= ~CitizenInstance.Flags.WaitingTaxi;
-                    CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags |= CitizenInstance.Flags.BoredOfWaiting;
-                    CitizenManager.instance.m_instances.m_buffer[instanceId].m_flags |= CitizenInstance.Flags.CannotUseTaxi;
-                    CitizenManager.instance.m_instances.m_buffer[instanceId].m_waitCounter = byte.MaxValue;
-                    return false;
-                }
-            }
-
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
 
-            // Stock Code
-            if (offer.Building != (ushort)0)
+            // Stock Code, 1.17.1-f4
+            if (offer.Building != 0)
             {
                 byte park = Singleton<DistrictManager>.instance.GetPark(offer.Position);
                 Building[] buffer = Singleton<BuildingManager>.instance.m_buildings.m_buffer;
-                DistrictPark.PedestrianZoneTransferReason reason;
-                if (park != (byte)0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].IsPedestrianZone && buffer[(int)offer.Building].Info.m_buildingAI.GetUseServicePoint(offer.Building, ref buffer[(int)offer.Building]) && DistrictPark.TryGetPedestrianReason(material, out reason))
+                if (park != 0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[park].IsPedestrianZone && buffer[offer.Building].Info.m_buildingAI.GetUseServicePoint(offer.Building, ref buffer[offer.Building]) && DistrictPark.TryGetPedestrianReason(material, out var reason))
                 {
                     bool flag = false;
-                    if ((Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].m_parkPolicies & DistrictPolicies.Park.ForceServicePoint) != DistrictPolicies.Park.None)
+                    if ((Singleton<DistrictManager>.instance.m_parks.m_buffer[park].m_parkPolicies & DistrictPolicies.Park.ForceServicePoint) != 0)
+                    {
                         flag = true;
+                    }
+
                     if (!flag)
                     {
-                        ushort accessSegment = buffer[(int)offer.Building].m_accessSegment;
-                        if (accessSegment == (ushort)0 && (buffer[(int)offer.Building].m_problems & new Notification.ProblemStruct(Notification.Problem1.RoadNotConnected, Notification.Problem2.NotInPedestrianZone)).IsNone)
+                        ushort accessSegment = buffer[offer.Building].m_accessSegment;
+                        if (accessSegment == 0 && (buffer[offer.Building].m_problems & new Notification.ProblemStruct(Notification.Problem1.RoadNotConnected, Notification.Problem2.NotInPedestrianZone)).IsNone)
                         {
-                            buffer[(int)offer.Building].Info.m_buildingAI.CheckRoadAccess(offer.Building, ref buffer[(int)offer.Building]);
-                            accessSegment = buffer[(int)offer.Building].m_accessSegment;
+                            buffer[offer.Building].Info.m_buildingAI.CheckRoadAccess(offer.Building, ref buffer[offer.Building]);
+                            accessSegment = buffer[offer.Building].m_accessSegment;
                         }
-                        if (accessSegment != (ushort)0 && (Singleton<NetManager>.instance.m_segments.m_buffer[(int)accessSegment].Info.m_vehicleCategories & reason.m_vehicleCategory) == VehicleInfo.VehicleCategory.None)
+
+                        if (accessSegment != 0 && (Singleton<NetManager>.instance.m_segments.m_buffer[accessSegment].Info.m_vehicleCategories & reason.m_vehicleCategory) == 0)
+                        {
                             flag = true;
+                        }
                     }
+
                     if (flag)
                     {
                         offer.m_isLocalPark = park;
-                        Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].AddMaterialRequest(offer.Building, material);
+                        Singleton<DistrictManager>.instance.m_parks.m_buffer[park].AddMaterialRequest(offer.Building, material);
                     }
                 }
             }
@@ -86,7 +74,7 @@ namespace EnhancedDistrictServices
     }
 
     [HarmonyPatch(typeof(TransferManager))]
-    [HarmonyPatch("AddOutgoingOffer")]
+    [HarmonyPatch(nameof(TransferManager.AddOutgoingOffer))]
     public class TransferManagerAddOutgoingOfferPatch
     {
         private static readonly MyRandomizer m_randomizer = new MyRandomizer(1);
@@ -124,32 +112,38 @@ namespace EnhancedDistrictServices
 
             TransferManagerAddOffer.ModifyOffer(material, ref offer);
 
-            // Stock Code
-            if (offer.Building != (ushort)0)
+            // Stock Code, 1.17.1-f4
+            if (offer.Building != 0)
             {
                 byte park = Singleton<DistrictManager>.instance.GetPark(offer.Position);
                 Building[] buffer = Singleton<BuildingManager>.instance.m_buildings.m_buffer;
-                DistrictPark.PedestrianZoneTransferReason reason;
-                if (park != (byte)0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].IsPedestrianZone && buffer[(int)offer.Building].Info.m_buildingAI.GetUseServicePoint(offer.Building, ref buffer[(int)offer.Building]) && DistrictPark.TryGetPedestrianReason(material, out reason))
+                if (park != 0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[park].IsPedestrianZone && buffer[offer.Building].Info.m_buildingAI.GetUseServicePoint(offer.Building, ref buffer[offer.Building]) && DistrictPark.TryGetPedestrianReason(material, out var reason))
                 {
                     bool flag = false;
-                    if ((Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].m_parkPolicies & DistrictPolicies.Park.ForceServicePoint) != DistrictPolicies.Park.None)
+                    if ((Singleton<DistrictManager>.instance.m_parks.m_buffer[park].m_parkPolicies & DistrictPolicies.Park.ForceServicePoint) != 0)
+                    {
                         flag = true;
+                    }
+
                     if (!flag)
                     {
-                        ushort accessSegment = buffer[(int)offer.Building].m_accessSegment;
-                        if (accessSegment == (ushort)0 && (buffer[(int)offer.Building].m_problems & new Notification.ProblemStruct(Notification.Problem1.RoadNotConnected, Notification.Problem2.NotInPedestrianZone)).IsNone)
+                        ushort accessSegment = buffer[offer.Building].m_accessSegment;
+                        if (accessSegment == 0 && (buffer[offer.Building].m_problems & new Notification.ProblemStruct(Notification.Problem1.RoadNotConnected, Notification.Problem2.NotInPedestrianZone)).IsNone)
                         {
-                            buffer[(int)offer.Building].Info.m_buildingAI.CheckRoadAccess(offer.Building, ref buffer[(int)offer.Building]);
-                            accessSegment = buffer[(int)offer.Building].m_accessSegment;
+                            buffer[offer.Building].Info.m_buildingAI.CheckRoadAccess(offer.Building, ref buffer[offer.Building]);
+                            accessSegment = buffer[offer.Building].m_accessSegment;
                         }
-                        if (accessSegment != (ushort)0 && (Singleton<NetManager>.instance.m_segments.m_buffer[(int)accessSegment].Info.m_vehicleCategories & reason.m_vehicleCategory) == VehicleInfo.VehicleCategory.None)
+
+                        if (accessSegment != 0 && (Singleton<NetManager>.instance.m_segments.m_buffer[accessSegment].Info.m_vehicleCategories & reason.m_vehicleCategory) == 0)
+                        {
                             flag = true;
+                        }
                     }
+
                     if (flag)
                     {
                         offer.m_isLocalPark = park;
-                        Singleton<DistrictManager>.instance.m_parks.m_buffer[(int)park].AddMaterialSuggestion(offer.Building, material);
+                        Singleton<DistrictManager>.instance.m_parks.m_buffer[park].AddMaterialSuggestion(offer.Building, material);
                     }
                 }
             }

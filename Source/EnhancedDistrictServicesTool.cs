@@ -37,11 +37,9 @@ namespace EnhancedDistrictServices
              EnhancedDistrictServicesUIPanel.Create();
 
             BuildingManager.instance.EventBuildingCreated += Constraints.CreateBuilding;
-            BuildingManager.instance.EventBuildingCreated += TaxiMod.RegisterTaxiBuilding;
             BuildingManager.instance.EventBuildingCreated += OutsideConnectionInfo.RegisterCargoBuilding;
 
             BuildingManager.instance.EventBuildingReleased += Constraints.ReleaseBuilding;
-            BuildingManager.instance.EventBuildingReleased += TaxiMod.DeregisterTaxiBuilding;
             BuildingManager.instance.EventBuildingReleased += OutsideConnectionInfo.DeregisterCargoBuilding;
         }
 
@@ -58,9 +56,7 @@ namespace EnhancedDistrictServices
             EnhancedDistrictServicesUIPanel.Destroy();
 
             BuildingManager.instance.EventBuildingCreated -= Constraints.CreateBuilding;
-            BuildingManager.instance.EventBuildingCreated -= TaxiMod.RegisterTaxiBuilding;
             BuildingManager.instance.EventBuildingReleased -= Constraints.ReleaseBuilding;
-            BuildingManager.instance.EventBuildingReleased -= TaxiMod.DeregisterTaxiBuilding;
         }
 
         protected override void OnEnable()
@@ -278,9 +274,11 @@ namespace EnhancedDistrictServices
         {
             var inputType = TransferManagerInfo.GetBuildingInputType(building);
 
-            var txtItems = new List<string>();
-            txtItems.Add($"{TransferManagerInfo.GetBuildingName(building)} ({building})");
-            txtItems.Add(TransferManagerInfo.GetDistrictParkText(building));
+            var txtItems = new List<string>
+            {
+                $"{TransferManagerInfo.GetBuildingName(building)} ({building})",
+                TransferManagerInfo.GetDistrictParkText(building)
+            };
 
             // Early return.  Rest of info pertains to building types that we deal with in the mod.
             if (!TransferManagerInfo.IsDistrictServicesBuilding(building))

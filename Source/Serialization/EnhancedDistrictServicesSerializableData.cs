@@ -21,7 +21,6 @@ namespace EnhancedDistrictServices.Serialization
             {
                 try                
                 {
-                    TaxiMod.ClearTaxiBuildings();
                     TransferManagerMod.ClearBuildingToBuildingExclusions();
                     
                     Datav4 data;
@@ -46,14 +45,6 @@ namespace EnhancedDistrictServices.Serialization
                     else
                     {
                         Constraints.Clear();
-                    }
-
-                    // Update Taxi buildings cache ...
-                    // TODO, FIXME: Make this less hacky ...
-                    var buildings = Utils.GetSupportedServiceBuildings();
-                    foreach (var building in buildings)
-                    {
-                        TaxiMod.RegisterTaxiBuilding(building);
                     }
                 }
                 catch (Exception ex)

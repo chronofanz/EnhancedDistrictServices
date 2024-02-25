@@ -95,7 +95,6 @@
     <Compile Include="Source\UI\CopyPaste.cs" />
     <Compile Include="Source\UI\ResourceLoader.cs" />
     <Compile Include="Source\UI\UIEDSButton.cs" />
-    <Compile Include="Source\Vehicles\TaxiMod.cs" />
     <Compile Include="Source\Patches\TransferManagerAddOfferPatch.cs" />
     <Compile Include="Source\UI\Settings.cs" />
     <Compile Include="Source\UI\UIOptionsKeymapping.cs" />

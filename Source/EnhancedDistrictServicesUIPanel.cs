@@ -127,27 +127,6 @@ namespace EnhancedDistrictServices
                 }
             };
 
-            if (Settings.enableSelectOutsideConnection.value)
-            {
-                UIServices.tooltip = "(Experimental) Click to select outside connection.";
-                UIServices.eventClicked += (c, p) =>
-                {
-                    Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIServices Clicked");
-
-                    var nextBuildingId = FindSimilarBuilding(m_currBuildingId, ItemClass.Service.None, ItemClass.SubService.None, typeof(OutsideConnectionAI));
-                    if (!TransferManagerInfo.IsDistrictServicesBuilding(nextBuildingId))
-                    {
-                        return;
-                    }
-
-                    Singleton<SimulationManager>.instance.AddAction(() =>
-                    {
-                        SetBuilding((ushort)nextBuildingId);
-                        UpdatePositionToBuilding((ushort)nextBuildingId);
-                    });
-                };
-            }
-
             UIOutgoingTab.eventClicked += (c, p) =>
             {
                 Logger.LogVerbose("EnhancedDistrictServicedUIPanel::UIOutgoingTab Clicked");
