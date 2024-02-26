@@ -34,7 +34,7 @@ namespace EnhancedDistrictServices
                 m_edsCursor = Utils.FindObject<CursorInfo>("SelfSufficient Placement");
             }
 
-             EnhancedDistrictServicesUIPanel.Create();
+            EnhancedDistrictServicesUIPanel.Create();
 
             BuildingManager.instance.EventBuildingCreated += Constraints.CreateBuilding;
             BuildingManager.instance.EventBuildingCreated += OutsideConnectionInfo.RegisterCargoBuilding;
