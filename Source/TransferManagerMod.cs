@@ -364,7 +364,7 @@ namespace EnhancedDistrictServices
                         continue;
                     }
 
-                    OfferTracker.LogEvent("MatchRequest", ref requestOffer, material);
+                    OfferTracker.LogEvent("MatchRequestClosest", ref requestOffer, material);
 
                     m_currentBuildingExclusions.Clear();
 
@@ -405,6 +405,7 @@ namespace EnhancedDistrictServices
                                 // Pedestrian areas
                                 if (requestOffer.m_isLocalPark != responseOffer.m_isLocalPark)
                                 {
+                                    OfferTracker.LogEvent("MatchLocalParkMismatch", ref responseOffer, material);
                                     continue;
                                 }
 
@@ -516,7 +517,7 @@ namespace EnhancedDistrictServices
                                 var success = StartTransfer(material, requestOffer, responseOffer, delta);
                                 if (!success)
                                 {
-                                    OfferTracker.LogEvent("MatchSuccessFail", ref responseOffer, material);
+                                    OfferTracker.LogEvent("MatchSuccessFail1", ref responseOffer, material);
                                     m_currentBuildingExclusions.Add(responseOffer.Building);
                                     continue;
                                 }
@@ -552,13 +553,14 @@ namespace EnhancedDistrictServices
                         }
                         else
                         {
+                            OfferTracker.LogEvent("MatchRequestFail2", ref requestOffer, material);
                             break;
                         }
-                    }                   
+                    }
 
                     if (requestPriority > 0 && requestAmount > 0)
                     {
-                        OfferTracker.LogEvent("MatchRequestFail", ref requestOffer, material);
+                        OfferTracker.LogEvent("MatchRequestFail3", ref requestOffer, material);
                         matchesMissed++;
                     }
                 }
@@ -620,7 +622,7 @@ namespace EnhancedDistrictServices
                         continue;
                     }
 
-                    OfferTracker.LogEvent("MatchRequest", ref requestOffer, material);
+                    OfferTracker.LogEvent("MatchRequestRandom", ref requestOffer, material);
 
                     m_currentBuildingExclusions.Clear();
 
@@ -642,7 +644,7 @@ namespace EnhancedDistrictServices
 
                     if (totalResponseCount == 0)
                     {
-                        OfferTracker.LogEvent("MatchRequestFail", ref requestOffer, material);
+                        OfferTracker.LogEvent("MatchRequestFail1", ref requestOffer, material);
                         continue;
                     }
 
@@ -682,7 +684,7 @@ namespace EnhancedDistrictServices
                                     var success = StartTransfer(material, requestOffer, responseOffer, delta);
                                     if (!success)
                                     {
-                                        OfferTracker.LogEvent("MatchSuccessFail", ref responseOffer, material);
+                                        OfferTracker.LogEvent("MatchSuccessFail2", ref responseOffer, material);
                                         m_currentBuildingExclusions.Add(responseOffer.Building);
                                         continue;
                                     }
@@ -712,7 +714,7 @@ namespace EnhancedDistrictServices
 
                     if (requestAmount > 0)
                     {
-                        OfferTracker.LogEvent("MatchRequestFail", ref requestOffer, material);
+                        OfferTracker.LogEvent("MatchRequestFail3", ref requestOffer, material);
                     }
                 }
             }
@@ -1064,18 +1066,25 @@ namespace EnhancedDistrictServices
         {
             bool active1 = offerIn.Active;
             bool active2 = offerOut.Active;
+
+            // Logger.Log($"TransferManager::StartTransfer: offerOut.Park={offerOut.Park}, offerIn.Park={offerIn.Park}");
+
             if (offerOut.Park != 0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[offerOut.Park].TryGetRandomServicePoint(material, out var buildingID1))
             {
+                // Logger.Log($"TransferManager::StartTransfer: Changing offerOut building from {offerOut.Building} to service point building {buildingID1}");
                 offerOut.Building = buildingID1;
             }
 
             if (offerIn.Park != 0 && Singleton<DistrictManager>.instance.m_parks.m_buffer[offerIn.Park].TryGetRandomServicePoint(material, out var buildingID2))
             {
+                // Logger.Log($"TransferManager::StartTransfer: Changing offerIn building from {offerIn.Building} to service point building {buildingID2}");
                 offerIn.Building = buildingID2;
             }
 
             if (active1 && offerIn.Vehicle != 0)
             {
+                // Logger.Log($"TransferManager::StartTransfer1 ...");
+
                 Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
                 ushort vehicle = offerIn.Vehicle;
                 VehicleInfo info = vehicles.m_buffer[vehicle].Info;
@@ -1087,6 +1096,8 @@ namespace EnhancedDistrictServices
 
             if (active2 && offerOut.Vehicle != 0)
             {
+                // Logger.Log($"TransferManager::StartTransfer2 ...");
+
                 Array16<Vehicle> vehicles = Singleton<VehicleManager>.instance.m_vehicles;
                 ushort vehicle = offerOut.Vehicle;
                 VehicleInfo info = vehicles.m_buffer[vehicle].Info;
@@ -1098,6 +1109,8 @@ namespace EnhancedDistrictServices
             
             if (active1 && offerIn.Citizen != 0)
             {
+                // Logger.Log($"TransferManager::StartTransfer3 ...");
+
                 Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
                 uint citizen = offerIn.Citizen;
                 CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
@@ -1117,6 +1130,8 @@ namespace EnhancedDistrictServices
 
             if (active2 && offerOut.Citizen != 0)
             {
+                // Logger.Log($"TransferManager::StartTransfer4 ...");
+
                 Array32<Citizen> citizens = Singleton<CitizenManager>.instance.m_citizens;
                 uint citizen = offerOut.Citizen;
                 CitizenInfo citizenInfo = citizens.m_buffer[citizen].GetCitizenInfo(citizen);
@@ -1136,6 +1151,8 @@ namespace EnhancedDistrictServices
 
             if (active2 && offerOut.Building != 0)
             {
+                // Logger.Log($"TransferManager::StartTransfer5 ...");
+
                 Array16<Building> buildings = Singleton<BuildingManager>.instance.m_buildings;
                 if (offerOut.m_isLocalPark != 0 && offerOut.m_isLocalPark == offerIn.m_isLocalPark)
                 {
@@ -1153,6 +1170,8 @@ namespace EnhancedDistrictServices
 
             if (active1 && offerIn.Building != 0)
             {
+                // Logger.Log($"TransferManager::StartTransfer6 ...");
+
                 if (offerIn.m_isLocalPark != 0 && offerIn.m_isLocalPark == offerOut.m_isLocalPark)
                 {
                     StartDistrictTransfer(material, offerOut, offerIn);
